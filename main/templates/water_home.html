@@ -1,0 +1,480 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Home | Water & Sanitation{% endblock %}
+
+{% block head_extras %}
+  <!-- Only the home page needs to preload videos (Hero high priority). -->
+  <link rel="preload" href="{% static 'file4.mp4' %}" as="video" fetchpriority="high">
+  <link rel="preload" href="{% static 'file5.mp4' %}" as="video">
+  <style>
+    /* ---- Video skeleton (avoid black blocks) ---- */
+    .video-skel{
+      position:absolute; inset:0; z-index:2; pointer-events:none;
+      border-radius:var(--card-radius);
+      background:
+        radial-gradient(120% 90% at 80% 10%, rgba(0,0,0,.25), transparent 60%),
+        linear-gradient(135deg, rgba(26,92,255,.30), rgba(0,178,255,.12));
+      overflow:hidden; opacity:1; transition:opacity .24s ease .05s;
+    }
+    .video-skel::after{
+      content:""; position:absolute; inset:0; transform:translateX(-100%);
+      background:linear-gradient(90deg, transparent, rgba(255,255,255,.16), transparent);
+      animation: sk-shine 1.2s linear infinite;
+    }
+    @keyframes sk-shine{ to { transform:translateX(100%); } }
+    .video-skel.out{ opacity:0; }
+
+    /* Make the background of the video transparent so that the skeleton can be seen (Chrome sometimes paints the background of the video black).） */
+    .panel video{ background:transparent !important; }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <!-- Hero (only on the homepage) -->
+  <section class="hero">
+    <article class="panel panel-hero" id="bannerHero">
+      <video id="heroVid"
+             src="{% static 'file4.mp4' %}"
+             playsinline muted loop preload="auto" autoplay
+             fetchpriority="high"></video>
+      <!-- Skeleton: Displayed before the first frame, fade out after loadeddata/playing -->
+      <div class="video-skel" aria-hidden="true"></div>
+      <div class="tint"></div>
+    </article>
+  </section>
+
+  <!-- Three panels -->
+  <section class="grid" id="videoGrid">
+    <article class="panel">
+      <video src="{% static 'file1.mp4' %}" playsinline muted loop preload="metadata" autoplay></video>
+      <div class="video-skel" aria-hidden="true"></div>
+      <div class="tint"></div>
+      <div class="overlay">
+        <div class="centerline">
+          <span class="title-row">
+            <span class="water-chip" id="chip-access" aria-label="Safe Water">
+              <svg viewBox="0 0 24 24">
+                <g class="rings">
+                  <circle class="ring r1" cx="12" cy="12" r="8.2"/>
+                  <circle class="ring r2" cx="12" cy="12" r="10"/>
+                </g>
+                <path class="drop" d="M12 4 C9 8,7 10.5,7 13a5 5 0 0 0 10 0c0-2.5-2-5-5-9z"/>
+              </svg>
+            </span>
+            <span>Pollution Sources</span>
+          </span>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel">
+      <video src="{% static 'file2.mp4' %}" playsinline muted loop preload="metadata" autoplay></video>
+      <div class="video-skel" aria-hidden="true"></div>
+      <div class="tint"></div>
+      <div class="overlay">
+        <div class="centerline">
+          <span class="title-row">
+            <span class="water-chip" id="chip-hygiene" aria-label="Hygiene">
+              <svg viewBox="0 0 24 24">
+                <circle class="bubble b1" cx="8"  cy="18" r="2.3"/>
+                <circle class="bubble b2" cx="13" cy="18" r="1.5"/>
+                <circle class="bubble b3" cx="16.5" cy="18" r="1.1"/>
+              </svg>
+            </span>
+            <span>Water Quality</span>
+          </span>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel">
+      <video src="{% static 'file3.mp4' %}" playsinline muted loop preload="metadata" autoplay></video>
+      <div class="video-skel" aria-hidden="true"></div>
+      <div class="tint"></div>
+      <div class="overlay">
+        <div class="centerline">
+          <span class="title-row">
+            <span class="water-chip" id="chip-report" aria-label="Reporting">
+              <svg viewBox="0 0 24 24">
+                <g class="ping"><circle class="ring r1" cx="12" cy="12" r="8.5"/></g>
+                <path class="drop" d="M12 4 C9 8,7 10.5,7 13a5 5 0 0 0 10 0c0-2.5-2-5-5-9z"/>
+              </svg>
+            </span>
+            <span>Community Reporting</span>
+          </span>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- WHY section-->
+  <section class="why-section" id="why">
+    <div class="lottie-bg" aria-hidden="true">
+      <!-- Key point: WHY videos do not play automatically and are not preloaded (viewport playback) -->
+      <video id="whyBgVid" src="{% static 'icecub.mp4' %}"
+             playsinline muted loop preload="none"></video>
+      <div class="video-skel" aria-hidden="true"></div>
+    </div>
+    <div class="why-main-content">
+      <h2 class="why-title">WHY CLEAN WATER & SAFE SANITATION?</h2>
+      <ul class="why-list">
+        <li class="why-list-item">
+          <span class="why-icon-bullet" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Water droplet">
+              <path d="M12 2.7l5 6.1c.94 1.14 1.5 2.58 1.5 4.09A6.5 6.5 0 1 1 5.5 12.9c0-1.51.56-2.95 1.5-4.09l5-6.11z"/>
+            </svg>
+          </span>
+          Real-time water safety checks—track turbidity & pH to keep drinking water safe.
+        </li>
+        <li class="why-list-item">
+          <span class="why-icon-bullet" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Water droplet">
+              <path d="M12 2.7l5 6.1c.94 1.14 1.5 2.58 1.5 4.09A6.5 6.5 0 1 1 5.5 12.9c0-1.51.56-2.95 1.5-4.09l5-6.11z"/>
+            </svg>
+          </span>
+          Map nearby toilets & handwashing points for safe, dignified sanitation.
+        </li>
+        <li class="why-list-item">
+          <span class="why-icon-bullet" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Water droplet">
+              <path d="M12 2.7l5 6.1c.94 1.14 1.5 2.58 1.5 4.09A6.5 6.5 0 1 1 5.5 12.9c0-1.51.56-2.95 1.5-4.09l5-6.11z"/>
+            </svg>
+          </span>
+          Simple household filtration & chlorination guides—clean water in minutes.
+        </li>
+        <li class="why-list-item">
+          <span class="why-icon-bullet" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Water droplet">
+              <path d="M12 2.7l5 6.1c.94 1.14 1.5 2.58 1.5 4.09A6.5 6.5 0 1 1 5.5 12.9c0-1.51.56-2.95 1.5-4.09l5-6.11z"/>
+            </svg>
+          </span>
+          Leak detection & water-saving tips to cut waste and bills.
+        </li>
+        <li class="why-list-item">
+          <span class="why-icon-bullet" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Water droplet">
+              <path d="M12 2.7l5 6.1c.94 1.14 1.5 2.58 1.5 4.09A6.5 6.5 0 1 1 5.5 12.9c0-1.51.56-2.95 1.5-4.09l5-6.11z"/>
+            </svg>
+          </span>
+          Community issue reporting—get alerts during outages & contamination events.
+        </li>
+      </ul>
+      <div class="why-note">Clean water saves lives. Safe sanitation protects communities.</div>
+    </div>
+  </section>
+
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+  /************ Homepage exclusive: Video control + chip/WHY interaction ************/
+  const gridVideos = Array.from(document.querySelectorAll("#videoGrid video"));
+  const heroVideo = document.getElementById('heroVid');
+  const whyVideo  = document.getElementById('whyBgVid');
+
+  // --- Skeleton: Remove the skeleton from the first frame to avoid black blocks. ---
+  function wireSkeleton(v){
+    const sk = v && v.parentElement && v.parentElement.querySelector('.video-skel');
+    if(!v || !sk) return;
+    const done = ()=>{ sk.classList.add('out'); v.removeEventListener('loadeddata', done); v.removeEventListener('playing', done); };
+    if (v.readyState >= 2) { done(); }
+    v.addEventListener('loadeddata', done);
+    v.addEventListener('playing', done);
+    v.addEventListener('error', done);
+  }
+  [heroVideo, whyVideo, ...gridVideos].forEach(v=>v && wireSkeleton(v));
+
+  // Static video URL (Django render)
+  const HERO_DARK_URL  = "{% static 'file4.mp4' %}";
+  const HERO_LIGHT_URL = "{% static 'file5.mp4' %}";
+
+  const manualPaused = new WeakSet();
+  const tryPlay = v => v && v.play && v.play().catch(()=>{});
+  const pause   = v => v && v.pause && v.pause();
+
+  /************ Visibility Flag ************/
+  let heroInView = true;
+  let gridInView = false;
+  let whyInView  = false;
+
+  /************ Mutually exclusive playback areas: “hero” | “grid” | 'why' ************/
+  let activeZone = 'hero'; // start hero
+  function applyZone(){
+    if (activeZone === 'why'){
+      pause(heroVideo);
+      gridVideos.forEach(v=>{ manualPaused.add(v); pause(v); });
+      tryPlay(whyVideo);
+      return;
+    }
+
+    if (activeZone === 'grid'){
+      pause(whyVideo);
+      pause(heroVideo);
+      // grid Play according to the original rules (hover/visible)
+      if (gridInView){
+        if (hoveredVideo){
+          gridVideos.forEach(v=>{ if(v!==hoveredVideo){ manualPaused.add(v); pause(v); }});
+          manualPaused.delete(hoveredVideo);
+          tryPlay(hoveredVideo);
+        }else{
+          gridVideos.forEach(v=>{ manualPaused.delete(v); tryPlay(v); });
+        }
+      }else{
+        gridVideos.forEach(v=>{ manualPaused.add(v); pause(v); });
+      }
+      return;
+    }
+
+    // activeZone === 'hero'
+    pause(whyVideo);
+    // grid shutdown
+    gridVideos.forEach(v=>{ manualPaused.add(v); pause(v); });
+    // Only hero can be played and is played in the viewport.
+    if (heroInView) tryPlay(heroVideo); else pause(heroVideo);
+  }
+
+  function recomputeZone(){
+    // Priority order: WHY > GRID > HERO
+    const next =
+      whyInView ? 'why' :
+      gridInView ? 'grid' :
+      'hero';
+    if (next !== activeZone){
+      activeZone = next;
+      applyZone();
+    }else{
+      // Apply the same zone update once to avoid small threshold fluctuations.
+      applyZone();
+    }
+  }
+
+  /************ Observers ************/
+  const bannerEl = document.getElementById('bannerHero');
+  const heroObserver = new IntersectionObserver((entries)=>{
+    const e = entries[0];
+    heroInView = e.isIntersecting && e.intersectionRatio > 0.15;
+    recomputeZone();
+  }, {threshold:[0,0.15,0.5,1], rootMargin: "0px 0px -10% 0px"});
+  if (bannerEl) heroObserver.observe(bannerEl);
+
+  const gridEl = document.getElementById("videoGrid");
+  const gridObserver = new IntersectionObserver((entries)=>{
+    gridInView = entries[0].isIntersecting && entries[0].intersectionRatio > 0.15;
+    recomputeZone();
+  }, {threshold:[0,0.15,0.6,1], rootMargin: "0px 0px -10% 0px"});
+  if (gridEl) gridObserver.observe(gridEl);
+
+  const whyEl = document.getElementById('why');
+  const whyObserver = new IntersectionObserver((entries)=>{
+    const e = entries[0];
+    whyInView = e.isIntersecting && e.intersectionRatio > 0.15;
+    recomputeZone();
+  }, {threshold:[0,0.15,0.35,0.6,1], rootMargin: "0px 0px -10% 0px"});
+  if (whyEl) whyObserver.observe(whyEl);
+
+  /************ Grid hover: Unicast v, others paused (only effective in the grid area) ************/
+  let hoveredVideo = null;
+  const panels = Array.from(document.querySelectorAll('#videoGrid .panel'));
+  panels.forEach(panel=>{
+    const v = panel.querySelector('video');
+
+    panel.addEventListener('pointerenter', ()=>{
+      hoveredVideo = v;
+      if (activeZone !== 'grid') return;
+      gridVideos.forEach(ov=>{
+        if(ov!==v){ manualPaused.add(ov); pause(ov); }
+      });
+      manualPaused.delete(v);
+      if(gridInView) tryPlay(v);
+    });
+
+    panel.addEventListener('pointerleave', ()=>{
+      hoveredVideo = null;
+      if (activeZone !== 'grid') return;
+      gridVideos.forEach(ov=>manualPaused.delete(ov));
+      if(gridInView) gridVideos.forEach(tryPlay);
+    });
+  });
+
+  // Grid keepPlaying (only in the grid area and when conditions are met)
+  gridVideos.forEach(v=>{
+    const shouldResume = ()=> activeZone==='grid' && gridInView && (!hoveredVideo || hoveredVideo===v);
+    ['stalled','waiting','suspend','emptied'].forEach(evt=>v.addEventListener(evt, ()=>{
+      if (manualPaused.has(v)) return;
+      if (shouldResume() && v.paused) tryPlay(v);
+    }));
+  });
+
+  // Hero keepPlaying (only in hero zone and heroInView)
+  if (heroVideo){
+    const shouldResumeHero = ()=> activeZone==='hero' && heroInView;
+    if (heroVideo.readyState>=2) tryPlay(heroVideo);
+    else heroVideo.addEventListener('canplay', ()=>tryPlay(heroVideo), {once:true});
+    ['pause','stalled','waiting','suspend','emptied'].forEach(evt=>heroVideo.addEventListener(evt, ()=>{
+      if (shouldResumeHero() && heroVideo.paused) tryPlay(heroVideo);
+    }));
+  }
+
+  // WHY keepPlaying (only in the why zone and whyInView)
+  if (whyVideo){
+    const shouldResumeWhy = ()=> activeZone==='why' && whyInView;
+    ['stalled','waiting','suspend','emptied'].forEach(evt=>whyVideo.addEventListener(evt, ()=>{
+      if (shouldResumeWhy() && whyVideo.paused) tryPlay(whyVideo);
+    }));
+    // Initially ensure WHY stop
+    pause(whyVideo);
+  }
+
+  // Restore the current area's video when returning to the foreground.
+  document.addEventListener("visibilitychange", ()=>{
+    if(!document.hidden) applyZone();
+  });
+
+  /************ Theme → Switch hero video source (via themechange broadcast by base) ************/
+  function setHeroByTheme(isLight){
+    if (!heroVideo) return;
+    const newSrc = isLight ? HERO_LIGHT_URL : HERO_DARK_URL;
+    if (heroVideo.getAttribute("src") !== newSrc){
+      heroVideo.setAttribute("src", newSrc);
+      heroVideo.load();
+      if (activeZone === 'hero' && heroInView) heroVideo.play().catch(()=>{});
+    }
+  }
+  setHeroByTheme(document.documentElement.getAttribute('data-theme') === 'light');
+  window.addEventListener('themechange', (e) => setHeroByTheme(e.detail.isLight));
+
+  /************ Background water drop chip animation (GSAP) ************/
+  function initWaterChips(){
+    const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced || !window.gsap) return;
+
+    const centerOrigin = el => el && gsap.set(el, { transformOrigin: '50% 50%' });
+
+    // Chip A
+    const chipA = document.querySelector('#chip-access');
+    if (chipA){
+      const aDrop = chipA.querySelector('.drop');
+      const aR1   = chipA.querySelector('.r1');
+      const aR2   = chipA.querySelector('.r2');
+      [aDrop,aR1,aR2].forEach(centerOrigin);
+      gsap.to(aDrop,{ y:-2, duration:1.6, ease:'sine.inOut', yoyo:true, repeat:-1 });
+      gsap.timeline({ repeat:-1 })
+        .fromTo(aR1,{ scale:0.8, opacity:0.65 },{ scale:1.35, opacity:0, duration:1.4, ease:'sine.out' })
+        .fromTo(aR2,{ scale:0.7, opacity:0.55 },{ scale:1.5,  opacity:0, duration:1.6, ease:'sine.out' }, 0.15);
+    }
+
+    // Chip B
+    const chipB = document.querySelector('#chip-hygiene');
+    if (chipB){
+      const b1 = chipB.querySelector('.b1'), b2 = chipB.querySelector('.b2'), b3 = chipB.querySelector('.b3');
+      [b1,b2,b3].forEach(centerOrigin);
+      const bubble = (el, delay, dist, dur)=>{
+        gsap.set(el,{ opacity:0.0, y:0, scale:0.95 });
+        gsap.timeline({ repeat:-1, repeatDelay:0.25, delay })
+          .to(el, { opacity:1, duration:0.2 })
+          .to(el, { y:-dist, scale:1.1, opacity:0, duration:dur, ease:'sine.out' });
+      };
+      bubble(b1, 0.0, 6, 1.2); bubble(b2, 0.25, 7, 1.4); bubble(b3, 0.5, 8, 1.6);
+    }
+
+    // Chip C
+    const chipC = document.querySelector('#chip-report');
+    if (chipC){
+      const cDrop = chipC.querySelector('.drop');
+      const cRing = chipC.querySelector('.ping .r1');
+      [cDrop,cRing].forEach(centerOrigin);
+      gsap.to(cDrop, { rotation:2, duration:1.4, yoyo:true, repeat:-1, ease:'sine.inOut' });
+      gsap.timeline({ repeat:-1, repeatDelay:0.4 })
+        .fromTo(cRing, { scale:0.85, opacity:0.65 }, { scale:1.55, opacity:0, duration:1.1, ease:'sine.out' });
+    }
+
+    const chips = [chipA, chipB, chipC].filter(Boolean);
+    let lastSplash = 0;
+    const chipCenterXY = el => { const r=el.getBoundingClientRect(); return {x:r.left+r.width/2, y:r.top+r.height/2}; };
+
+    chips.forEach((chip)=>{
+      chip.addEventListener('pointerenter', ()=>{
+        gsap.to(chip, { scale:1.12, duration:0.25, ease:'sine.out' });
+        const now = performance.now();
+        if (window.spawnRipple && now - lastSplash > 180){
+          const p = chipCenterXY(chip); window.spawnRipple(p.x, p.y, 1.0); lastSplash = now;
+        }
+      });
+      chip.addEventListener('pointermove', (e)=>{
+        const rel = { x: (e.offsetX - chip.clientWidth/2)/chip.clientWidth, y: (e.offsetY - chip.clientHeight/2)/chip.clientHeight };
+        gsap.to(chip, { x: rel.x*3, y: rel.y*3, rotation: rel.x*3, duration:0.2, ease:'sine.out' });
+        const now = performance.now();
+        if (window.spawnRipple && now - lastSplash > 260){
+          const p = chipCenterXY(chip); window.spawnRipple(p.x, p.y, 0.8); lastSplash = now;
+        }
+      });
+      chip.addEventListener('pointerleave', ()=>{
+        gsap.to(chip, { scale:1, x:0, y:0, rotation:0, duration:0.25, ease:'sine.inOut' });
+      });
+      chip.addEventListener('click', ()=>{
+        if (!window.spawnRipple) return;
+        const p = chipCenterXY(chip);
+        window.spawnRipple(p.x, p.y, 1.6);
+        gsap.fromTo(chip, { scale:1.0 }, { scale:1.18, duration:0.12, yoyo:true, repeat:1, ease:'sine.inOut' });
+      });
+    });
+  }
+
+  /************ WHY Block: JS Increases Interaction ************/
+  function initWhyBullets(){
+    const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced || !window.gsap) return;
+
+    const items = Array.from(document.querySelectorAll('.why-list-item'));
+    items.forEach(item=>{
+      const bullet = item.querySelector('.why-icon-bullet');
+      const icon = bullet && bullet.querySelector('svg');
+      if (icon){
+        gsap.set(icon, { transformOrigin:'50% 50%' });
+        gsap.to(icon, { y:-1.2, duration:1.6, ease:'sine.inOut', yoyo:true, repeat:-1 });
+      }
+      const centerXY = el => { const r=el.getBoundingClientRect(); return {x:r.left+r.width/2, y:r.top+r.height/2}; };
+
+      item.addEventListener('pointerenter', ()=>{
+        gsap.to(bullet, {
+          scale:1.08, y:-1, duration:0.22, ease:'sine.out',
+          boxShadow:'0 0 0 6px rgba(154,215,255,.30), 0 12px 28px rgba(24,110,255,.45)'
+        });
+        gsap.to(bullet, { borderColor:'rgba(154,215,255,.75)', duration:0.22 });
+        if (window.spawnRipple){
+          const p = centerXY(bullet);
+          window.spawnRipple(p.x, p.y, 1.0);
+        }
+      });
+      item.addEventListener('pointermove', (e)=>{
+        const r = bullet.getBoundingClientRect();
+        const rx = (e.clientX - (r.left + r.width/2)) / r.width;
+        const ry = (e.clientY - (r.top + r.height/2)) / r.height;
+        gsap.to(bullet, { x:rx*3, y:ry*3, rotation:rx*5, duration:0.18, ease:'sine.out' });
+      });
+      item.addEventListener('pointerleave', ()=>{
+        gsap.to(bullet, {
+          scale:1, x:0, y:0, rotation:0, duration:0.25, ease:'sine.inOut',
+          boxShadow:'0 2px 14px rgba(24,110,255,.35)', borderColor:'transparent'
+        });
+      });
+      item.addEventListener('click', ()=>{
+        if (window.spawnRipple){
+          const p = centerXY(bullet);
+          window.spawnRipple(p.x, p.y, 1.4);
+        }
+        gsap.fromTo(bullet, { scale:1 }, { scale:1.12, duration:0.12, yoyo:true, repeat:1, ease:'sine.inOut' });
+      });
+    });
+  }
+
+  // Call GSAP after base has finished starting up
+  window.pageInit = function(){
+    initWaterChips();
+    initWhyBullets();
+    // When entering the station, first apply once according to the current viewport.
+    applyZone();
+  };
+</script>
+{% endblock %}

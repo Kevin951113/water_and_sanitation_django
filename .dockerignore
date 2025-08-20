@@ -1,0 +1,40 @@
+# Python cache / build artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+build/
+dist/
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Virtualenv / IDE / OS
+venv/
+.venv/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Git
+.git/
+.gitignore
+
+# Django local data
+db.sqlite3
+media/
+# if you collectstatic into this folder, don’t send it in the build context
+# staticfiles/   
+
+# Node (if present)
+node_modules/
+
+# Env / secrets
+.env
+.env.*
+.envrc
