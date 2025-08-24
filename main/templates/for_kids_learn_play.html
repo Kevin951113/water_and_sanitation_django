@@ -1,21 +1,523 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}About | Water & Sanitation{% endblock %}
+{% block title %}For Kids – Learn & Play | Water & Sanitation{% endblock %}
 
 {% block head_extras %}
+<link rel="preload" href="{% static 'fish1.mp4' %}" as="video">
+<style>
+  :root{
+    --card-radius: 18px;
+    --hdrH: 80px; /* 由 JS 實際量測覆蓋 */
+    --card-text: #fff;
+    --card-text-shadow: 0 2px 6px rgba(0,0,0,.65);
+    --title-grad: linear-gradient(90deg,#98caff 0%, #58b2ff 50%, #1f8aff 100%);
+  }
+  [data-theme="light"]{
+    --card-text:#fff;
+    --card-text-shadow: 0 2px 8px rgba(0,0,0,.6);
+  }
+
+  /* 關掉全站波紋（本頁自帶） */
+  #ripple-layer{ display:none !important; }
+
+  /* ===== 佈局：影片鋪滿 header 下方整個視窗 ===== */
+  .kids-stage{ position:relative; min-height: calc(100svh - var(--hdrH)); }
+  .aquarium,
+  .ripples{
+    position: fixed;
+    left:0; right:0;
+    top: var(--hdrH);
+    bottom:0;
+    pointer-events:none;
+  }
+  .aquarium{ z-index:0; opacity:0; transition:opacity .6s ease; }
+  .aquarium.bg-on{ opacity:1; }
+  .aquarium video{ width:100%; height:100%; object-fit:cover; filter:saturate(1.05) contrast(1.02) brightness(1.05); }
+  .ripples{
+    z-index:1; opacity:.75;
+    background:
+      radial-gradient(1000px 500px at 12% 18%, rgba(91,200,255,.30), transparent 60%),
+      radial-gradient(800px 400px at 85% 28%, rgba(40,150,255,.22), transparent 60%);
+    animation:rippleMove 14s linear infinite;
+  }
+  @keyframes rippleMove{ 0%{transform:translateY(0)} 50%{transform:translateY(2px)} 100%{transform:translateY(0)} }
+
+  /* ===== 單卡容器（固定在右側，垂直置中） ===== */
+  .card-dock{
+    position: fixed;
+    right: clamp(12px, 3vw, 28px);
+    top: calc(var(--hdrH) + clamp(12px, 1.5vw, 18px));
+    bottom: clamp(12px, 2vw, 20px);
+    width: min(560px, 44vw);
+    z-index: 2;
+    display: grid;
+    align-items: center;
+    justify-items: stretch;
+  }
+
+  /* 只顯示 .card.active 這一張 */
+  .cards{ display: contents; }
+  .card{ display:none; }
+  .card.active{
+    display:flex;
+    flex-direction: column;        /* 垂直排列，題目與答案同一欄寬 */
+  }
+
+  /* ===== 卡片樣式（厚玻璃） ===== */
+  .card{
+    background:
+      linear-gradient(180deg, rgba(5,12,24,.80), rgba(8,18,36,.74)),
+      rgba(8,18,38,.42);
+    border:1px solid rgba(160,210,255,.30);
+    border-radius:14px;
+    padding: clamp(16px, 2vw, 22px);
+    backdrop-filter: blur(12px) saturate(130%);
+    color: var(--card-text);
+    text-shadow: var(--card-text-shadow);
+    min-height: 240px;
+    box-shadow: 0 14px 34px rgba(0,20,60,.48);
+    position:relative;
+    overflow:hidden;
+  }
+
+  .card h3{
+    font-weight: 900;
+    font-size: clamp(20px, 2.4vw, 26px);
+    margin: 0 0 10px;
+    letter-spacing: .2px;
+    background: var(--title-grad);
+    -webkit-background-clip: text; background-clip:text; color: transparent;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 1px 0 rgba(0,0,0,.45), 0 0 14px rgba(40,120,220,.35);
+  }
+  [data-theme="light"] .card h3{
+    background: none !important;
+    -webkit-background-clip: initial; background-clip: initial;
+    -webkit-text-fill-color: initial;
+    color: #fff !important;
+    text-shadow: 0 2px 8px rgba(0,0,0,.6);
+  }
+
+  /* === 讓題目與答案「同寬」的關鍵設定 === */
+  .card > *{ min-width:0; }             /* 允許 flex 子元素縮小 */
+  .qa-wrap{
+    width: 100%;                         /* 共同容器，統一寬度 */
+    display: grid;
+  }
+  .qa-wrap > p,
+  .details p{
+    margin:0 0 12px;
+    font-size: clamp(16px, 1.2vw, 18px);
+    line-height:1.6;
+    overflow-wrap:anywhere;              /* 長字能換行，寬度一致 */
+  }
+
+  /* 用透明度呈現答案（高度由 JS 鎖定），題目不再隱藏 */
+  .details{
+    max-height: none !important;
+    opacity: 0;
+    transition: opacity .25s ease;
+    width: 100%;
+  }
+  .card.revealed .details{ opacity: 1; }
+
+  /* ===== 右上角「同一格位置」：倒數徽章與勾勾重疊 ===== */
+  .hud{
+    position:absolute; top:12px; right:12px; z-index:3;
+    display:grid;                      /* 兩個元素重疊在同一格 */
+    align-items:center; justify-items:end;
+    pointer-events:none;               /* 不擋住卡片互動 */
+  }
+  .hud > *{ grid-area: 1 / 1; }        /* 疊在同一格 */
+
+  /* 倒數徽章（顯示於閱讀中） */
+  .read-timer{
+    height:28px; padding:0 10px; border-radius:999px;
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:12px; font-weight:800; color:#0a2a6b;
+    background:linear-gradient(180deg,#d7fbe8,#b5f1d4);
+    border:1px solid rgba(24,192,109,.6);
+    box-shadow: 0 2px 10px rgba(24,192,109,.25), inset 0 1px 0 #fff;
+    opacity:0; transform:translateY(-6px);
+    transition:opacity .2s ease, transform .2s ease;
+  }
+  .card.reading .read-timer{ opacity:1; transform:translateY(0); }
+  .read-dot{ width:8px; height:8px; border-radius:50%; background:#18c06d; box-shadow:0 0 0 3px rgba(24,192,109,.25); }
+
+  /* 綠底白勾勾（顯示於完成後），出現在同一位置 */
+  .check-badge{
+    width:28px; height:28px; border-radius:999px;
+    display:grid; place-items:center; font-size:18px; line-height:1;
+    background:#18c06d; color:#fff; border:none;
+    box-shadow: 0 4px 16px rgba(24,192,109,.45), inset 0 -2px 0 rgba(0,0,0,.18);
+    transform:scale(.82); opacity:0; transition:opacity .2s ease, transform .2s ease;
+  }
+  .card.done .check-badge{ opacity:1; transform:scale(1); }
+
+  /* 提示（每張卡都有） */
+  .hint{
+    position:absolute; right:12px; bottom:12px;
+    background:rgba(255,255,255,.16);
+    border:1px dashed rgb(255, 255, 255);
+    font-size:12px; padding:4px 8px; border-radius:999px; color:#fff;
+    text-shadow:0 1px 0 rgba(255, 254, 254, 0.45); pointer-events:none;
+  }
+
+  /* 下一題箭頭（完成後才顯示） */
+  .next-btn{
+    position: fixed;
+    right: calc(clamp(12px, 3vw, 28px) + min(560px, 44vw) + 10px);
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    width: 54px; height: 54px; border-radius: 999px;
+    display: grid; place-items: center;
+    background: linear-gradient(180deg,#e8f5ff,#cfe9ff);
+    border: 1px solid rgba(120,170,255,.6);
+    box-shadow: 0 8px 26px rgba(30,90,200,.35);
+    color:#0a2a6b; font-size: 22px; cursor: pointer;
+    opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease;
+  }
+  .next-btn.show{ opacity: 1; pointer-events: auto; }
+  .next-btn:active{ transform: translateY(-50%) scale(.96); }
+  @media (max-width: 980px){
+    .next-btn{ right: clamp(12px, 3vw, 28px); top: auto; bottom: calc(12px + env(safe-area-inset-bottom)); transform:none; }
+    .next-btn:active{ transform: scale(.96); }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .aquarium, .ripples{ transition:none; animation:none; }
+    .aquarium video{ filter:none; }
+  }
+
+  /* 固定卡片高度（由 JS 設定 --fixedH） & 鎖卡：顯示答案後禁止再互動 */
+  .card.fixed{ height: var(--fixedH); }
+  .card.locked{ pointer-events:none; }
+</style>
 {% endblock %}
 
 {% block content %}
-<!-- Do NOT touch the header above (it's shared in base.html) -->
+<section class="kids-stage">
+  <!-- 影片：第一張完成後才顯示 -->
+  <div class="aquarium" id="aquarium" aria-hidden="true">
+    <video id="fishVideo" src="{% static 'fish1.mp4' %}" preload="metadata" autoplay muted loop playsinline></video>
+  </div>
+  <!-- 本頁波紋覆蓋影片 -->
+  <div class="ripples" aria-hidden="true"></div>
 
-<!-- >>> Write your own page content here <<< -->
+  <!-- 單卡停靠區（右側） -->
+  <div class="card-dock">
+    <div class="cards" id="cards">
+      <!-- 1 -->
+      <article class="card card--starter active" data-card="1" tabindex="0" aria-expanded="false" aria-controls="details-1">
+        <div class="hud" aria-hidden="true">
+          <div class="read-timer"><span class="read-dot"></span><span class="read-text">Keep reading… 4s</span></div>
+          <div class="check-badge">✓</div>
+        </div>
+        <h3>What is water pollution?</h3>
+        <div class="qa-wrap">
+          <p>When dirty stuff gets into rivers, lakes, or the ocean, animals, plants, and people are affected.</p>
+          <div class="details" id="details-1"><p>Common sources: factory wastewater, household detergents, plastic trash, oil, and farm chemicals.</p></div>
+        </div>
+        <span class="hint" aria-hidden="true">Tap me to unlock the fish!</span>
+      </article>
 
-<!-- Do NOT touch the footer below (it's shared in base.html) -->
+      <!-- 2 -->
+      <article class="card" data-card="2" tabindex="0" aria-expanded="false" aria-controls="details-2">
+        <div class="hud" aria-hidden="true">
+          <div class="read-timer"><span class="read-dot"></span><span class="read-text">Keep reading… 4s</span></div>
+          <div class="check-badge">✓</div>
+        </div>
+        <h3>Why do rainy days matter?</h3>
+        <div class="qa-wrap">
+          <p>Rain washes street grime into the water — like oil and litter.</p>
+          <div class="details" id="details-2"><p>During heavy storms, runoff carries microplastics, fertilizers, and animal waste into creeks.</p></div>
+        </div>
+        <span class="hint" aria-hidden="true">Tap me to unlock the fish!</span>
+      </article>
+
+      <!-- 3 -->
+      <article class="card" data-card="3" tabindex="0" aria-expanded="false" aria-controls="details-3">
+        <div class="hud" aria-hidden="true">
+          <div class="read-timer"><span class="read-dot"></span><span class="read-text">Keep reading… 4s</span></div>
+          <div class="check-badge">✓</div>
+        </div>
+        <h3>How does plastic harm fish?</h3>
+        <div class="qa-wrap">
+          <p>Fish may mistake tiny plastic bits for food.</p>
+          <div class="details" id="details-3"><p>Microplastics can remain in their bodies and move up the food chain.</p></div>
+        </div>
+        <span class="hint" aria-hidden="true">Tap me to unlock the fish!</span>
+      </article>
+
+      <!-- 4 -->
+      <article class="card" data-card="4" tabindex="0" aria-expanded="false" aria-controls="details-4">
+        <div class="hud" aria-hidden="true">
+          <div class="read-timer"><span class="read-dot"></span><span class="read-text">Keep reading… 4s</span></div>
+          <div class="check-badge">✓</div>
+        </div>
+        <h3>What can we do at home?</h3>
+        <div class="qa-wrap">
+          <p>Don’t pour used oil down the sink — store it for recycling.</p>
+          <div class="details" id="details-4"><p>Choose eco-friendly cleaners and use less to keep drains safer.</p></div>
+        </div>
+        <span class="hint" aria-hidden="true">Tap me to unlock the fish!</span>
+      </article>
+
+      <!-- 5 -->
+      <article class="card" data-card="5" tabindex="0" aria-expanded="false" aria-controls="details-5">
+        <div class="hud" aria-hidden="true">
+          <div class="read-timer"><span class="read-dot"></span><span class="read-text">Keep reading… 4s</span></div>
+          <div class="check-badge">✓</div>
+        </div>
+        <h3>What about parks and schools?</h3>
+        <div class="qa-wrap">
+          <p>Put rubbish in the bin and pick up stray plastic bags and caps.</p>
+          <div class="details" id="details-5"><p>Storm drains often flow straight to rivers or the sea.</p></div>
+        </div>
+        <span class="hint" aria-hidden="true">Tap me to unlock the fish!</span>
+      </article>
+
+      <!-- 6 -->
+      <article class="card" data-card="6" tabindex="0" aria-expanded="false" aria-controls="details-6">
+        <div class="hud" aria-hidden="true">
+          <div class="read-timer"><span class="read-dot"></span><span class="read-text">Keep reading… 4s</span></div>
+          <div class="check-badge">✓</div>
+        </div>
+        <h3>Why do animals need clean water?</h3>
+        <div class="qa-wrap">
+          <p>Fish, shrimp, and frogs live in water — dirty water harms them first.</p>
+          <div class="details" id="details-6"><p>Healthy streams and seas mean healthier environments for everyone.</p></div>
+        </div>
+        <span class="hint" aria-hidden="true">Tap me to unlock the fish!</span>
+      </article>
+
+      <!-- 7 -->
+      <article class="card" data-card="7" tabindex="0" aria-expanded="false" aria-controls="details-7">
+        <div class="hud" aria-hidden="true">
+          <div class="read-timer"><span class="read-dot"></span><span class="read-text">Keep reading… 4s</span></div>
+          <div class="check-badge">✓</div>
+        </div>
+        <h3>What is algal bloom?</h3>
+        <div class="qa-wrap">
+          <p>Too many nutrients make algae “explode” in number.</p>
+          <div class="details" id="details-7"><p>It reduces oxygen and can suffocate fish. Cut fertilizer runoff.</p></div>
+        </div>
+        <span class="hint" aria-hidden="true">Tap me to unlock the fish!</span>
+      </article>
+
+      <!-- 8 -->
+      <article class="card" data-card="8" tabindex="0" aria-expanded="false" aria-controls="details-8">
+        <div class="hud" aria-hidden="true">
+          <div class="read-timer"><span class="read-dot"></span><span class="read-text">Keep reading… 4s</span></div>
+          <div class="check-badge">✓</div>
+        </div>
+        <h3>What is sewer overflow?</h3>
+        <div class="qa-wrap">
+          <p>In big storms, mixed water may be released from treatment plants.</p>
+          <div class="details" id="details-8"><p>Check public advisories and avoid water play right after storms.</p></div>
+        </div>
+        <span class="hint" aria-hidden="true">Tap me to unlock the fish!</span>
+      </article>
+
+      <!-- 9 -->
+      <article class="card" data-card="9" tabindex="0" aria-expanded="false" aria-controls="details-9">
+        <div class="hud" aria-hidden="true">
+          <div class="read-timer"><span class="read-dot"></span><span class="read-text">Keep reading… 4s</span></div>
+          <div class="check-badge">✓</div>
+        </div>
+        <h3>Be a Water Helper!</h3>
+        <div class="qa-wrap">
+          <p>Reduce plastic, recycle, and join a beach or river clean-up.</p>
+          <div class="details" id="details-9"><p>Share what you learned so more people can protect our water together!</p></div>
+        </div>
+        <span class="hint" aria-hidden="true">Tap me to unlock the fish!</span>
+      </article>
+    </div>
+  </div>
+
+  <!-- 下一題箭頭 -->
+  <button id="nextBtn" class="next-btn" type="button" aria-label="Next card">›</button>
+</section>
 {% endblock %}
 
 {% block page_scripts %}
 <script>
-  window.pageInit = function(){};
+  window.pageInit = function(){
+    /* ===== 動態量測 header 高度，讓影片剛好鋪在 header 下方 ===== */
+    const hdr = document.getElementById('siteHeader');
+    function applyHdrH(){
+      const h = (hdr && hdr.offsetHeight) ? hdr.offsetHeight : 80;
+      document.documentElement.style.setProperty('--hdrH', h + 'px');
+    }
+    applyHdrH();
+    window.addEventListener('resize', applyHdrH);
+
+    const aquarium = document.getElementById('aquarium');
+    const fishVideo = document.getElementById('fishVideo');
+    const cardsWrap = document.getElementById('cards');
+    const nextBtn   = document.getElementById('nextBtn');
+
+    const READ_MS = 4000; // 倒數秒數
+    const cards = Array.from(cardsWrap.querySelectorAll('.card'));
+    let activeIndex = 0; // 目前顯示的卡
+
+    const state = new Map(); // id -> {timerId, startTime, done}
+    let fishUnlocked = false;
+
+    const ensure = (id)=>{
+      if(!state.has(id)) state.set(id, {timerId:null, startTime:null, done:false});
+      return state.get(id);
+    };
+
+    /* 量測並鎖定每張卡最大高度（題目 + 答案） */
+    function lockAllCardHeights() {
+      cards.forEach((card) => {
+        const details = card.querySelector('.details');
+        if (!details) return;
+
+        const wasOpen = details.classList.contains('open');
+        const wasRevealed = card.classList.contains('revealed');
+
+        // 題目狀態（僅題目）
+        details.classList.remove('open');
+        card.classList.remove('revealed');
+        card.style.height = 'auto';
+        const hClosed = card.scrollHeight;
+
+        // 答案狀態（題目 + 答案）
+        details.classList.add('open');
+        card.classList.add('revealed');
+        const hOpen = card.scrollHeight;
+
+        // 還原
+        details.classList.toggle('open', wasOpen);
+        card.classList.toggle('revealed', wasRevealed);
+
+        const fixed = Math.max(hClosed, hOpen, 240);
+        card.style.setProperty('--fixedH', fixed + 'px');
+        card.classList.add('fixed');
+      });
+    }
+
+    function showOnly(index){
+      cards.forEach((c,i)=> c.classList.toggle('active', i===index));
+      const id = String(index+1);
+      const st = ensure(id);
+      nextBtn.classList.toggle('show', !!st.done && index < cards.length-1);
+    }
+
+    function setReading(cardEl, on){
+      cardEl.classList.toggle('reading', !!on);
+    }
+    function setDone(cardEl){
+      cardEl.classList.add('done');
+      setReading(cardEl,false);
+    }
+    function stopTimer(id){
+      const st = ensure(id);
+      if(st.timerId!=null){ clearInterval(st.timerId); st.timerId=null; }
+      st.startTime=null;
+    }
+    function startTimer(cardEl, id){
+      const st = ensure(id);
+      stopTimer(id);
+      st.startTime = Date.now();
+      setReading(cardEl, true);
+
+      const readText = cardEl.querySelector('.read-text');
+      const update = ()=>{
+        if(!readText) return;
+        const remain = Math.max(0, READ_MS - (Date.now() - st.startTime));
+        readText.textContent = `Keep reading… ${Math.ceil(remain/1000)}s`;
+      };
+      update();
+
+      st.timerId = setInterval(()=>{
+        const elapsed = Date.now() - st.startTime;
+        update();
+        if(elapsed >= READ_MS){
+          stopTimer(id);
+          st.done = true;
+          setDone(cardEl);
+
+          // 完成當前卡 → 顯示下一題箭頭（若還有下一張）
+          const idx = Number(id) - 1;
+          if (idx === activeIndex && activeIndex < cards.length-1){
+            nextBtn.classList.add('show');
+          }
+
+          // 第 1 張完成 → 顯示背景魚
+          if(id==='1' && !fishUnlocked){
+            fishUnlocked = true;
+            aquarium.classList.add('bg-on');
+            fishVideo?.play?.().catch(()=>{});
+          }
+        }
+      }, 100);
+    }
+
+    /* 顯示答案一次後鎖卡 */
+    function revealOnce(card){
+      if(card.classList.contains('locked')) return; // 已鎖
+      const id = card.dataset.card;
+      const details = document.getElementById('details-'+id);
+      if(!details) return;
+
+      // 顯示答案（題目仍保留）
+      card.classList.add('revealed');
+      details.classList.add('open');
+      card.setAttribute('aria-expanded', 'true');
+
+      // 立刻鎖卡：之後不能點擊／鍵盤觸發
+      card.classList.add('locked');
+      card.setAttribute('tabindex','-1');
+
+      const st = ensure(id);
+      if(!st.done) startTimer(card, id); else setDone(card);
+    }
+
+    // 點擊卡片：只作用於「未鎖且為目前顯示」的卡
+    cardsWrap.addEventListener('click', e=>{
+      const card = e.target.closest('.card.active');
+      if(!card || card.classList.contains('locked')) return;
+      revealOnce(card);
+    });
+
+    // 鍵盤：Enter/Space 只對「未鎖的 active 卡」有效
+    cardsWrap.addEventListener('keydown', e=>{
+      const t = e.target;
+      if(!t.classList?.contains('card') || !t.classList.contains('active')) return;
+      if(t.classList.contains('locked')) return;
+      if(e.key==='Enter' || e.key===' '){
+        e.preventDefault();
+        revealOnce(t);
+      }
+    });
+
+    // 下一題
+    nextBtn.addEventListener('click', ()=>{
+      if (activeIndex >= cards.length-1) return;
+      activeIndex += 1;
+      showOnly(activeIndex);
+    });
+
+    // 初始化
+    showOnly(activeIndex);
+    lockAllCardHeights();
+
+    // 視窗尺寸改變時重新量測
+    window.addEventListener('resize', ()=>{
+      cards.forEach(c => { c.classList.remove('fixed'); c.style.removeProperty('--fixedH'); });
+      lockAllCardHeights();
+    });
+
+    // 節能
+    document.addEventListener('visibilitychange', ()=>{
+      if(!fishVideo) return;
+      if(document.hidden) fishVideo.pause?.(); else if(aquarium.classList.contains('bg-on')) fishVideo.play?.();
+    });
+  };
 </script>
 {% endblock %}

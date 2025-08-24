@@ -8,6 +8,48 @@
   <link rel="preload" href="{% static 'file4.mp4' %}" as="video" fetchpriority="high">
   <link rel="preload" href="{% static 'file5.mp4' %}" as="video">
   <style>
+    /* ===================== THEME PALETTE ===================== */
+    :root{
+      --card-radius: 18px;
+
+      /* hero glass + text */
+      --hero-glass-bg: rgba(8,18,38,.30);
+      --hero-glass-border: rgba(173,216,255,.20);
+      --hero-head-gradient: linear-gradient(92deg,#79c9ff 0%,#37b5ff 45%,#1f9fff 90%);
+      --hero-sub: #d8edff;
+      --hero-shine: rgba(130,200,255,.28);
+      --hero-text-shadow: 0 2px 16px rgba(0,45,120,.35);
+
+      /* hero sizing (compact, centered) */
+      --hero-min-h: 40svh;
+      --hero-card-maxw: 600px;
+      --hero-head-max: 44px;
+      --hero-sub-max: 16px;
+
+      /* panel glass */
+      --panel-glass-bg: rgba(8,18,38,.28);
+      --panel-glass-border: rgba(160,210,255,.20);
+      --panel-title: #eaf6ff;
+      --panel-shadow: 0 10px 28px rgba(0,20,60,.28);
+      --panel-shadow-hover: 0 14px 36px rgba(0,20,60,.34);
+      --panel-chip-ring: rgba(140,205,255,.6);
+    }
+    [data-theme="light"]{
+      --hero-glass-bg: rgba(255,255,255,.36);
+      --hero-glass-border: rgba(18,86,170,.18);
+      --hero-head-gradient: linear-gradient(92deg,#0077ff 0%,#18b8ff 55%,#5ad1ff 100%);
+      --hero-sub: #0f3b66;
+      --hero-shine: rgba(0,140,255,.22);
+      --hero-text-shadow: 0 2px 12px rgba(0,85,170,.18);
+
+      --panel-glass-bg: rgba(255,255,255,.42);
+      --panel-glass-border: rgba(18,86,170,.16);
+      --panel-title: #0f355f;
+      --panel-shadow: 0 10px 26px rgba(10,60,140,.18);
+      --panel-shadow-hover: 0 14px 34px rgba(10,60,140,.24);
+      --panel-chip-ring: rgba(60,165,255,.55);
+    }
+
     /* ---- Video skeleton (avoid black blocks) ---- */
     .video-skel{
       position:absolute; inset:0; z-index:2; pointer-events:none;
@@ -25,8 +67,160 @@
     @keyframes sk-shine{ to { transform:translateX(100%); } }
     .video-skel.out{ opacity:0; }
 
-    /* Make the background of the video transparent so that the skeleton can be seen (Chrome sometimes paints the background of the video black).） */
+    /* Keep video background transparent so skeleton can show through */
     .panel video{ background:transparent !important; }
+
+    /* ===================== HERO (JS-driven show/hide) ===================== */
+    .panel-hero{
+      position:relative; overflow:hidden; border-radius:var(--card-radius);
+      min-height: var(--hero-min-h);
+    }
+    .panel-hero video{
+      position:absolute; inset:0; width:100%; height:100%;
+      object-fit:cover; z-index:1;
+    }
+    .panel-hero .tint{
+      position:absolute; inset:0; z-index:2; pointer-events:none;
+      background:
+        radial-gradient(120% 90% at 55% 60%, rgba(0,0,0,.18) 0%, transparent 60%),
+        linear-gradient(180deg, rgba(0,0,0,.12), rgba(0,0,0,.04) 40%, rgba(0,0,0,.18));
+      mix-blend-multiply;
+    }
+    [data-theme="light"] .panel-hero .tint{
+      background:
+        radial-gradient(120% 90% at 55% 60%, rgba(255,255,255,.16) 0%, transparent 62%),
+        linear-gradient(180deg, rgba(255,255,255,.40), rgba(255,255,255,.10) 36%, rgba(0,0,0,.05));
+      mix-blend-normal;
+    }
+
+    /* Centered glass card for hero headline (hidden by default) */
+    .hero-copy{
+      position:absolute; inset:0; z-index:3;
+      display:grid; place-items:center;
+      pointer-events:none;
+      padding: 8px;
+    }
+    .hero-copy-inner{
+      max-width: min(var(--hero-card-maxw), 86vw);
+      width: fit-content;
+      padding: clamp(10px, 1.2vw, 14px) clamp(16px, 2.2vw, 22px);
+      border-radius: 16px;
+      background: var(--hero-glass-bg);
+      backdrop-filter: blur(10px) saturate(120%);
+      -webkit-backdrop-filter: blur(10px) saturate(120%);
+      border: 1px solid var(--hero-glass-border);
+      box-shadow: 0 10px 30px rgba(0,20,60,.22);
+      display:flex; flex-direction:column; align-items:center; gap:8px;
+      text-align:center;
+
+      /* initial hidden */
+      opacity: 0;
+      transform: translateY(8px) scale(.98);
+      transition:
+        opacity .55s cubic-bezier(.2,.6,.2,1) .10s,
+        transform .55s cubic-bezier(.2,.6,.2,1) .10s,
+        box-shadow .55s ease;
+    }
+    /* shown state controlled by JS */
+    .hero-copy-inner.shown{
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      box-shadow: 0 14px 40px rgba(0,20,60,.28);
+    }
+
+    .hero-eyebrow{
+      font-weight:800; letter-spacing:.12em;
+      font-size: clamp(10px, .8vw, 12px);
+      text-transform: uppercase;
+      color: var(--hero-sub);
+      filter: drop-shadow(0 0 6px var(--hero-shine));
+    }
+    .hero-head{
+      line-height: 1.02;
+      font-weight: 900;
+      font-size: clamp(26px, 4.4vw, var(--hero-head-max));
+      letter-spacing: -0.01em;
+      background: var(--hero-head-gradient);
+      -webkit-background-clip:text; background-clip:text; color: transparent;
+      text-shadow: var(--hero-text-shadow);
+      margin: 0;
+    }
+    .hero-sub{
+      margin: 0;
+      font-weight: 600;
+      font-size: clamp(13px, 1.5vw, var(--hero-sub-max));
+      color: var(--hero-sub);
+      text-wrap: balance;
+      text-shadow: 0 1px 8px rgba(0,0,0,.20);
+    }
+
+    /* ===================== GRID PANELS (single-layer glass pill) ===================== */
+
+    #videoGrid .panel{
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--card-radius);
+    }
+    #videoGrid .panel video{
+      position:absolute; inset:0; width:100%; height:100%;
+      object-fit:cover; z-index:1;
+    }
+    #videoGrid .panel .tint{
+      position:absolute; inset:0; z-index:2; pointer-events:none;
+      background: linear-gradient(180deg, rgba(0,0,0,.10), rgba(0,0,0,.18));
+      mix-blend-multiply;
+    }
+    [data-theme="light"] #videoGrid .panel .tint{
+      background: linear-gradient(180deg, rgba(255,255,255,.40), rgba(0,0,0,.06));
+      mix-blend-normal;
+    }
+
+    .panel .overlay{
+      position:absolute; inset:0; z-index:3;
+      display:grid; place-items:center;
+      padding: clamp(6px, 2vw, 16px);
+      pointer-events:none;
+    }
+    .panel .centerline{
+      pointer-events:auto;
+      max-width: min(720px, 88%);
+      width: fit-content;
+      background: var(--panel-glass-bg);
+      backdrop-filter: blur(10px) saturate(120%);
+      -webkit-backdrop-filter: blur(10px) saturate(120%);
+      border: 1px solid var(--panel-glass-border);
+      box-shadow: var(--panel-shadow);
+      border-radius: 16px;
+      padding: clamp(10px, 1.4vw, 14px) clamp(14px, 2.2vw, 22px);
+      transition: box-shadow .35s ease, transform .35s ease;
+    }
+    .panel-link:hover .centerline,
+    .panel:hover .centerline{
+      box-shadow: var(--panel-shadow-hover);
+      transform: translateY(-1px);
+    }
+
+    .panel .title-row{
+      display:flex; align-items:center; gap:10px;
+      font-weight:900; letter-spacing:.02em;
+      font-size: clamp(16px, 2.2vw, 22px);
+      color: var(--panel-title);
+      text-shadow: 0 2px 10px rgba(0,0,0,.20);
+      white-space: normal;
+      overflow-wrap: anywhere;
+      text-wrap: balance;
+    }
+
+    .water-chip{
+      display:inline-flex; align-items:center; justify-content:center;
+      width: 38px; height: 38px; border-radius: 999px;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.22);
+      box-shadow: inset 0 0 12px rgba(255,255,255,.12),
+                  0 0 0 6px var(--panel-chip-ring);
+      backdrop-filter: blur(6px);
+    }
+    .water-chip svg{ width:22px; height:22px; color: currentColor; }
   </style>
 {% endblock %}
 
@@ -38,80 +232,99 @@
              src="{% static 'file4.mp4' %}"
              playsinline muted loop preload="auto" autoplay
              fetchpriority="high"></video>
-      <!-- Skeleton: Displayed before the first frame, fade out after loadeddata/playing -->
       <div class="video-skel" aria-hidden="true"></div>
       <div class="tint"></div>
+
+      <!-- Compact glass headline: JS toggles .shown and auto-hides after delay -->
+      <div class="hero-copy" role="region" aria-label="Welcome section">
+        <div class="hero-copy-inner" id="heroCopyInner">
+          <div class="hero-eyebrow">WATER • HEALTH • COMMUNITY</div>
+          <h1 class="hero-head">Welcome to Water &amp; Sanitation</h1>
+          <p class="hero-sub">Plan safe, fun family days with clean‑water insights.</p>
+        </div>
+      </div>
     </article>
   </section>
 
-  <!-- Three panels -->
+  <!-- Three panels (single-layer glass over video; only GSAP chips + text inside) -->
   <section class="grid" id="videoGrid">
-    <article class="panel">
-      <video src="{% static 'file1.mp4' %}" playsinline muted loop preload="metadata" autoplay></video>
-      <div class="video-skel" aria-hidden="true"></div>
-      <div class="tint"></div>
-      <div class="overlay">
-        <div class="centerline">
-          <span class="title-row">
-            <span class="water-chip" id="chip-access" aria-label="Safe Water">
-              <svg viewBox="0 0 24 24">
-                <g class="rings">
-                  <circle class="ring r1" cx="12" cy="12" r="8.2"/>
-                  <circle class="ring r2" cx="12" cy="12" r="10"/>
-                </g>
-                <path class="drop" d="M12 4 C9 8,7 10.5,7 13a5 5 0 0 0 10 0c0-2.5-2-5-5-9z"/>
-              </svg>
-            </span>
-            <span>Pollution Sources</span>
-          </span>
-        </div>
-      </div>
-    </article>
 
-    <article class="panel">
-      <video src="{% static 'file2.mp4' %}" playsinline muted loop preload="metadata" autoplay></video>
-      <div class="video-skel" aria-hidden="true"></div>
-      <div class="tint"></div>
-      <div class="overlay">
-        <div class="centerline">
-          <span class="title-row">
-            <span class="water-chip" id="chip-hygiene" aria-label="Hygiene">
-              <svg viewBox="0 0 24 24">
-                <circle class="bubble b1" cx="8"  cy="18" r="2.3"/>
-                <circle class="bubble b2" cx="13" cy="18" r="1.5"/>
-                <circle class="bubble b3" cx="16.5" cy="18" r="1.1"/>
-              </svg>
+    <!-- Pollution Sources -->
+    <a href="{% url 'pollution_sources' %}" class="panel-link">
+      <article class="panel">
+        <video src="{% static 'file1.mp4' %}" playsinline muted loop preload="metadata" autoplay></video>
+        <div class="video-skel" aria-hidden="true"></div>
+        <div class="tint"></div>
+        <div class="overlay">
+          <div class="centerline">
+            <span class="title-row">
+              <span class="water-chip" id="chip-access" aria-label="Safe Water">
+                <svg viewBox="0 0 24 24">
+                  <g class="rings">
+                    <circle class="ring r1" cx="12" cy="12" r="8.2"/>
+                    <circle class="ring r2" cx="12" cy="12" r="10"/>
+                  </g>
+                  <path class="drop" d="M12 4 C9 8,7 10.5,7 13a5 5 0 0 0 10 0c0-2.5-2-5-5-9z"/>
+                </svg>
+              </span>
+              <span>POLLUTION SOURCES</span>
             </span>
-            <span>Water Quality</span>
-          </span>
+          </div>
         </div>
-      </div>
-    </article>
+      </article>
+    </a>
 
-    <article class="panel">
-      <video src="{% static 'file3.mp4' %}" playsinline muted loop preload="metadata" autoplay></video>
-      <div class="video-skel" aria-hidden="true"></div>
-      <div class="tint"></div>
-      <div class="overlay">
-        <div class="centerline">
-          <span class="title-row">
-            <span class="water-chip" id="chip-report" aria-label="Reporting">
-              <svg viewBox="0 0 24 24">
-                <g class="ping"><circle class="ring r1" cx="12" cy="12" r="8.5"/></g>
-                <path class="drop" d="M12 4 C9 8,7 10.5,7 13a5 5 0 0 0 10 0c0-2.5-2-5-5-9z"/>
-              </svg>
+    <!-- Explore Water Quality -->
+    <a href="{% url 'explore_water_quality' %}" class="panel-link">
+      <article class="panel">
+        <video src="{% static 'file2.mp4' %}" playsinline muted loop preload="metadata" autoplay></video>
+        <div class="video-skel" aria-hidden="true"></div>
+        <div class="tint"></div>
+        <div class="overlay">
+          <div class="centerline">
+            <span class="title-row">
+              <span class="water-chip" id="chip-hygiene" aria-label="Hygiene">
+                <svg viewBox="0 0 24 24">
+                  <circle class="bubble b1" cx="8"  cy="18" r="2.3"/>
+                  <circle class="bubble b2" cx="13" cy="18" r="1.5"/>
+                  <circle class="bubble b3" cx="16.5" cy="18" r="1.1"/>
+                </svg>
+              </span>
+              <span>EXPLORE WATER QUALITY</span>
             </span>
-            <span>Community Reporting</span>
-          </span>
+          </div>
         </div>
-      </div>
-    </article>
+      </article>
+    </a>
+
+    <!-- Future & Family Safety -->
+    <a href="{% url 'future_family_safety' %}" class="panel-link">
+      <article class="panel">
+        <video src="{% static 'file3.mp4' %}" playsinline muted loop preload="metadata" autoplay></video>
+        <div class="video-skel" aria-hidden="true"></div>
+        <div class="tint"></div>
+        <div class="overlay">
+          <div class="centerline">
+            <span class="title-row">
+              <span class="water-chip" id="chip-report" aria-label="Reporting">
+                <svg viewBox="0 0 24 24">
+                  <g class="ping"><circle class="ring r1" cx="12" cy="12" r="8.5"/></g>
+                  <path class="drop" d="M12 4 C9 8,7 10.5,7 13a5 5 0 0 0 10 0c0-2.5-2-5-5-9z"/>
+                </svg>
+              </span>
+              <span>COMMUNITY REPORTING &amp; FAMILY SAFETY</span>
+            </span>
+          </div>
+        </div>
+      </article>
+    </a>
+
   </section>
 
-  <!-- WHY section-->
+  <!-- WHY section -->
   <section class="why-section" id="why">
     <div class="lottie-bg" aria-hidden="true">
-      <!-- Key point: WHY videos do not play automatically and are not preloaded (viewport playback) -->
+      <!-- NOTE: WHY videos do not autoplay and are not preloaded (viewport playback) -->
       <video id="whyBgVid" src="{% static 'icecub.mp4' %}"
              playsinline muted loop preload="none"></video>
       <div class="video-skel" aria-hidden="true"></div>
@@ -163,7 +376,6 @@
       <div class="why-note">Clean water saves lives. Safe sanitation protects communities.</div>
     </div>
   </section>
-
 {% endblock %}
 
 {% block page_scripts %}
@@ -173,7 +385,7 @@
   const heroVideo = document.getElementById('heroVid');
   const whyVideo  = document.getElementById('whyBgVid');
 
-  // --- Skeleton: Remove the skeleton from the first frame to avoid black blocks. ---
+  /* Skeleton handling */
   function wireSkeleton(v){
     const sk = v && v.parentElement && v.parentElement.querySelector('.video-skel');
     if(!v || !sk) return;
@@ -185,7 +397,7 @@
   }
   [heroVideo, whyVideo, ...gridVideos].forEach(v=>v && wireSkeleton(v));
 
-  // Static video URL (Django render)
+  /* Static video URLs */
   const HERO_DARK_URL  = "{% static 'file4.mp4' %}";
   const HERO_LIGHT_URL = "{% static 'file5.mp4' %}";
 
@@ -193,13 +405,11 @@
   const tryPlay = v => v && v.play && v.play().catch(()=>{});
   const pause   = v => v && v.pause && v.pause();
 
-  /************ Visibility Flag ************/
-  let heroInView = true;
-  let gridInView = false;
-  let whyInView  = false;
+  /* Visibility flags */
+  let heroInView = true, gridInView = false, whyInView = false;
 
-  /************ Mutually exclusive playback areas: “hero” | “grid” | 'why' ************/
-  let activeZone = 'hero'; // start hero
+  /* Exclusive playback zones */
+  let activeZone = 'hero';
   function applyZone(){
     if (activeZone === 'why'){
       pause(heroVideo);
@@ -207,106 +417,62 @@
       tryPlay(whyVideo);
       return;
     }
-
     if (activeZone === 'grid'){
-      pause(whyVideo);
-      pause(heroVideo);
-      // grid Play according to the original rules (hover/visible)
+      pause(whyVideo); pause(heroVideo);
       if (gridInView){
         if (hoveredVideo){
-          gridVideos.forEach(v=>{ if(v!==hoveredVideo){ manualPaused.add(v); pause(v); }});
-          manualPaused.delete(hoveredVideo);
-          tryPlay(hoveredVideo);
+          gridVideos.forEach(v=>{ if(v!==hoveredVideo){ manualPaused.add(v); pause(v);} });
+          manualPaused.delete(hoveredVideo); tryPlay(hoveredVideo);
         }else{
           gridVideos.forEach(v=>{ manualPaused.delete(v); tryPlay(v); });
         }
-      }else{
-        gridVideos.forEach(v=>{ manualPaused.add(v); pause(v); });
-      }
+      }else{ gridVideos.forEach(v=>{ manualPaused.add(v); pause(v); }); }
       return;
     }
-
-    // activeZone === 'hero'
     pause(whyVideo);
-    // grid shutdown
     gridVideos.forEach(v=>{ manualPaused.add(v); pause(v); });
-    // Only hero can be played and is played in the viewport.
     if (heroInView) tryPlay(heroVideo); else pause(heroVideo);
   }
-
   function recomputeZone(){
-    // Priority order: WHY > GRID > HERO
-    const next =
-      whyInView ? 'why' :
-      gridInView ? 'grid' :
-      'hero';
-    if (next !== activeZone){
-      activeZone = next;
-      applyZone();
-    }else{
-      // Apply the same zone update once to avoid small threshold fluctuations.
-      applyZone();
-    }
+    const next = whyInView ? 'why' : (gridInView ? 'grid' : 'hero');
+    if (next !== activeZone){ activeZone = next; applyZone(); } else { applyZone(); }
   }
 
-  /************ Observers ************/
-  const bannerEl = document.getElementById('bannerHero');
+  /* Intersection observers */
   const heroObserver = new IntersectionObserver((entries)=>{
-    const e = entries[0];
-    heroInView = e.isIntersecting && e.intersectionRatio > 0.15;
-    recomputeZone();
+    const e = entries[0]; heroInView = e.isIntersecting && e.intersectionRatio > 0.15; recomputeZone();
   }, {threshold:[0,0.15,0.5,1], rootMargin: "0px 0px -10% 0px"});
-  if (bannerEl) heroObserver.observe(bannerEl);
+  const bannerEl = document.getElementById('bannerHero'); if (bannerEl) heroObserver.observe(bannerEl);
 
-  const gridEl = document.getElementById("videoGrid");
   const gridObserver = new IntersectionObserver((entries)=>{
-    gridInView = entries[0].isIntersecting && entries[0].intersectionRatio > 0.15;
-    recomputeZone();
+    gridInView = entries[0].isIntersecting && entries[0].intersectionRatio > 0.15; recomputeZone();
   }, {threshold:[0,0.15,0.6,1], rootMargin: "0px 0px -10% 0px"});
-  if (gridEl) gridObserver.observe(gridEl);
+  const gridEl = document.getElementById("videoGrid"); if (gridEl) gridObserver.observe(gridEl);
 
-  const whyEl = document.getElementById('why');
   const whyObserver = new IntersectionObserver((entries)=>{
-    const e = entries[0];
-    whyInView = e.isIntersecting && e.intersectionRatio > 0.15;
-    recomputeZone();
+    const e = entries[0]; whyInView = e.isIntersecting && e.intersectionRatio > 0.15; recomputeZone();
   }, {threshold:[0,0.15,0.35,0.6,1], rootMargin: "0px 0px -10% 0px"});
-  if (whyEl) whyObserver.observe(whyEl);
+  const whyEl = document.getElementById('why'); if (whyEl) whyObserver.observe(whyEl);
 
-  /************ Grid hover: Unicast v, others paused (only effective in the grid area) ************/
+  /* Grid hover: unicast video */
   let hoveredVideo = null;
   const panels = Array.from(document.querySelectorAll('#videoGrid .panel'));
   panels.forEach(panel=>{
     const v = panel.querySelector('video');
-
-    panel.addEventListener('pointerenter', ()=>{
-      hoveredVideo = v;
-      if (activeZone !== 'grid') return;
-      gridVideos.forEach(ov=>{
-        if(ov!==v){ manualPaused.add(ov); pause(ov); }
-      });
-      manualPaused.delete(v);
-      if(gridInView) tryPlay(v);
-    });
-
-    panel.addEventListener('pointerleave', ()=>{
-      hoveredVideo = null;
-      if (activeZone !== 'grid') return;
-      gridVideos.forEach(ov=>manualPaused.delete(ov));
-      if(gridInView) gridVideos.forEach(tryPlay);
-    });
+    panel.addEventListener('pointerenter', ()=>{ hoveredVideo = v; if (activeZone!=='grid') return;
+      gridVideos.forEach(ov=>{ if(ov!==v){ manualPaused.add(ov); pause(ov); } }); manualPaused.delete(v); if(gridInView) tryPlay(v); });
+    panel.addEventListener('pointerleave', ()=>{ hoveredVideo = null; if (activeZone!=='grid') return;
+      gridVideos.forEach(ov=>manualPaused.delete(ov)); if(gridInView) gridVideos.forEach(tryPlay); });
   });
 
-  // Grid keepPlaying (only in the grid area and when conditions are met)
   gridVideos.forEach(v=>{
     const shouldResume = ()=> activeZone==='grid' && gridInView && (!hoveredVideo || hoveredVideo===v);
     ['stalled','waiting','suspend','emptied'].forEach(evt=>v.addEventListener(evt, ()=>{
-      if (manualPaused.has(v)) return;
-      if (shouldResume() && v.paused) tryPlay(v);
+      if (manualPaused.has(v)) return; if (shouldResume() && v.paused) tryPlay(v);
     }));
   });
 
-  // Hero keepPlaying (only in hero zone and heroInView)
+  /* Hero keep-playing */
   if (heroVideo){
     const shouldResumeHero = ()=> activeZone==='hero' && heroInView;
     if (heroVideo.readyState>=2) tryPlay(heroVideo);
@@ -315,23 +481,18 @@
       if (shouldResumeHero() && heroVideo.paused) tryPlay(heroVideo);
     }));
   }
-
-  // WHY keepPlaying (only in the why zone and whyInView)
+  /* WHY keep-playing */
   if (whyVideo){
     const shouldResumeWhy = ()=> activeZone==='why' && whyInView;
     ['stalled','waiting','suspend','emptied'].forEach(evt=>whyVideo.addEventListener(evt, ()=>{
       if (shouldResumeWhy() && whyVideo.paused) tryPlay(whyVideo);
     }));
-    // Initially ensure WHY stop
     pause(whyVideo);
   }
 
-  // Restore the current area's video when returning to the foreground.
-  document.addEventListener("visibilitychange", ()=>{
-    if(!document.hidden) applyZone();
-  });
+  document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) applyZone(); });
 
-  /************ Theme → Switch hero video source (via themechange broadcast by base) ************/
+  /* Switch hero source by theme (base.html should dispatch `themechange`) */
   function setHeroByTheme(isLight){
     if (!heroVideo) return;
     const newSrc = isLight ? HERO_LIGHT_URL : HERO_DARK_URL;
@@ -344,19 +505,36 @@
   setHeroByTheme(document.documentElement.getAttribute('data-theme') === 'light');
   window.addEventListener('themechange', (e) => setHeroByTheme(e.detail.isLight));
 
-  /************ Background water drop chip animation (GSAP) ************/
+  /* ===== Hero glass: show on enter, hide ~5–6s after leave ===== */
+  const heroCopyInner = document.getElementById('heroCopyInner');
+  const HIDE_DELAY_MS = 5600; // ~5–6 seconds
+  let heroHideTimer = null;
+
+  function showHeroCopy(){
+    if (!heroCopyInner) return;
+    clearTimeout(heroHideTimer);
+    heroCopyInner.classList.add('shown');
+  }
+  function scheduleHideHeroCopy(){
+    if (!heroCopyInner) return;
+    clearTimeout(heroHideTimer);
+    heroHideTimer = setTimeout(()=> heroCopyInner.classList.remove('shown'), HIDE_DELAY_MS);
+  }
+
+  if (bannerEl){
+    bannerEl.addEventListener('pointerenter', showHeroCopy);
+    bannerEl.addEventListener('pointerleave', scheduleHideHeroCopy);
+  }
+
+  /* GSAP chip animations + WHY bullets */
   function initWaterChips(){
     const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduced || !window.gsap) return;
-
     const centerOrigin = el => el && gsap.set(el, { transformOrigin: '50% 50%' });
 
-    // Chip A
     const chipA = document.querySelector('#chip-access');
     if (chipA){
-      const aDrop = chipA.querySelector('.drop');
-      const aR1   = chipA.querySelector('.r1');
-      const aR2   = chipA.querySelector('.r2');
+      const aDrop = chipA.querySelector('.drop'); const aR1 = chipA.querySelector('.r1'); const aR2 = chipA.querySelector('.r2');
       [aDrop,aR1,aR2].forEach(centerOrigin);
       gsap.to(aDrop,{ y:-2, duration:1.6, ease:'sine.inOut', yoyo:true, repeat:-1 });
       gsap.timeline({ repeat:-1 })
@@ -364,7 +542,6 @@
         .fromTo(aR2,{ scale:0.7, opacity:0.55 },{ scale:1.5,  opacity:0, duration:1.6, ease:'sine.out' }, 0.15);
     }
 
-    // Chip B
     const chipB = document.querySelector('#chip-hygiene');
     if (chipB){
       const b1 = chipB.querySelector('.b1'), b2 = chipB.querySelector('.b2'), b3 = chipB.querySelector('.b3');
@@ -378,54 +555,18 @@
       bubble(b1, 0.0, 6, 1.2); bubble(b2, 0.25, 7, 1.4); bubble(b3, 0.5, 8, 1.6);
     }
 
-    // Chip C
     const chipC = document.querySelector('#chip-report');
     if (chipC){
-      const cDrop = chipC.querySelector('.drop');
-      const cRing = chipC.querySelector('.ping .r1');
+      const cDrop = chipC.querySelector('.drop'); const cRing = chipC.querySelector('.ping .r1');
       [cDrop,cRing].forEach(centerOrigin);
       gsap.to(cDrop, { rotation:2, duration:1.4, yoyo:true, repeat:-1, ease:'sine.inOut' });
       gsap.timeline({ repeat:-1, repeatDelay:0.4 })
         .fromTo(cRing, { scale:0.85, opacity:0.65 }, { scale:1.55, opacity:0, duration:1.1, ease:'sine.out' });
     }
-
-    const chips = [chipA, chipB, chipC].filter(Boolean);
-    let lastSplash = 0;
-    const chipCenterXY = el => { const r=el.getBoundingClientRect(); return {x:r.left+r.width/2, y:r.top+r.height/2}; };
-
-    chips.forEach((chip)=>{
-      chip.addEventListener('pointerenter', ()=>{
-        gsap.to(chip, { scale:1.12, duration:0.25, ease:'sine.out' });
-        const now = performance.now();
-        if (window.spawnRipple && now - lastSplash > 180){
-          const p = chipCenterXY(chip); window.spawnRipple(p.x, p.y, 1.0); lastSplash = now;
-        }
-      });
-      chip.addEventListener('pointermove', (e)=>{
-        const rel = { x: (e.offsetX - chip.clientWidth/2)/chip.clientWidth, y: (e.offsetY - chip.clientHeight/2)/chip.clientHeight };
-        gsap.to(chip, { x: rel.x*3, y: rel.y*3, rotation: rel.x*3, duration:0.2, ease:'sine.out' });
-        const now = performance.now();
-        if (window.spawnRipple && now - lastSplash > 260){
-          const p = chipCenterXY(chip); window.spawnRipple(p.x, p.y, 0.8); lastSplash = now;
-        }
-      });
-      chip.addEventListener('pointerleave', ()=>{
-        gsap.to(chip, { scale:1, x:0, y:0, rotation:0, duration:0.25, ease:'sine.inOut' });
-      });
-      chip.addEventListener('click', ()=>{
-        if (!window.spawnRipple) return;
-        const p = chipCenterXY(chip);
-        window.spawnRipple(p.x, p.y, 1.6);
-        gsap.fromTo(chip, { scale:1.0 }, { scale:1.18, duration:0.12, yoyo:true, repeat:1, ease:'sine.inOut' });
-      });
-    });
   }
-
-  /************ WHY Block: JS Increases Interaction ************/
   function initWhyBullets(){
     const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduced || !window.gsap) return;
-
     const items = Array.from(document.querySelectorAll('.why-list-item'));
     items.forEach(item=>{
       const bullet = item.querySelector('.why-icon-bullet');
@@ -434,47 +575,45 @@
         gsap.set(icon, { transformOrigin:'50% 50%' });
         gsap.to(icon, { y:-1.2, duration:1.6, ease:'sine.inOut', yoyo:true, repeat:-1 });
       }
-      const centerXY = el => { const r=el.getBoundingClientRect(); return {x:r.left+r.width/2, y:r.top+r.height/2}; };
-
-      item.addEventListener('pointerenter', ()=>{
-        gsap.to(bullet, {
-          scale:1.08, y:-1, duration:0.22, ease:'sine.out',
-          boxShadow:'0 0 0 6px rgba(154,215,255,.30), 0 12px 28px rgba(24,110,255,.45)'
-        });
-        gsap.to(bullet, { borderColor:'rgba(154,215,255,.75)', duration:0.22 });
-        if (window.spawnRipple){
-          const p = centerXY(bullet);
-          window.spawnRipple(p.x, p.y, 1.0);
-        }
-      });
-      item.addEventListener('pointermove', (e)=>{
-        const r = bullet.getBoundingClientRect();
-        const rx = (e.clientX - (r.left + r.width/2)) / r.width;
-        const ry = (e.clientY - (r.top + r.height/2)) / r.height;
-        gsap.to(bullet, { x:rx*3, y:ry*3, rotation:rx*5, duration:0.18, ease:'sine.out' });
-      });
-      item.addEventListener('pointerleave', ()=>{
-        gsap.to(bullet, {
-          scale:1, x:0, y:0, rotation:0, duration:0.25, ease:'sine.inOut',
-          boxShadow:'0 2px 14px rgba(24,110,255,.35)', borderColor:'transparent'
-        });
-      });
-      item.addEventListener('click', ()=>{
-        if (window.spawnRipple){
-          const p = centerXY(bullet);
-          window.spawnRipple(p.x, p.y, 1.4);
-        }
-        gsap.fromTo(bullet, { scale:1 }, { scale:1.12, duration:0.12, yoyo:true, repeat:1, ease:'sine.inOut' });
-      });
     });
   }
 
-  // Call GSAP after base has finished starting up
   window.pageInit = function(){
     initWaterChips();
     initWhyBullets();
-    // When entering the station, first apply once according to the current viewport.
     applyZone();
   };
+
+  /************ NEW: show loading mask when clicking the three panels ************/
+  (function wirePanelMask(){
+    const links = Array.from(document.querySelectorAll('#videoGrid a.panel-link'));
+    function hasModifier(e){ return e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button === 1; }
+    function isInternal(href){
+      try{ const u = new URL(href, location.href); return u.origin === location.origin; }
+      catch(e){ return false; }
+    }
+    links.forEach(a=>{
+      // mouse / touch click
+      a.addEventListener('click', (e)=>{
+        if (e.defaultPrevented) return;
+        if (hasModifier(e)) return;               // let new-tab/window behaviors pass through
+        if (!isInternal(a.href)) return;          // only mask same-origin
+        e.preventDefault();
+        if (typeof showLoadingMask === 'function') showLoadingMask();
+        setTimeout(()=>{ window.location.href = a.href; }, 900);
+      });
+
+      // keyboard activation (Enter/Space)
+      a.addEventListener('keydown', (e)=>{
+        const k = e.key || e.code;
+        if (k === 'Enter' || k === ' ' || k === 'Spacebar'){
+          if (!isInternal(a.href)) return;
+          e.preventDefault();
+          if (typeof showLoadingMask === 'function') showLoadingMask();
+          setTimeout(()=>{ window.location.href = a.href; }, 900);
+        }
+      });
+    });
+  })();
 </script>
 {% endblock %}

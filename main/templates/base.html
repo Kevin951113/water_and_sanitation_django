@@ -6,7 +6,7 @@
   <title>{% block title %}[Water and Sanitation]{% endblock %}</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-  <!-- Extremely early theme activation: Set data-theme before CSS (to avoid flickering) -->
+  <!-- super-early theme boot so there’s no flash -->
   <script>
     (function () {
       try {
@@ -15,7 +15,7 @@
         if (saved === 'light')      { isLight = true; }
         else if (saved === 'dark')  { isLight = false; }
         else {
-          // Not selected → Follow the system
+          // follow the OS if user hasn't chosen
           isLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
         }
         document.documentElement.setAttribute('data-theme', isLight ? 'light' : 'dark');
@@ -23,74 +23,39 @@
     })();
   </script>
 
-  <!-- Shared: Preloaded logo, loading GIF -->
+  <!-- assets we want asap -->
   <link rel="preload" href="{% static 'lightoff_logo.png' %}" as="image">
   <link rel="preload" href="{% static 'lighton_logo.png' %}" as="image">
   <link rel="preload" href="{% static 'giphy1.gif' %}" as="image"><!-- loading GIF -->
 
-  <!-- Subpages (such as the home page) can add additional preload here. -->
   {% block head_extras %}{% endblock %}
 
   <style>
-
-    .menu .dropdown {
-      position: relative;
-      display: inline-block;          /* keeps spacing like other items */
-    }
-
-    .menu .dropdown > a {
-      display: inline-flex;           /* inherit your link typography/hover */
-      align-items: center;
-    }
-
+    /* ===== Dropdown ===== */
+    .menu .dropdown { position: relative; display: inline-block; }
+    .menu .dropdown > a { display: inline-flex; align-items: center; }
     .menu .submenu {
-      display: none;
-      position: absolute;
-      top: 100%;
-      left: 0;
-      min-width: 260px;
+      display: none; position: absolute; top: 100%; left: 0; min-width: 260px;
       background: rgba(5, 8, 15, 0.96);
       border: 1px solid rgba(255, 255, 255, 0.12);
       box-shadow: 0 12px 28px rgba(0,0,0,0.35);
-      padding: 6px 0;
-      z-index: 1000;
-      backdrop-filter: saturate(120%) blur(6px);
+      padding: 6px 0; z-index: 1000; backdrop-filter: saturate(120%) blur(6px);
     }
+    .menu .submenu a { display: block; padding: 10px 14px; text-decoration: none; white-space: nowrap; }
+    .menu .submenu a:hover, .menu .submenu a:focus { background: rgba(255,255,255,0.08); }
+    .menu .dropdown:hover .submenu, .menu .dropdown:focus-within .submenu { display: block; }
 
-    .menu .submenu a {
-      display: block;
-      padding: 10px 14px;
-      text-decoration: none;
-      white-space: nowrap;
-    }
-
-    .menu .submenu a:hover,
-    .menu .submenu a:focus {
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    /* show submenu on hover or keyboard focus */
-    .menu .dropdown:hover .submenu,
-    .menu .dropdown:focus-within .submenu {
-      display: block;
-    }
-
-    /* Light theme overrides for dropdown panel */
+    /* Light theme dropdown panel */
     html[data-theme="light"] .menu .submenu{
-      /* 亮一點的半透明白，帶一點 header-glow 色調 */
       background: color-mix(in srgb, var(--card-bg) 92%, var(--header-glow) 8%);
       border: 1px solid rgba(0,0,0,.08);
       box-shadow: 0 12px 24px rgba(0,0,0,.12);
     }
-
-    html[data-theme="light"] .menu .submenu a{
-      color: var(--text); /* light theme 下為深色字 */
-    }
-
+    html[data-theme="light"] .menu .submenu a{ color: var(--text); }
     html[data-theme="light"] .menu .submenu a:hover,
     html[data-theme="light"] .menu .submenu a:focus {
       background: color-mix(in srgb, var(--header-glow) 16%, white 84%);
-      color: var(--header-glow); /* 文字變成藍色基調 */
+      color: var(--header-glow);
       text-shadow: 0 0 6px color-mix(in srgb, var(--header-glow) 70%, white 30%);
     }
 
@@ -101,42 +66,55 @@
       --card-bg:#111; --shadow:0 10px 30px rgba(0,0,0,.35); --card-stroke:rgba(255,255,255,.08);
       --card-radius:22px; --gap:18px;
       --header-glow:#9ad7ff;
+      /* outline + glow */
+      --stroke: rgba(0,0,0,.78);
+      --glow-outer: 0 0 28px color-mix(in srgb, var(--header-glow) 95%, transparent);
+      --glow-inner: 0 0 10px color-mix(in srgb, var(--header-glow) 90%, transparent);
+
+      /* inlined SVGs for the toggle — keeping the button’s original colors intact */
+      --ico-sun: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l-1.4-1.4M20.4 20.4 19 19M5 19l-1.4 1.4M20.4 3.6 19 5'/%3E%3C/svg%3E");
+      --ico-moon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 1 0 9.8 9.8z'/%3E%3C/svg%3E");
     }
     html[data-theme="light"]{
       --bg:#fff; --text:#0e1420; --muted:#4a5a6c;
       --header-bg:rgba(255,255,255,.75); --hairline:rgba(0,0,0,.1);
       --card-bg:#f5f7fb; --shadow:0 10px 30px rgba(0,0,0,.12); --card-stroke:rgba(0,0,0,.06);
       --header-glow:#1b4fff;
+      --stroke: rgba(0,0,0,.55);
+      --glow-outer: 0 0 14px color-mix(in srgb, var(--header-glow) 65%, transparent);
+      --glow-inner: 0 0 3px  color-mix(in srgb, var(--header-glow) 70%, transparent);
+      /* keep icons white in light mode too — simple and readable */
+      --ico-sun: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l-1.4-1.4M20.4 20.4 19 19M5 19l-1.4 1.4M20.4 3.6 19 5'/%3E%3C/svg%3E");
+      --ico-moon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 1 0 9.8 9.8z'/%3E%3C/svg%3E");
     }
 
     *{box-sizing:border-box}
-    html,body{
-      margin:0; height:100%;
-      background:var(--bg); color:var(--text);
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji";
-    }
+    html,body{ margin:0; height:100%; background:var(--bg); color:var(--text);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji"; }
 
-    /* ===== Header ===== */
+    /* ===== Header (單列導覽) ===== */
     header{
-      position:sticky; top:0; z-index:10;
-      backdrop-filter:blur(10px);
-      background:var(--header-bg);
-      border-bottom:1px solid var(--hairline);
-      padding:12px 18px;
-      display:flex; align-items:center; gap:16px;
+      position:sticky; top:0; z-index:10; backdrop-filter:blur(10px);
+      background:var(--header-bg); border-bottom:1px solid var(--hairline);
+      padding:12px 18px; display:flex; align-items:center; gap:16px;
     }
     .brand{display:flex; align-items:center; gap:10px}
     .brand .logo{width:110px; height:110px; display:inline-block}
     .brand .logo img{width:100%; height:100%; object-fit:contain; display:block}
-    header h1{margin:0; font-size:18px; letter-spacing:.5px; white-space:nowrap}
+    header h1{
+      margin:0; font-size:18px; letter-spacing:.5px; white-space:nowrap;
+      -webkit-text-stroke:.4px var(--stroke);
+      text-shadow:0 1px 0 rgba(0,0,0,.25);
+    }
 
-    /* ===== Menu with slot effect ===== */
-    nav.menu{flex:1; display:flex; justify-content:center; gap:32px}
-    nav.menu a{
-      position:relative; display:inline-block;
-      color:var(--text); text-decoration:none;
-      font-weight:700; letter-spacing:.08em; font-size:14px; text-transform:uppercase;
-      padding:8px 2px;
+    /* ===== Menu with slot effect + 黑框描邊/光暈 ===== */
+    nav.menu{flex:1; display:flex; justify-content:center; gap:28px; flex-wrap:wrap;}
+    nav.menu a, nav.menu .menu-link{
+      position:relative; display:inline-block; color:var(--text); text-decoration:none;
+      font-weight:800; letter-spacing:.08em; font-size:14px; text-transform:uppercase;
+      padding:8px 10px; border-radius:10px;
+      -webkit-text-stroke:.35px var(--stroke);
+      text-shadow: 0 1px 0 rgba(0,0,0,.22);
     }
     .slot-window{ display:block; height:1.2em; overflow:hidden; line-height:1.2em; }
     .slot-track{ display:block; }
@@ -146,12 +124,22 @@
     }
     nav.menu a:hover .slot-track{ animation: slotSpin 1.1s cubic-bezier(.22,.72,.17,1) both; }
     nav.menu a:focus-visible{outline:2px solid var(--text); outline-offset:4px; border-radius:6px}
-    nav.menu a:hover, nav.menu a:focus-visible, nav.menu a.active{
+
+    /* hover/focus/active 視覺（含下方光暈條） */
+    nav.menu a:hover, nav.menu a:focus-visible, nav.menu a.active,
+    nav.menu .menu-link:hover, nav.menu .menu-link:focus-visible, nav.menu .menu-link.active{
       color: var(--header-glow);
-      text-shadow: 0 0 14px color-mix(in srgb, var(--header-glow) 80%, transparent),
-                   0 0  2px color-mix(in srgb, var(--header-glow) 85%, transparent),
-                   0 1px 1px rgba(0,0,0,.18);
+      text-shadow: var(--glow-outer), var(--glow-inner), 0 1px 1px rgba(0,0,0,.18);
+      background: color-mix(in srgb, var(--header-glow) 12%, transparent);
     }
+    nav.menu a::after, nav.menu .menu-link::after{
+      content:""; position:absolute; left:12px; right:12px; bottom:4px; height:6px; border-radius:999px;
+      background: radial-gradient(60% 120% at 50% 50%, color-mix(in srgb, var(--header-glow) 65%, transparent), transparent 70%);
+      opacity:0; transform:translateY(4px); transition:opacity .18s, transform .18s; pointer-events:none; filter:blur(.8px);
+    }
+    nav.menu a:hover::after, nav.menu a.active::after,
+    nav.menu .menu-link:hover::after, nav.menu .menu-link.active::after{ opacity:1; transform:translateY(0); }
+
     html[data-theme="light"] nav.menu a:hover,
     html[data-theme="light"] nav.menu a:focus-visible,
     html[data-theme="light"] nav.menu a.active{
@@ -167,14 +155,27 @@
     header button:hover{background:rgba(127,127,127,.12)}
     header button:focus-visible{outline:2px solid var(--text); outline-offset:2px}
 
-    /* ===== Hero / Panels（Style reserved, can be used on non-homepages） ===== */
+    /* ===== Sun + Moon on the existing button (no color/label changes, just visuals) ===== */
+    #lightBtn{ position:relative; } /* already relative, just being explicit */
+    #lightBtn::before,
+    #lightBtn::after{
+      content:""; position:absolute; top:50%; transform:translateY(-50%);
+      width:18px; height:18px; opacity:.95; pointer-events:none;
+      background-repeat:no-repeat; background-position:center; background-size:contain;
+      /* tiny subtle glow so they read on any gradient */
+      filter: drop-shadow(0 0 4px rgba(255,255,255,.45));
+    }
+    /* sun on the left, moon on the right — spaced inside the existing padding */
+    #lightBtn::before{ left:.4em; background-image: var(--ico-sun); }
+    #lightBtn::after{  right:.4em; background-image: var(--ico-moon); }
+
+    /* ===== Hero / Panels ===== */
     .hero{ max-width:1300px; margin:22px auto 0; padding:0; position:relative; z-index:1; }
     .panel{
       position:relative; aspect-ratio:9/14; overflow:hidden; border-radius:var(--card-radius);
       background:var(--card-bg); box-shadow:var(--shadow); border:1px solid var(--card-stroke);
       isolation:isolate; transform:translateY(0) scale(1);
-      transition:transform .35s cubic-bezier(.2,.7,.2,1), box-shadow .35s; will-change:transform;
-      z-index:1;
+      transition:transform .35s cubic-bezier(.2,.7,.2,1), box-shadow .35s; will-change:transform; z-index:1;
     }
     .panel-hero{ aspect-ratio:auto; height:clamp(160px, 28vw, 380px); background:#000; margin-bottom:var(--gap); }
     .panel video{
@@ -202,7 +203,7 @@
     @media (min-width:900px){ .grid{grid-template-columns:1fr 1fr} }
     @media (min-width:1200px){ .grid{grid-template-columns:1fr 1fr 1fr} }
 
-    /* ===== Overlay title + water chips（General style） ===== */
+    /* ===== Overlay title + water chips ===== */
     .overlay{position:absolute; inset:0; display:grid; place-items:center; pointer-events:none; z-index:2; padding:18px}
     .centerline{
       font-weight:800; letter-spacing:.5px; text-transform:uppercase;
@@ -217,13 +218,11 @@
     html[data-theme="light"] .centerline{ text-shadow:none; }
     html[data-theme="light"] .title-row{ background: color-mix(in srgb, white 75%, var(--header-glow) 25%); box-shadow:none; }
 
-    .water-chip{
-      width:28px; height:28px; border-radius:999px; display:inline-flex;
+    .water-chip{ width:28px; height:28px; border-radius:999px; display:inline-flex;
       align-items:center; justify-content:center; flex:0 0 auto;
       background: radial-gradient(circle at 60% 30%, #8fd3ff 0%, #3db7ff 40%, #0a62cc 100%);
       box-shadow: 0 0 0 2px rgba(255,255,255,.25), 0 6px 18px rgba(0, 150, 255, .35);
-      overflow:hidden; position:relative; cursor:pointer; transition: filter .2s ease;
-    }
+      overflow:hidden; position:relative; cursor:pointer; transition: filter .2s ease; }
     .water-chip:hover{ filter:brightness(1.05) saturate(1.1); }
     .water-chip svg{ width:70%; height:70%; display:block; }
     .water-chip .ring{ fill:none; stroke:#d8efff; opacity:.85; stroke-width:1.8; }
@@ -241,44 +240,28 @@
     .hint{position:fixed; right:12px; bottom:10px; color:var(--muted); font-size:12px; opacity:.75; user-select:none}
 
     /* ===== Background Ripple Layer ===== */
-    #ripple-layer{
-      position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.9;
-    }
+    #ripple-layer{ position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.9; }
     html[data-theme="dark"] #ripple-layer{ mix-blend-mode:screen; }
     html[data-theme="light"] #ripple-layer{ mix-blend-mode:multiply; }
-
     .ripple{
       position:absolute; left:0; top:0; width:160px; height:160px; border-radius:999px;
-      transform:translate(-50%,-50%) scale(.25);
-      opacity:.8; will-change:transform,opacity,filter;
-      background:radial-gradient(circle,
-        rgba(180,235,255,.75) 0%,
-        rgba(150,215,255,.35) 35%,
-        rgba(150,215,255,0) 70%);
-      filter:blur(.8px);
-      box-shadow:0 0 28px rgba(120,190,255,.35);
+      transform:translate(-50%,-50%) scale(.25); opacity:.8; will-change:transform,opacity,filter;
+      background:radial-gradient(circle, rgba(180,235,255,.75) 0%, rgba(150,215,255,.35) 35%, rgba(150,215,255,0) 70%);
+      filter:blur(.8px); box-shadow:0 0 28px rgba(120,190,255,.35);
     }
     html[data-theme="light"] .ripple{
-      background:radial-gradient(circle,
-        rgba(40,110,255,.22) 0%,
-        rgba(40,110,255,.10) 35%,
-        rgba(40,110,255,0) 70%);
+      background:radial-gradient(circle, rgba(40,110,255,.22) 0%, rgba(40,110,255,.10) 35%, rgba(40,110,255,0) 70%);
       filter:blur(.6px); box-shadow:0 0 20px rgba(40,110,255,.12); opacity:.7;
     }
 
-    /* ===== WHY（Style, JS interacts with subpages) ===== */
+    /* ===== WHY ===== */
     .why-section{
-      position:relative; display:flex; align-items:flex-start;
-      min-height:460px; overflow:hidden; padding:48px 0 0 0;
+      position:relative; display:flex; align-items:flex-start; min-height:460px; overflow:hidden; padding:48px 0 0 0;
       background: linear-gradient(135deg,#0b1f36 0%, #0c3d66 55%, #0e6fc0 100%);
       border-top:1px solid var(--card-stroke); border-bottom:1px solid var(--card-stroke);
     }
     html[data-theme="light"] .why-section{ background: linear-gradient(135deg,#eaf3ff 0%, #d8ebff 55%, #cfe7ff 100%); }
-    .lottie-bg{
-      position:absolute; left:-70px; bottom:-70px; z-index:0; opacity:.65;
-      pointer-events:none; user-select:none; width:700px; height:700px;
-      filter: saturate(1.1) contrast(1.03);
-    }
+    .lottie-bg{ position:absolute; left:-70px; bottom:-70px; z-index:0; opacity:.65; pointer-events:none; user-select:none; width:700px; height:700px; filter: saturate(1.1) contrast(1.03); }
     .lottie-bg video{ width:100%; height:100%; object-fit:cover; opacity:.75; }
     .why-main-content{ z-index:1; margin:0 auto; width:100%; max-width:1300px; display:flex; flex-direction:column; align-items:center; position:relative; }
     .why-title{
@@ -290,10 +273,7 @@
       background:linear-gradient(90deg,#1a5cff,#00b2ff);
       -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent;
     }
-    .why-list{
-      display:flex; flex-direction:column; gap:22px; width:100%; max-width:740px;
-      margin:0 auto 18px auto; font-size:1.12rem; font-weight:600; z-index:1; line-height:1.45;
-    }
+    .why-list{ display:flex; flex-direction:column; gap:22px; width:100%; max-width:740px; margin:0 auto 18px auto; font-size:1.12rem; font-weight:600; z-index:1; line-height:1.45; }
     .why-list-item{
       display:flex; align-items:center; gap:18px; cursor:pointer;
       transition:transform .28s cubic-bezier(.4,2,.6,1), background .25s ease;
@@ -320,86 +300,42 @@
     /* Button style */
     .dashboard-btn {
       background: linear-gradient(90deg,#08497e 0%, #0e6fc0 50%, #5dade2 100%);
-      color: #fff;
-      border: none;
-      border-radius: 1.6em;
-      padding: .72em 1.8em;
-      font-weight: 800;
-      font-size: 1rem;
-      margin-top: .2em;
-      cursor: pointer;
+      color: #fff; border: none; border-radius: 1.6em; padding: .72em 1.8em;
+      font-weight: 800; font-size: 1rem; margin-top: .2em; cursor: pointer;
       box-shadow: 0 3px 13px rgba(14,111,192,.3);
       transition: background .18s, color .18s, box-shadow .18s, transform .18s;
-      display: inline-flex;
-      align-items: center;
-      gap: .5em;
-      position: relative;
-      z-index: 2;
-      -webkit-tap-highlight-color: transparent;
+      display: inline-flex; align-items: center; gap: .5em; position: relative; z-index: 2; -webkit-tap-highlight-color: transparent;
     }
-    .dashboard-btn:hover{
-      background: linear-gradient(90deg, #5dade2 0%, #0e6fc0 100%);
-      color: #eaf6ff;
-      box-shadow: 0 8px 28px rgba(14,111,192,.5);
-      transform: translateY(-1px) scale(1.02);
-    }
+    .dashboard-btn:hover{ background: linear-gradient(90deg, #5dade2 0%, #0e6fc0 100%); color: #eaf6ff; box-shadow: 0 8px 28px rgba(14,111,192,.5); transform: translateY(-1px) scale(1.02); }
     .dashboard-btn:focus{ outline:none; }
-    .dashboard-btn:focus-visible{
-      background: linear-gradient(90deg, #5dade2 0%, #0e6fc0 100%);
-      color: #eaf6ff;
-      box-shadow: 0 0 0 3px rgba(90,173,226,.45), 0 8px 28px rgba(14,111,192,.5);
-      transform: translateY(-1px) scale(1.02);
-    }
-    .dashboard-btn:active{
-      transform: translateY(0) scale(.98);
-      box-shadow: 0 2px 10px rgba(14,111,192,.35);
-    }
+    .dashboard-btn:focus-visible{ background: linear-gradient(90deg, #5dade2 0%, #0e6fc0 100%); color: #eaf6ff; box-shadow: 0 0 0 3px rgba(90,173,226,.45), 0 8px 28px rgba(14,111,192,.5); transform: translateY(-1px) scale(1.02); }
+    .dashboard-btn:active{ transform: translateY(0) scale(.98); box-shadow: 0 2px 10px rgba(14,111,192,.35); }
 
     /* Footer */
     footer{
-      padding:16px;
-      border-top:1px solid var(--card-stroke);
-      text-align:center;
-      color:var(--muted);
-      position:relative;
-      z-index:1;
-      background:transparent;
+      padding:16px; border-top:1px solid var(--card-stroke); text-align:center; color:var(--muted);
+      position:relative; z-index:1; background:transparent;
     }
 
-    /* ===== Full Page Loading Mask（Jump animation） ===== */
+    /* ===== Full Page Loading Mask ===== */
     #loadingMask{
-      display:none; position:fixed; inset:0; z-index:10000;
-      background:rgba(14,20,32,0.16); backdrop-filter:blur(2.5px);
-      align-items:center; justify-content:center;
-      opacity:0; pointer-events:none; transition:opacity .22s ease;
+      display:none; position:fixed; inset:0; z-index:10000; background:rgba(14,20,32,0.16); backdrop-filter:blur(2.5px);
+      align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .22s ease;
     }
     #loadingMask.active{ display:flex !important; opacity:1; pointer-events:auto; }
     .loading-card{
-      background:#ffffff3c; border-radius:26px; padding:32px 44px; /* 稍微縮小 */
-      box-shadow:0 8px 28px rgba(66,29,121,.38);
-      display:flex; flex-direction:column; align-items:center; gap:12px;
-      transform:scale(.985); transition:transform .25s ease, opacity .25s ease; opacity:.99;
+      background:#ffffff3c; border-radius:26px; padding:32px 44px;
+      box-shadow:0 8px 28px rgba(66,29,121,.38); display:flex; flex-direction:column; align-items:center; gap:12px;
+      transform:scale(.985); transition:transform .6s ease, opacity .25s ease; opacity:.99;
     }
     #loadingMask.active .loading-card{ transform:scale(1); }
     .loading-gif{ width:min(420px, 72vw); height:auto; display:block; }
-
-    /* Light blue gradient text + blue halo (upgraded version) */
     .loading-text {
-      font-size: clamp(28px,4.6vw,44px);
-      font-weight: 900;
-      letter-spacing: .8px;
-      line-height: 1.08;
+      font-size: clamp(28px,4.6vw,44px); font-weight: 900; letter-spacing: .8px; line-height: 1.08;
       background: linear-gradient(90deg,#d7e7ff 0%, #91a6ff 50%, #3d5afe 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
+      -webkit-background-clip: text; background-clip: text; color: transparent;
       -webkit-text-stroke: 2px rgba(0, 50, 200, 0.7);
-      text-shadow:
-        0 0 12px #3d5afeaa,
-        0 0 20px #536dfeaa,
-        0 0 28px #91a6ffaa,
-        0 0 4px #fff8,
-        0 2px 8px #e0e9ffcc;
+      text-shadow: 0 0 12px #3d5afeaa, 0 0 20px #536dfeaa, 0 0 28px #91a6ffaa, 0 0 4px #fff8, 0 2px 8px #e0e9ffcc;
     }
   </style>
 </head>
@@ -412,32 +348,48 @@
       <h1>[Water and Sanitation]</h1>
     </div>
 
+    {% with current=request.resolver_match.url_name %}
     <nav class="menu" aria-label="Primary">
-      <a href="{% url 'home' %}"><span class="slot-window"><span class="slot-track">
-        <span class="slot-item">[Home]</span><span class="slot-item" aria-hidden="true">[Home]</span>
-      </span></span></a>
+      <a href="{% url 'home' %}" class="{% if current == 'home' %}active{% endif %}">
+        <span class="slot-window"><span class="slot-track">
+          <span class="slot-item">[Home]</span><span class="slot-item" aria-hidden="true">[Home]</span>
+        </span></span>
+      </a>
+
       <!-- dropdown item -->
       <div class="dropdown menu-item">
-        <a href="#" class="menu-link has-submenu" aria-haspopup="true" aria-expanded="false">
+        <a href="#"
+           class="menu-link has-submenu {% if current == 'explore_water_quality' or current == 'pollution_sources' or current == 'future_family_safety' %}active{% endif %}"
+           aria-haspopup="true"
+           aria-expanded="{% if current == 'explore_water_quality' or current == 'pollution_sources' or current == 'future_family_safety' %}true{% else %}false{% endif %}">
           <span class="slot-window"><span class="slot-track">
             <span class="slot-item">[Water Insights]</span>
             <span class="slot-item" aria-hidden="true">[Water Insights]</span>
           </span></span>
         </a>
         <div class="submenu" role="menu">
-          <a role="menuitem" href="{% url 'explore_water_quality' %}">[Explore Water Quality]</a>
-          <a role="menuitem" href="{% url 'pollution_sources' %}">[Pollution Sources]</a>
-          <a role="menuitem" href="{% url 'future_family_safety' %}">[Community Reporting & Family Safety]</a>
+          <a role="menuitem" href="{% url 'explore_water_quality' %}" class="{% if current == 'explore_water_quality' %}active{% endif %}">[Explore Water Quality]</a>
+          <a role="menuitem" href="{% url 'pollution_sources' %}" class="{% if current == 'pollution_sources' %}active{% endif %}">[Pollution Sources]</a>
+          <a role="menuitem" href="{% url 'future_family_safety' %}" class="{% if current == 'future_family_safety' %}active{% endif %}">[Community Reporting & Family Safety]</a>
         </div>
       </div>
-      <a href="{% url 'for_kids_learn_play' %}"><span class="slot-window"><span class="slot-track">
-        <span class="slot-item">[For Kids – Learn & Play]</span><span class="slot-item" aria-hidden="true">[For Kids – Learn & Play]</span>
-      </span></span></a>
-      <a href="{% url 'about_water_sanitation' %}"><span class="slot-window"><span class="slot-track">
-        <span class="slot-item">[About Our Water]</span><span class="slot-item" aria-hidden="true">[About Our Water]</span>
-      </span></span></a>
-    </nav>
 
+      <a href="{% url 'for_kids_learn_play' %}" class="{% if current == 'for_kids_learn_play' %}active{% endif %}">
+        <span class="slot-window"><span class="slot-track">
+          <span class="slot-item">[For Kids – Learn & Play]</span><span class="slot-item" aria-hidden="true">[For Kids – Learn & Play]</span>
+        </span></span>
+      </a>
+
+      <a href="{% url 'about_water_sanitation' %}" class="{% if current == 'about_water_sanitation' %}active{% endif %}">
+        <span class="slot-window"><span class="slot-track">
+          <span class="slot-item">[About Our Water]</span><span class="slot-item" aria-hidden="true">[About Our Water]</span>
+        </span></span>
+      </a>
+    </nav>
+    {% endwith %}
+
+    <!-- Button stays exactly the same visually (text/gradient),
+         we just paint sun+moon via CSS ::before/::after. -->
     <button id="lightBtn" class="dashboard-btn" aria-pressed="false" aria-label="Toggle lights">
       Lights: Off
     </button>
@@ -462,7 +414,7 @@
   <!-- Full Page Loading Mask -->
   <div id="loadingMask" aria-hidden="true">
     <div class="loading-card" role="status" aria-live="polite">
-      <img class="loading-gif" src="{% static 'giphy1.gif' %}" alt="Loading..." style="width:600px;height:500px;display:block;">
+      <img class="loading-gif" src="{% static 'giphy1.gif' %}" alt="Loading..." style="width:740px;height:460px;display:block;">
       <span class="loading-text">Loading…</span>
     </div>
   </div>
@@ -493,13 +445,12 @@
       return false;
     }
 
-    /************ Theme switching (shared across the entire site, including persistence) ************/
+    /************ Theme switching ************/
     const lightBtn=document.getElementById("lightBtn");
     const htmlEl=document.documentElement;
     const logoImg=document.getElementById("brandLogo");
     const LOGO_DARK="{% static 'lightoff_logo.png' %}";
     const LOGO_LIGHT="{% static 'lighton_logo.png' %}";
-    // Determine the initial state based on the data-theme set in the early script of <head>.
     let isLight = htmlEl.getAttribute("data-theme") === "light";
 
     function updateLogo(isLight){
@@ -507,10 +458,9 @@
       logoImg.alt=isLight?"Brand logo (lights on)":"Brand logo (lights off)";
     }
     function updateButton(isLight){
-      lightBtn.textContent=`Lights: ${isLight ? "On" : "Off"}`;
+      lightBtn.textContent=`Lights: ${isLight ? "On" : "Off"}`; // keep it simple; icons are CSS-only
       lightBtn.setAttribute("aria-pressed", String(isLight));
     }
-    // First, synchronise the buttons and logo with the current theme (to avoid errors in the first screen display).
     updateButton(isLight);
     updateLogo(isLight);
 
@@ -519,26 +469,16 @@
       htmlEl.setAttribute("data-theme", isLight ? "light" : "dark");
       updateButton(isLight);
       updateLogo(isLight);
-
-      // Persist to localStorage
       try { localStorage.setItem('theme', isLight ? 'light' : 'dark'); } catch(e){}
-
-      // Synchronise browser colours
       let meta=document.querySelector('meta[name="theme-color"]');
       if(!meta){ meta=document.createElement("meta"); meta.name="theme-color"; document.head.appendChild(meta); }
       meta.content=getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
-
-      // Allow subpages (such as the home page) to receive and switch videos/special effects.
       window.dispatchEvent(new CustomEvent('themechange', { detail: { isLight } }));
-
-      // Water Surface Animations Transitions
       if (window.waterStage && window.waterStage.transitionTo){
         window.waterStage.transitionTo(isLight);
       }
     }
     lightBtn.addEventListener("click",()=>{ setTheme(!isLight); });
-
-    // （Optional) Multi-page synchronisation: Switching to another page also changes the other pages.
     window.addEventListener('storage', (e)=>{
       if (e.key === 'theme' && e.newValue) {
         const wantLight = e.newValue === 'light';
@@ -546,16 +486,14 @@
       }
     });
 
-    /************ Background Water Ripple (GSAP)） ************/
+    /************ Background Water Ripple (GSAP) ************/
     function initBackgroundRipple(){
       const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (prefersReduced) return;
-
       const layer = document.getElementById('ripple-layer');
       if (!layer || !window.gsap) return;
-
       const headerEl = document.getElementById('siteHeader');
-      const bannerEl = document.getElementById('bannerHero'); // If the subpage has a hero, this can prevent ripples from overlapping.
+      const bannerEl = document.getElementById('bannerHero');
 
       const deadEls = [ headerEl, bannerEl ].filter(Boolean);
       let deadRects = [];
@@ -614,10 +552,9 @@
       window.addEventListener('pointerdown', e=>handlePointer(e,1.2), { passive:true });
     }
 
-    /************ Water surface (establishment and control)） ************/
+    /************ Water surface ************/
     function initWaterStage(){
       if (!window.gsap) return null;
-
       const canvas = document.getElementById('water-canvas');
       const ctx = canvas.getContext('2d');
       const DPR = window.devicePixelRatio || 1;
@@ -753,18 +690,13 @@
       initBackgroundRipple();
       window.waterStage = initWaterStage();
       if (window.waterStage){
-        // Apply initial state directly (without going through the motions)
         window.waterStage.setModeImmediate(isLight);
       }
-
-      // Synchronise meta theme-color (ensure it loads correctly)
       (function syncThemeColor(){
         let meta=document.querySelector('meta[name="theme-color"]');
         if(!meta){ meta=document.createElement("meta"); meta.name="theme-color"; document.head.appendChild(meta); }
         meta.content=getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
       })();
-
-      // Allow subpages to add exclusive interactions after GSAP is in place.
       if (window.pageInit) window.pageInit();
     })();
   </script>
@@ -782,7 +714,7 @@
       const mask = document.getElementById('loadingMask');
       if(!mask) return;
       mask.classList.remove('active');
-      setTimeout(()=>{ mask.style.display='none'; }, 250);
+      setTimeout(()=>{ mask.style.display='none'; }, 650);
     }
     function forceHideLoadingMask(){
       const mask = document.getElementById('loadingMask');
@@ -797,29 +729,24 @@
       }catch(e){ return false; }
     }
 
-    // If there is a heroVid on the home page, wait until the first frame (loadeddata) or up to 1.6 seconds before closing it.
     function hideMaskWhenHeroReady(e){
-      // If coming from BFCache or back/forward navigation → hide immediately
       if ((e && e.persisted) || isBackForwardNav()){
-        forceHideLoadingMask();
-        return;
+        forceHideLoadingMask(); return;
       }
       const hero = document.getElementById('heroVid');
       if (!hero){ hideLoadingMask(); return; }
       const done = () => { clearTimeout(tid); hideLoadingMask(); };
-      if (hero.readyState >= 2){ done(); return; } // The first frame is already available.
+      if (hero.readyState >= 2){ done(); return; }
       hero.addEventListener('loadeddata', done, { once:true });
-      const tid = setTimeout(done, 1600); // guarantee
+      const tid = setTimeout(done, 1600);
     }
 
-    // Handling when entering the station or returning from BFCache
     window.addEventListener('pageshow', hideMaskWhenHeroReady);
     window.addEventListener('load', hideMaskWhenHeroReady);
-    // Make sure we never store an active mask in BFCache
     window.addEventListener('pagehide', forceHideLoadingMask);
     document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState === 'hidden') forceHideLoadingMask(); });
 
-    /************ Only intercept within the site: header .menu a and .dashboard-btn[data-href] ************/
+    /************ Only intercept within the site ************/
     function isInternalLink(a){
       if(!a || !a.href) return false;
       if(a.target === '_blank') return false;
@@ -830,9 +757,7 @@
         return url.origin === window.location.origin;
       }catch(e){ return false; }
     }
-    function hasModifierKey(e){
-      return e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button === 1;
-    }
+    function hasModifierKey(e){ return e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button === 1; }
 
     document.querySelectorAll('header .menu a').forEach(a=>{
       a.addEventListener('click', (e)=>{
@@ -840,7 +765,7 @@
         if(!isInternalLink(a)) return;
         e.preventDefault();
         showLoadingMask();
-        setTimeout(()=>{ window.location.href = a.href; }, 700);
+        setTimeout(()=>{ window.location.href = a.href; }, 1000);
       });
     });
 
@@ -851,15 +776,14 @@
         if(!href) return;
         e.preventDefault();
         showLoadingMask();
-        setTimeout(()=>{ window.location.href = href; }, 700);
+        setTimeout(()=>{ window.location.href = href; }, 1000);
       });
     });
 
-    /************ Preload videos before returning to the home page (hover Home or idle trigger; only for 4G and above) ************/
+    /************ Prefetch home videos ************/
     const HOME_PATH = new URL("{% url 'home' %}", window.location.origin).pathname;
     const isOnHome = window.location.pathname === HOME_PATH;
 
-    // List the videos that will be used on the home page (adjust according to actual file names)
     const HOME_VIDEOS = [
       "{% static 'file1.mp4' %}",
       "{% static 'file2.mp4' %}",
@@ -877,36 +801,27 @@
     function prefetchHomeVideos(){
       if (homePrefetched || isOnHome || !canPrefetchNow()) return;
       homePrefetched = true;
-
-      // First, use <link rel="prefetch"> to prompt the browser.
       HOME_VIDEOS.forEach(src=>{
         const l=document.createElement('link');
         l.rel='prefetch'; l.as='video'; l.href=src; l.crossOrigin='anonymous';
         document.head.appendChild(l);
       });
-      // Then use fetch with low priority to place the file in the HTTP cache (only effective for the same domain).
       HOME_VIDEOS.forEach(src=>{
-        try{
-          fetch(src, { mode:'no-cors', cache:'force-cache', priority:'low' }).catch(()=>{});
-        }catch(e){}
+        try{ fetch(src, { mode:'no-cors', cache:'force-cache', priority:'low' }).catch(()=>{}); }catch(e){}
       });
     }
 
-    // Hover Home Trigger
     const homeLink = Array.from(document.querySelectorAll('header .menu a'))
       .find(a => { try { return new URL(a.href, location.href).pathname === HOME_PATH; } catch(e){ return false; }});
-    if (homeLink){
-      homeLink.addEventListener('pointerenter', prefetchHomeVideos, { once:true, passive:true });
-    }
+    if (homeLink){ homeLink.addEventListener('pointerenter', prefetchHomeVideos, { once:true, passive:true }); }
 
-    // Preload after a period of inactivity (not only on the home page)
     if (!isOnHome){
       const idle = window.requestIdleCallback || (fn=>setTimeout(fn, 2000));
       idle(()=> prefetchHomeVideos());
     }
   </script>
 
-  <!-- Subpages can inject their own scripts here (e.g. video controls/interactions on the home page). -->
+  <!-- Subpages can inject their own scripts here -->
   {% block page_scripts %}{% endblock %}
 </body>
 </html>
