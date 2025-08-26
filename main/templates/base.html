@@ -15,13 +15,16 @@
         if (saved === 'light')      { isLight = true; }
         else if (saved === 'dark')  { isLight = false; }
         else {
-          // follow the OS if user hasn't chosen
           isLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
         }
         document.documentElement.setAttribute('data-theme', isLight ? 'light' : 'dark');
       } catch(e) {}
     })();
   </script>
+
+  <!-- Bootstrap (for responsive navbar collapse only) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <!-- assets we want asap -->
   <link rel="preload" href="{% static 'lightoff_logo.png' %}" as="image">
@@ -66,12 +69,9 @@
       --card-bg:#111; --shadow:0 10px 30px rgba(0,0,0,.35); --card-stroke:rgba(255,255,255,.08);
       --card-radius:22px; --gap:18px;
       --header-glow:#9ad7ff;
-      /* outline + glow */
       --stroke: rgba(0,0,0,.78);
       --glow-outer: 0 0 28px color-mix(in srgb, var(--header-glow) 95%, transparent);
       --glow-inner: 0 0 10px color-mix(in srgb, var(--header-glow) 90%, transparent);
-
-      /* inlined SVGs for the toggle — keeping the button’s original colors intact */
       --ico-sun: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l-1.4-1.4M20.4 20.4 19 19M5 19l-1.4 1.4M20.4 3.6 19 5'/%3E%3C/svg%3E");
       --ico-moon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 1 0 9.8 9.8z'/%3E%3C/svg%3E");
     }
@@ -83,7 +83,6 @@
       --stroke: rgba(0,0,0,.55);
       --glow-outer: 0 0 14px color-mix(in srgb, var(--header-glow) 65%, transparent);
       --glow-inner: 0 0 3px  color-mix(in srgb, var(--header-glow) 70%, transparent);
-      /* keep icons white in light mode too — simple and readable */
       --ico-sun: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l-1.4-1.4M20.4 20.4 19 19M5 19l-1.4 1.4M20.4 3.6 19 5'/%3E%3C/svg%3E");
       --ico-moon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 1 0 9.8 9.8z'/%3E%3C/svg%3E");
     }
@@ -92,23 +91,29 @@
     html,body{ margin:0; height:100%; background:var(--bg); color:var(--text);
       font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji"; }
 
-    /* ===== Header (單列導覽) ===== */
+    /* ===== Header ===== */
     header{
       position:sticky; top:0; z-index:10; backdrop-filter:blur(10px);
       background:var(--header-bg); border-bottom:1px solid var(--hairline);
       padding:12px 18px; display:flex; align-items:center; gap:16px;
     }
     .brand{display:flex; align-items:center; gap:10px}
-    .brand .logo{width:110px; height:110px; display:inline-block}
+    .brand .logo{ width:clamp(40px, 10vw, 110px); height:clamp(40px, 10vw, 110px); display:inline-block; }
     .brand .logo img{width:100%; height:100%; object-fit:contain; display:block}
     header h1{
-      margin:0; font-size:18px; letter-spacing:.5px; white-space:nowrap;
+      margin:0;
+      font-size:clamp(16px, 4.2vw, 22px);
+      letter-spacing:.5px; white-space:nowrap;
       -webkit-text-stroke:.4px var(--stroke);
       text-shadow:0 1px 0 rgba(0,0,0,.25);
     }
+    @media (max-width:575.98px){
+      header{ padding:10px 12px; }
+      .brand{ gap:8px; }
+    }
 
-    /* ===== Menu with slot effect + 黑框描邊/光暈 ===== */
-    nav.menu{flex:1; display:flex; justify-content:center; gap:28px; flex-wrap:wrap;}
+    /* ===== Menu with slot effect ===== */
+    nav.menu{flex:1; justify-content:center; gap:28px; flex-wrap:wrap;}
     nav.menu a, nav.menu .menu-link{
       position:relative; display:inline-block; color:var(--text); text-decoration:none;
       font-weight:800; letter-spacing:.08em; font-size:14px; text-transform:uppercase;
@@ -125,7 +130,7 @@
     nav.menu a:hover .slot-track{ animation: slotSpin 1.1s cubic-bezier(.22,.72,.17,1) both; }
     nav.menu a:focus-visible{outline:2px solid var(--text); outline-offset:4px; border-radius:6px}
 
-    /* hover/focus/active 視覺（含下方光暈條） */
+    /* hover/focus/active */
     nav.menu a:hover, nav.menu a:focus-visible, nav.menu a.active,
     nav.menu .menu-link:hover, nav.menu .menu-link:focus-visible, nav.menu .menu-link.active{
       color: var(--header-glow);
@@ -155,19 +160,121 @@
     header button:hover{background:rgba(127,127,127,.12)}
     header button:focus-visible{outline:2px solid var(--text); outline-offset:2px}
 
-    /* ===== Sun + Moon on the existing button (no color/label changes, just visuals) ===== */
-    #lightBtn{ position:relative; } /* already relative, just being explicit */
+    /* ===== Sun + Moon visuals only ===== */
+    #lightBtn{ position:relative; }
     #lightBtn::before,
     #lightBtn::after{
       content:""; position:absolute; top:50%; transform:translateY(-50%);
       width:18px; height:18px; opacity:.95; pointer-events:none;
       background-repeat:no-repeat; background-position:center; background-size:contain;
-      /* tiny subtle glow so they read on any gradient */
       filter: drop-shadow(0 0 4px rgba(255,255,255,.45));
     }
-    /* sun on the left, moon on the right — spaced inside the existing padding */
-    #lightBtn::before{ left:.4em; background-image: var(--ico-sun); }
-    #lightBtn::after{  right:.4em; background-image: var(--ico-moon); }
+    #lightBtn::before{ left:.1em; background-image: var(--ico-sun); }
+    #lightBtn::after{  right:.1em; background-image: var(--ico-moon); }
+
+    /* Make ONLY the light button responsive on larger screens too */
+    #lightBtn{
+      min-height: clamp(38px, 4.2vw, 46px);
+      padding: clamp(.56em, .8vw, .72em) clamp(1em, 1.6vw, 1.8em);
+      font-size: clamp(.95rem, .5vw + .7rem, 1rem);
+    }
+    #lightBtn::before,
+    #lightBtn::after{
+      width: clamp(16px, 1.2vw + 10px, 20px);
+      height: clamp(16px, 1.2vw + 10px, 20px);
+    }
+
+    /* ===== Responsive navbar ===== */
+    @media (min-width: 992px){
+      nav.menu{ display:flex; }
+      nav.menu.collapse,
+      nav.menu.collapse:not(.show){
+        display:flex !important;
+        height:auto !important;
+        visibility:visible !important;
+      }
+    }
+    @media (max-width: 991.98px){
+      nav.menu{ display:block; }
+      nav.menu.collapse:not(.show){ display:none !important; }
+    }
+
+    /* Hamburger */
+    .hamburger-btn{
+      border:1px solid var(--hairline); color:var(--text); background:transparent;
+      padding:.45rem .7rem; border-radius:10px; line-height:1; font-weight:900;
+      min-width:40px; min-height:40px; box-shadow:none; transition:color .15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .hamburger-btn:hover,
+    .hamburger-btn:focus-visible,
+    .hamburger-btn[aria-expanded="true"]{
+      color: var(--header-glow);
+      background: transparent;
+      text-shadow: none;
+      box-shadow: none;
+      transform: none;
+      outline: none;
+    }
+
+    /* ===== Mobile: menu panel + FIX no-shift during .collapsing ===== */
+    @media (max-width: 991.98px){
+      header{ position:sticky; top:0; }
+
+      /* Keep the nav OUT of the flex flow for the whole animation */
+      #primaryNav.collapse,
+      #primaryNav.collapsing,
+      #primaryNav.collapse.show{
+        position:absolute; left:0; right:0; top:100%;
+        background: var(--header-bg);
+        border-top:1px solid var(--hairline);
+        padding:10px 18px 12px;
+        z-index: 9;
+        box-shadow: 0 10px 30px rgba(0,0,0,.35);
+        backdrop-filter: blur(10px);
+        width:100%;
+        border-radius: 0 0 18px 18px;
+      }
+
+      /* Hidden state still fully removed */
+      #primaryNav.collapse:not(.show){ display:none !important; }
+
+      header .menu a,
+      header .menu .menu-link{
+        display:block; padding:10px 12px; margin:6px 0;
+        color: var(--header-glow);
+        background: transparent;
+        text-shadow:none;
+        border-radius:12px;
+      }
+
+      /* dropdown submenu becomes inline */
+      .menu .submenu{
+        position: static; display: none; padding: 4px 0; border: 0; box-shadow:none;
+        background: transparent;
+      }
+      .menu .dropdown:focus-within .submenu,
+      .menu .dropdown:hover .submenu{ display:block; }
+
+      /* ===== Light button: icon-only on small screens (keep original gradient colors) ===== */
+      #lightBtn{
+        width: clamp(40px, 9.5vw, 46px);
+        height: clamp(40px, 9.5vw, 46px);
+        padding: 0;
+        border-radius: 999px;
+        font-size: 0;         /* hide text visually */
+        min-width: auto;
+        gap: 0;
+      }
+      #lightBtn::after{ display:none; } /* only one icon */
+      #lightBtn::before{
+        left:50%; right:auto; transform:translate(-50%, -50%);
+        width: clamp(18px, 4.3vw, 22px);
+        height: clamp(18px, 4.3vw, 22px);
+      }
+      html[data-theme="light"] #lightBtn::before{ background-image: var(--ico-sun); }
+      html[data-theme="dark"]  #lightBtn::before{ background-image: var(--ico-moon); }
+    }
 
     /* ===== Hero / Panels ===== */
     .hero{ max-width:1300px; margin:22px auto 0; padding:0; position:relative; z-index:1; }
@@ -203,7 +310,6 @@
     @media (min-width:900px){ .grid{grid-template-columns:1fr 1fr} }
     @media (min-width:1200px){ .grid{grid-template-columns:1fr 1fr 1fr} }
 
-    /* ===== Overlay title + water chips ===== */
     .overlay{position:absolute; inset:0; display:grid; place-items:center; pointer-events:none; z-index:2; padding:18px}
     .centerline{
       font-weight:800; letter-spacing:.5px; text-transform:uppercase;
@@ -311,7 +417,6 @@
     .dashboard-btn:focus-visible{ background: linear-gradient(90deg, #5dade2 0%, #0e6fc0 100%); color: #eaf6ff; box-shadow: 0 0 0 3px rgba(90,173,226,.45), 0 8px 28px rgba(14,111,192,.5); transform: translateY(-1px) scale(1.02); }
     .dashboard-btn:active{ transform: translateY(0) scale(.98); box-shadow: 0 2px 10px rgba(14,111,192,.35); }
 
-    /* Footer */
     footer{
       padding:16px; border-top:1px solid var(--card-stroke); text-align:center; color:var(--muted);
       position:relative; z-index:1; background:transparent;
@@ -340,59 +445,73 @@
   </style>
 </head>
 <body>
-  <header id="siteHeader">
-    <div class="brand" aria-label="Brand">
-      <span class="logo" aria-hidden="true">
-        <img id="brandLogo" src="{% static 'lightoff_logo.png' %}" alt="Brand logo (lights off)">
-      </span>
-      <h1>[Water and Sanitation]</h1>
-    </div>
-
-    {% with current=request.resolver_match.url_name %}
-    <nav class="menu" aria-label="Primary">
-      <a href="{% url 'home' %}" class="{% if current == 'home' %}active{% endif %}">
-        <span class="slot-window"><span class="slot-track">
-          <span class="slot-item">[Home]</span><span class="slot-item" aria-hidden="true">[Home]</span>
-        </span></span>
-      </a>
-
-      <!-- dropdown item -->
-      <div class="dropdown menu-item">
-        <a href="#"
-           class="menu-link has-submenu {% if current == 'explore_water_quality' or current == 'pollution_sources' or current == 'future_family_safety' %}active{% endif %}"
-           aria-haspopup="true"
-           aria-expanded="{% if current == 'explore_water_quality' or current == 'pollution_sources' or current == 'future_family_safety' %}true{% else %}false{% endif %}">
-          <span class="slot-window"><span class="slot-track">
-            <span class="slot-item">[Water Insights]</span>
-            <span class="slot-item" aria-hidden="true">[Water Insights]</span>
-          </span></span>
-        </a>
-        <div class="submenu" role="menu">
-          <a role="menuitem" href="{% url 'explore_water_quality' %}" class="{% if current == 'explore_water_quality' %}active{% endif %}">[Explore Water Quality]</a>
-          <a role="menuitem" href="{% url 'pollution_sources' %}" class="{% if current == 'pollution_sources' %}active{% endif %}">[Pollution Sources]</a>
-          <a role="menuitem" href="{% url 'future_family_safety' %}" class="{% if current == 'future_family_safety' %}active{% endif %}">[Community Reporting & Family Safety]</a>
-        </div>
+  <header id="siteHeader" class="container-fluid">
+    <div class="d-flex align-items-center w-100 gap-2 position-relative">
+      <!-- Brand -->
+      <div class="brand" aria-label="Brand">
+        <span class="logo" aria-hidden="true">
+          <img id="brandLogo" src="{% static 'lightoff_logo.png' %}" alt="Brand logo (lights off)">
+        </span>
+        <h1>[Water and Sanitation]</h1>
       </div>
 
-      <a href="{% url 'for_kids_learn_play' %}" class="{% if current == 'for_kids_learn_play' %}active{% endif %}">
-        <span class="slot-window"><span class="slot-track">
-          <span class="slot-item">[For Kids – Learn & Play]</span><span class="slot-item" aria-hidden="true">[For Kids – Learn & Play]</span>
-        </span></span>
-      </a>
+      <!-- Hamburger (small screens only) -->
+      <button class="hamburger-btn d-lg-none ms-auto"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#primaryNav"
+              aria-controls="primaryNav"
+              aria-expanded="false"
+              aria-label="Toggle menu">☰</button>
 
-      <a href="{% url 'about_water_sanitation' %}" class="{% if current == 'about_water_sanitation' %}active{% endif %}">
-        <span class="slot-window"><span class="slot-track">
-          <span class="slot-item">[About Our Water]</span><span class="slot-item" aria-hidden="true">[About Our Water]</span>
-        </span></span>
-      </a>
-    </nav>
-    {% endwith %}
+      {% with current=request.resolver_match.url_name %}
+      <!-- Nav -->
+      <nav id="primaryNav"
+           class="menu collapse d-lg-flex flex-lg-row justify-content-center gap-3 mx-lg-auto"
+           aria-label="Primary">
+        <a href="{% url 'home' %}" class="{% if current == 'home' %}active{% endif %}">
+          <span class="slot-window"><span class="slot-track">
+            <span class="slot-item">[Home]</span><span class="slot-item" aria-hidden="true">[Home]</span>
+          </span></span>
+        </a>
 
-    <!-- Button stays exactly the same visually (text/gradient),
-         we just paint sun+moon via CSS ::before/::after. -->
-    <button id="lightBtn" class="dashboard-btn" aria-pressed="false" aria-label="Toggle lights">
-      Lights: Off
-    </button>
+        <!-- dropdown item -->
+        <div class="dropdown menu-item">
+          <a href="#"
+             class="menu-link has-submenu {% if current == 'explore_water_quality' or current == 'pollution_sources' or current == 'future_family_safety' %}active{% endif %}"
+             aria-haspopup="true"
+             aria-expanded="{% if current == 'explore_water_quality' or current == 'pollution_sources' or current == 'future_family_safety' %}true{% else %}false{% endif %}">
+            <span class="slot-window"><span class="slot-track">
+              <span class="slot-item">[Water Insights]</span>
+              <span class="slot-item" aria-hidden="true">[Water Insights]</span>
+            </span></span>
+          </a>
+          <div class="submenu" role="menu">
+            <a role="menuitem" href="{% url 'explore_water_quality' %}" class="{% if current == 'explore_water_quality' %}active{% endif %}">[Explore Water Quality]</a>
+            <a role="menuitem" href="{% url 'pollution_sources' %}" class="{% if current == 'pollution_sources' %}active{% endif %}">[Pollution Sources]</a>
+            <a role="menuitem" href="{% url 'future_family_safety' %}" class="{% if current == 'future_family_safety' %}active{% endif %}">[Community Reporting & Family Safety]</a>
+          </div>
+        </div>
+
+        <a href="{% url 'for_kids_learn_play' %}" class="{% if current == 'for_kids_learn_play' %}active{% endif %}">
+          <span class="slot-window"><span class="slot-track">
+            <span class="slot-item">[For Kids – Learn & Play]</span><span class="slot-item" aria-hidden="true">[For Kids – Learn & Play]</span>
+          </span></span>
+        </a>
+
+        <a href="{% url 'about_water_sanitation' %}" class="{% if current == 'about_water_sanitation' %}active{% endif %}">
+          <span class="slot-window"><span class="slot-track">
+            <span class="slot-item">[About Our Water]</span><span class="slot-item" aria-hidden="true">[About Our Water]</span>
+          </span></span>
+        </a>
+      </nav>
+      {% endwith %}
+
+      <!-- Light switch -->
+      <button id="lightBtn" class="dashboard-btn ms-lg-3" aria-pressed="false" aria-label="Toggle lights">
+        Lights: Off
+      </button>
+    </div>
   </header>
 
   <!-- Fixed water surface and background ripples (shared) -->
@@ -401,7 +520,7 @@
   </div>
   <div id="ripple-layer" aria-hidden="true"></div>
 
-  <!-- Main content: Overridden by subpage -->
+  <!-- Main content -->
   <main class="wrap">
     {% block content %}{% endblock %}
   </main>
@@ -458,7 +577,7 @@
       logoImg.alt=isLight?"Brand logo (lights on)":"Brand logo (lights off)";
     }
     function updateButton(isLight){
-      lightBtn.textContent=`Lights: ${isLight ? "On" : "Off"}`; // keep it simple; icons are CSS-only
+      lightBtn.textContent=`Lights: ${isLight ? "On" : "Off"}`;
       lightBtn.setAttribute("aria-pressed", String(isLight));
     }
     updateButton(isLight);
@@ -485,6 +604,25 @@
         if (wantLight !== isLight) setTheme(wantLight);
       }
     });
+
+    /* --- Desktop/mobile nav guard so nav never disappears on wide screens --- */
+    function resetNavForBreakpoint(){
+      const nav = document.getElementById('primaryNav');
+      if (!nav) return;
+      if (window.innerWidth >= 992){
+        nav.classList.remove('collapsing');
+        nav.classList.add('show');
+        nav.style.removeProperty('height');
+        nav.style.removeProperty('visibility');
+        nav.style.removeProperty('display');
+      } else {
+        nav.style.removeProperty('height');
+        nav.style.removeProperty('visibility');
+        nav.style.removeProperty('display');
+      }
+    }
+    window.addEventListener('resize', resetNavForBreakpoint);
+    window.addEventListener('load', resetNavForBreakpoint);
 
     /************ Background Water Ripple (GSAP) ************/
     function initBackgroundRipple(){
@@ -682,7 +820,6 @@
       };
     }
 
-    // Enable shared effects
     (async function boot(){
       const ok = await ensureGSAP();
       if(!ok) return;
@@ -701,9 +838,8 @@
     })();
   </script>
 
-  <!-- Jump to Loading + Preload video to home page + Wait for hero first frame before closing mask -->
+  <!-- Jump to Loading + Prefetch + collapse events -->
   <script>
-    /************ Loading Mask Show/Hide************/
     function showLoadingMask(){
       const mask = document.getElementById('loadingMask');
       if(!mask) return;
@@ -746,7 +882,6 @@
     window.addEventListener('pagehide', forceHideLoadingMask);
     document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState === 'hidden') forceHideLoadingMask(); });
 
-    /************ Only intercept within the site ************/
     function isInternalLink(a){
       if(!a || !a.href) return false;
       if(a.target === '_blank') return false;
@@ -780,15 +915,14 @@
       });
     });
 
-    /************ Prefetch home videos ************/
+    /* Prefetch home videos */
     const HOME_PATH = new URL("{% url 'home' %}", window.location.origin).pathname;
     const isOnHome = window.location.pathname === HOME_PATH;
-
     const HOME_VIDEOS = [
       "{% static 'file1.mp4' %}",
       "{% static 'file2.mp4' %}",
       "{% static 'file3.mp4' %}",
-      "{% static 'file4.mp4' %}", // hero
+      "{% static 'file4.mp4' %}",
       "{% static 'file5.mp4' %}"
     ];
 
@@ -819,9 +953,15 @@
       const idle = window.requestIdleCallback || (fn=>setTimeout(fn, 2000));
       idle(()=> prefetchHomeVideos());
     }
+
+    document.addEventListener('shown.bs.collapse', e => {
+      if (e.target && e.target.id === 'primaryNav') window.dispatchEvent(new Event('resize'));
+    });
+    document.addEventListener('hidden.bs.collapse', e => {
+      if (e.target && e.target.id === 'primaryNav') window.dispatchEvent(new Event('resize'));
+    });
   </script>
 
-  <!-- Subpages can inject their own scripts here -->
   {% block page_scripts %}{% endblock %}
 </body>
 </html>
