@@ -79,7 +79,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'parkspero',  # RDS DB name
+        'NAME': 'water_and_sanitation',  # RDS DB name
         'USER': 'admin',       # RDS admin username
         'PASSWORD': 'DjangoProject',  # should apply password encryption
         'HOST': 'fit5120-mysql-manager.chqewewswxbs.ap-southeast-2.rds.amazonaws.com',  # RDS endpoint

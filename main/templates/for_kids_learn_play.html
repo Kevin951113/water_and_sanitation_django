@@ -5,10 +5,14 @@
 
 {% block head_extras %}
 <link rel="preload" href="{% static 'fish1.mp4' %}" as="video">
+<link rel="preload" href="{% static 'platypus_dance.gif' %}" as="image">
+<link rel="preload" href="{% static 'win.png' %}" as="image">
+<link rel="preload" href="{% static 'submarine.gif' %}" as="image">
+<link rel="preload" href="{% static 'boat.gif' %}" as="image">
 <style>
   :root{
     --card-radius: 18px;
-    --hdrH: 80px; /* 由 JS 實際量測覆蓋 */
+    --hdrH: 80px;            /* JS measures header height */
     --card-text: #fff;
     --card-text-shadow: 0 2px 6px rgba(0,0,0,.65);
     --title-grad: linear-gradient(90deg,#98caff 0%, #58b2ff 50%, #1f8aff 100%);
@@ -18,10 +22,10 @@
     --card-text-shadow: 0 2px 8px rgba(0,0,0,.6);
   }
 
-  /* 關掉全站波紋（本頁自帶） */
+  /* kill site-wide ripple so this page keeps its own vibes */
   #ripple-layer{ display:none !important; }
 
-  /* ===== 佈局：影片鋪滿 header 下方整個視窗 ===== */
+  /* ===== stage: video fills viewport under header ===== */
   .kids-stage{ position:relative; min-height: calc(100svh - var(--hdrH)); }
   .aquarium,
   .ripples{
@@ -43,7 +47,7 @@
   }
   @keyframes rippleMove{ 0%{transform:translateY(0)} 50%{transform:translateY(2px)} 100%{transform:translateY(0)} }
 
-  /* ===== 單卡容器（固定在右側，垂直置中） ===== */
+  /* ===== right dock: single active card sits here ===== */
   .card-dock{
     position: fixed;
     right: clamp(12px, 3vw, 28px);
@@ -56,15 +60,14 @@
     justify-items: stretch;
   }
 
-  /* 只顯示 .card.active 這一張 */
   .cards{ display: contents; }
   .card{ display:none; }
   .card.active{
     display:flex;
-    flex-direction: column;        /* 垂直排列，題目與答案同一欄寬 */
+    flex-direction: column;  /* title + content same width */
   }
 
-  /* ===== 卡片樣式（厚玻璃） ===== */
+  /* ===== glassy card styling ===== */
   .card{
     background:
       linear-gradient(180deg, rgba(5,12,24,.80), rgba(8,18,36,.74)),
@@ -99,39 +102,28 @@
     text-shadow: 0 2px 8px rgba(0,0,0,.6);
   }
 
-  /* === 讓題目與答案「同寬」的關鍵設定 === */
-  .card > *{ min-width:0; }             /* 允許 flex 子元素縮小 */
-  .qa-wrap{
-    width: 100%;                         /* 共同容器，統一寬度 */
-    display: grid;
-  }
-  .qa-wrap > p,
-  .details p{
+  .card > *{ min-width:0; }
+  .qa-wrap{ width:100%; display:grid; }
+  .qa-wrap > p, .details p{
     margin:0 0 12px;
     font-size: clamp(16px, 1.2vw, 18px);
     line-height:1.6;
-    overflow-wrap:anywhere;              /* 長字能換行，寬度一致 */
+    overflow-wrap:anywhere;
   }
 
-  /* 用透明度呈現答案（高度由 JS 鎖定），題目不再隱藏 */
+  /* fade in details instead of reflowing height */
   .details{
     max-height: none !important;
-    opacity: 0;
-    transition: opacity .25s ease;
-    width: 100%;
+    opacity: 0; transition: opacity .25s ease; width: 100%;
   }
   .card.revealed .details{ opacity: 1; }
 
-  /* ===== 右上角「同一格位置」：倒數徽章與勾勾重疊 ===== */
+  /* ===== HUD ===== */
   .hud{
     position:absolute; top:12px; right:12px; z-index:3;
-    display:grid;                      /* 兩個元素重疊在同一格 */
-    align-items:center; justify-items:end;
-    pointer-events:none;               /* 不擋住卡片互動 */
+    display:grid; align-items:center; justify-items:end; pointer-events:none;
   }
-  .hud > *{ grid-area: 1 / 1; }        /* 疊在同一格 */
-
-  /* 倒數徽章（顯示於閱讀中） */
+  .hud > *{ grid-area: 1 / 1; }
   .read-timer{
     height:28px; padding:0 10px; border-radius:999px;
     display:inline-flex; align-items:center; gap:6px;
@@ -145,7 +137,6 @@
   .card.reading .read-timer{ opacity:1; transform:translateY(0); }
   .read-dot{ width:8px; height:8px; border-radius:50%; background:#18c06d; box-shadow:0 0 0 3px rgba(24,192,109,.25); }
 
-  /* 綠底白勾勾（顯示於完成後），出現在同一位置 */
   .check-badge{
     width:28px; height:28px; border-radius:999px;
     display:grid; place-items:center; font-size:18px; line-height:1;
@@ -155,23 +146,20 @@
   }
   .card.done .check-badge{ opacity:1; transform:scale(1); }
 
-  /* 提示（每張卡都有） */
   .hint{
     position:absolute; right:12px; bottom:12px;
     background:rgba(255,255,255,.16);
-    border:1px dashed rgb(255, 255, 255);
+    border:1px dashed rgb(255,255,255);
     font-size:12px; padding:4px 8px; border-radius:999px; color:#fff;
-    text-shadow:0 1px 0 rgba(255, 254, 254, 0.45); pointer-events:none;
+    text-shadow:0 1px 0 rgba(255,254,254,.45); pointer-events:none;
   }
 
-  /* 下一題箭頭（完成後才顯示） */
+  /* next arrow */
   .next-btn{
     position: fixed;
     right: calc(clamp(12px, 3vw, 28px) + min(560px, 44vw) + 10px);
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 2;
-    width: 54px; height: 54px; border-radius: 999px;
+    top: 50%; transform: translateY(-50%);
+    z-index: 2; width: 54px; height: 54px; border-radius: 999px;
     display: grid; place-items: center;
     background: linear-gradient(180deg,#e8f5ff,#cfe9ff);
     border: 1px solid rgba(120,170,255,.6);
@@ -181,197 +169,511 @@
   }
   .next-btn.show{ opacity: 1; pointer-events: auto; }
   .next-btn:active{ transform: translateY(-50%) scale(.96); }
-  @media (max-width: 980px){
-    .next-btn{ right: clamp(12px, 3vw, 28px); top: auto; bottom: calc(12px + env(safe-area-inset-bottom)); transform:none; }
+  @media (max-width:980px){
+    .next-btn{ right: clamp(12px, 3vw, 28px); top:auto; bottom: calc(12px + env(safe-area-inset-bottom)); transform:none; }
     .next-btn:active{ transform: scale(.96); }
+  }
+
+  /* glossy FINISH button */
+  .finish-btn{
+    position: fixed;
+    right: calc(clamp(12px, 3vw, 28px) + min(560px, 44vw) + 10px);
+    top: 50%; transform: translateY(-50%);
+    z-index: 2;
+    padding: 12px 18px;
+    border-radius: 999px;
+    font-weight: 900;
+    letter-spacing: .02em;
+    font-size: 14px;
+    color: #6b4a00;
+    background: linear-gradient(180deg,#fff3b0,#ffd069);
+    border: 1px solid rgba(160,120,20,.6);
+    box-shadow: 0 10px 26px rgba(180,140,30,.45), inset 0 1px 0 #fff;
+    cursor: pointer;
+    opacity: 0; pointer-events: none; transform-origin: center;
+    transition: opacity .2s ease, transform .2s ease;
+    overflow: hidden;
+  }
+  .finish-btn.show{ opacity:1; pointer-events:auto; }
+  .finish-btn:hover{ transform: translateY(-50%) scale(1.03); }
+  .finish-btn::after{
+    content:"";
+    position:absolute;
+    top:-120%; left:-60%;
+    width:45%; height:320%;
+    background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.65), rgba(255,255,255,0));
+    transform: rotate(25deg);
+    animation: sheen 2.2s linear infinite;
+  }
+  @keyframes sheen{
+    0%{ left:-60%; }
+    100%{ left: 140%; }
   }
 
   @media (prefers-reduced-motion: reduce){
     .aquarium, .ripples{ transition:none; animation:none; }
     .aquarium video{ filter:none; }
+    .finish-btn::after{ animation: none; }
   }
 
-  /* 固定卡片高度（由 JS 設定 --fixedH） & 鎖卡：顯示答案後禁止再互動 */
   .card.fixed{ height: var(--fixedH); }
   .card.locked{ pointer-events:none; }
+
+  /* ============================================================
+     PROGRESS DOCK
+     ============================================================ */
+  .progress-dock{
+    position: fixed;
+    left: clamp(12px, 3vw, 28px);
+    top: calc(var(--hdrH) + clamp(12px, 1.5vw, 18px));
+    z-index: 2;
+    display: grid;
+    gap: 14px;
+    width: min(340px, 40vw);
+    align-content: start;
+  }
+  .ring{
+    --p: 0;
+    --track: rgba(255,255,255,.14);
+    --fillA: #40dd75;
+    --fillB: #3ee6ff;
+    width: 140px; height: 140px; border-radius: 50%;
+    position: relative;
+    background:
+      conic-gradient(var(--fillA), var(--fillB)) 0/0 0 no-repeat,
+      conic-gradient(var(--fillB) calc(var(--p)*1turn), var(--track) 0);
+    box-shadow: 0 10px 30px rgba(30,140,255,.35), 0 0 0 1px rgba(160,210,255,.25) inset;
+    transition: background .6s ease;
+  }
+  .ring::before{
+    content:""; position:absolute; inset:8px; border-radius:50%;
+    background: rgba(7,15,30,.92);
+    box-shadow: inset 0 0 0 1px rgba(160,210,255,.25);
+  }
+  .ring::after{
+    content:""; position:absolute; inset:-6px; border-radius:50%;
+    background:
+      radial-gradient(closest-side, rgba(64,221,117,.28), transparent),
+      radial-gradient(closest-side, rgba(62,230,255,.25), transparent);
+    filter: blur(8px); opacity:.7; pointer-events:none;
+  }
+  .ring-core{ position:absolute; inset:0; display:grid; place-items:center; text-align:center; }
+  .ring-count{ font-weight:900; font-size: 28px; letter-spacing:.4px; color:#eaf7ff; }
+  .ring-caption{ font-size:12px; opacity:.85; text-transform: uppercase; letter-spacing:.12em; color:#dff3ff; }
+
+  .segbar{
+    display: grid; grid-auto-flow: column; gap: 6px; align-items: center;
+    background: rgba(8,18,38,.42);
+    border:1px solid rgba(160,210,255,.30);
+    box-shadow: 0 8px 22px rgba(0,20,60,.28);
+    padding: 10px 12px; border-radius: 12px;
+  }
+  .seg{ height: 8px; width: 100%; border-radius: 6px; background: rgba(255,255,255,.18); }
+  .seg.on{ background: linear-gradient(90deg, #40dd75, #3ee6ff); box-shadow: 0 0 16px rgba(64,221,117,.55); }
+
+  .progress-toast{
+    min-height: 22px; width: max-content; font-size: 12px; font-weight:800; color:#0a2a6b;
+    background: linear-gradient(180deg,#fffbd1,#ffe27a);
+    border:1px solid rgba(180,160,60,.6);
+    border-radius: 999px; padding: 4px 10px;
+    opacity: 0; transform: translateY(-6px);
+    transition: opacity .25s ease, transform .25s ease;
+    box-shadow: 0 8px 18px rgba(180,160,60,.35);
+  }
+  .progress-toast.show{ opacity:1; transform: translateY(0); }
+
+  /* ===== celebration overlay ===== */
+  .celebration{
+    position: fixed;
+    inset: var(--hdrH) 0 0 0;
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 999;
+    background:
+      radial-gradient(1200px 600px at 20% 10%, rgba(140,200,255,.15), transparent 55%),
+      radial-gradient(1000px 500px at 80% 20%, rgba(60,170,255,.12), transparent 60%),
+      rgba(10,18,34,.35);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    opacity: 0;
+  }
+  .celebration.show{ display:flex; }
+  .celebration .glass-card{
+    position:relative;
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    border: 0;
+    box-shadow: none;
+    transform: translateY(8px) scale(.985);
+    opacity: 0;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    text-align: center;
+  }
+  .media{
+    position:relative;
+    width: min(86vw, 1100px);
+    aspect-ratio: 16 / 9;
+    display: block;
+  }
+
+  /* --- Soft yellow halo behind the platypus GIF --- */
+  .halo-behind{
+    position:absolute;
+    left:50%; top:50%;
+    transform: translate(-50%, -50%);
+    width: min(60%, 700px);
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    z-index: 1;
+    pointer-events:none;
+    mix-blend-mode: screen;
+    background:
+      radial-gradient(closest-side,
+        rgba(255,240,170,.75) 0%,
+        rgba(255,225,120,.45) 35%,
+        rgba(255,210,100,.28) 55%,
+        rgba(255,195,80,.18) 70%,
+        rgba(255,180,60,0) 85%);
+    filter: blur(18px) brightness(1.2) saturate(1.1);
+  }
+
+  /* WIN banner (front) */
+  .media .win-label{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    object-fit: contain;
+    image-rendering: -webkit-optimize-contrast;
+    filter: drop-shadow(0 10px 22px rgba(0,0,0,.5));
+    z-index: 3; pointer-events:none;
+  }
+
+  /* platypus GIF */
+  .media .platypus{
+    position:absolute; left:50%; top:50%;
+    transform: translate(-50%, -50%);
+    height: min(62%, 520px);
+    width: auto;
+    image-rendering: -webkit-optimize-contrast;
+    filter: drop-shadow(0 12px 28px rgba(0,0,0,.45));
+    z-index: 2;
+  }
+
+  /* --------- VESSELS (no blur layer; pure GIFs) ---------- */
+  .vessels-layer{
+    position: fixed;
+    inset: var(--hdrH) 0 0 0;   /* same stage as background */
+    z-index: 2;                 /* above ocean, under/over cards is OK */
+    pointer-events: none;
+    overflow: visible;
+  }
+  .vessel{
+    position:absolute;
+    top: calc(58%);             /* 航線高度 */
+    transform: translateX(110vw) scale(1.08);
+    opacity: 0;
+    will-change: transform, opacity;
+    image-rendering: -webkit-optimize-contrast;
+    filter: drop-shadow(0 8px 18px rgba(0,0,0,.35));
+  }
+  .vessel.sub{ width: min(34vw, 460px); }   /* 放大一點 */
+  .vessel.boat{ width: min(30vw, 420px); }
+
+  .vessel.run{
+    opacity: 1;
+    animation: sail-left 9s linear forwards; /* 若修改這裡，也要同步更新 JS 的 VESSEL_RUN_MS */
+  }
+  @keyframes sail-left{
+    0%{    transform: translateX(110vw) scale(1.08); }
+    100%{  transform: translateX(-130vw) scale(1.08); }
+  }
+
+  /* entrance & exit animations (overlay + inner container) */
+  @keyframes celebIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes cardIn  { 0%{ opacity:0; transform: translateY(12px) scale(.975); }
+                       100%{ opacity:1; transform: translateY(0) scale(1);} }
+  @keyframes celebOut{ from { opacity: 1; } to { opacity: 0; } }
+  @keyframes cardOut { 0%{ opacity:1; transform: translateY(0) scale(1);}
+                       100%{ opacity:0; transform: translateY(10px) scale(.985);} }
+
+  .celebration.anim-in{ animation: celebIn 600ms ease forwards; }
+  .celebration.anim-in .glass-card{ animation: cardIn 700ms cubic-bezier(.2,.9,.2,1.0) 80ms forwards; }
+  .celebration.anim-out{ animation: celebOut 600ms ease forwards; }
+  .celebration.anim-out .glass-card{ animation: cardOut 500ms ease forwards; }
+
+  /* responsive tweak */
+  @media (max-width: 560px){
+    .media{ width: min(94vw, 560px); }
+    .media .platypus{ height: min(64%, 360px); }
+    .finish-btn{ right: clamp(12px, 3vw, 28px); top:auto; bottom: calc(12px + env(safe-area-inset-bottom)); transform:none; }
+    .vessel.sub{ width: min(56vw, 420px); }
+    .vessel.boat{ width: min(52vw, 400px); }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
 <section class="kids-stage">
-  <!-- 影片：第一張完成後才顯示 -->
+  <!-- video: only fades in after card #1 finished -->
   <div class="aquarium" id="aquarium" aria-hidden="true">
     <video id="fishVideo" src="{% static 'fish1.mp4' %}" preload="metadata" autoplay muted loop playsinline></video>
   </div>
-  <!-- 本頁波紋覆蓋影片 -->
+  <!-- soft ripple overlay -->
   <div class="ripples" aria-hidden="true"></div>
 
-  <!-- 單卡停靠區（右側） -->
-  <div class="card-dock">
-    <div class="cards" id="cards">
-      <!-- 1 -->
-      <article class="card card--starter active" data-card="1" tabindex="0" aria-expanded="false" aria-controls="details-1">
-        <div class="hud" aria-hidden="true">
-          <div class="read-timer"><span class="read-dot"></span><span class="read-text">Keep reading… 4s</span></div>
-          <div class="check-badge">✓</div>
-        </div>
-        <h3>What is water pollution?</h3>
-        <div class="qa-wrap">
-          <p>When dirty stuff gets into rivers, lakes, or the ocean, animals, plants, and people are affected.</p>
-          <div class="details" id="details-1"><p>Common sources: factory wastewater, household detergents, plastic trash, oil, and farm chemicals.</p></div>
-        </div>
-        <span class="hint" aria-hidden="true">Tap me to unlock the fish!</span>
-      </article>
+  <!-- vessels layer (no blur) -->
+  <div class="vessels-layer" id="vessels" aria-hidden="true">
+    <img id="submarineGif" class="vessel sub" src="{% static 'submarine.gif' %}" alt="">
+    <img id="boatGif" class="vessel boat" src="{% static 'boat.gif' %}" alt="">
+  </div>
 
-      <!-- 2 -->
-      <article class="card" data-card="2" tabindex="0" aria-expanded="false" aria-controls="details-2">
-        <div class="hud" aria-hidden="true">
-          <div class="read-timer"><span class="read-dot"></span><span class="read-text">Keep reading… 4s</span></div>
-          <div class="check-badge">✓</div>
-        </div>
-        <h3>Why do rainy days matter?</h3>
-        <div class="qa-wrap">
-          <p>Rain washes street grime into the water — like oil and litter.</p>
-          <div class="details" id="details-2"><p>During heavy storms, runoff carries microplastics, fertilizers, and animal waste into creeks.</p></div>
-        </div>
-        <span class="hint" aria-hidden="true">Tap me to unlock the fish!</span>
-      </article>
-
-      <!-- 3 -->
-      <article class="card" data-card="3" tabindex="0" aria-expanded="false" aria-controls="details-3">
-        <div class="hud" aria-hidden="true">
-          <div class="read-timer"><span class="read-dot"></span><span class="read-text">Keep reading… 4s</span></div>
-          <div class="check-badge">✓</div>
-        </div>
-        <h3>How does plastic harm fish?</h3>
-        <div class="qa-wrap">
-          <p>Fish may mistake tiny plastic bits for food.</p>
-          <div class="details" id="details-3"><p>Microplastics can remain in their bodies and move up the food chain.</p></div>
-        </div>
-        <span class="hint" aria-hidden="true">Tap me to unlock the fish!</span>
-      </article>
-
-      <!-- 4 -->
-      <article class="card" data-card="4" tabindex="0" aria-expanded="false" aria-controls="details-4">
-        <div class="hud" aria-hidden="true">
-          <div class="read-timer"><span class="read-dot"></span><span class="read-text">Keep reading… 4s</span></div>
-          <div class="check-badge">✓</div>
-        </div>
-        <h3>What can we do at home?</h3>
-        <div class="qa-wrap">
-          <p>Don’t pour used oil down the sink — store it for recycling.</p>
-          <div class="details" id="details-4"><p>Choose eco-friendly cleaners and use less to keep drains safer.</p></div>
-        </div>
-        <span class="hint" aria-hidden="true">Tap me to unlock the fish!</span>
-      </article>
-
-      <!-- 5 -->
-      <article class="card" data-card="5" tabindex="0" aria-expanded="false" aria-controls="details-5">
-        <div class="hud" aria-hidden="true">
-          <div class="read-timer"><span class="read-dot"></span><span class="read-text">Keep reading… 4s</span></div>
-          <div class="check-badge">✓</div>
-        </div>
-        <h3>What about parks and schools?</h3>
-        <div class="qa-wrap">
-          <p>Put rubbish in the bin and pick up stray plastic bags and caps.</p>
-          <div class="details" id="details-5"><p>Storm drains often flow straight to rivers or the sea.</p></div>
-        </div>
-        <span class="hint" aria-hidden="true">Tap me to unlock the fish!</span>
-      </article>
-
-      <!-- 6 -->
-      <article class="card" data-card="6" tabindex="0" aria-expanded="false" aria-controls="details-6">
-        <div class="hud" aria-hidden="true">
-          <div class="read-timer"><span class="read-dot"></span><span class="read-text">Keep reading… 4s</span></div>
-          <div class="check-badge">✓</div>
-        </div>
-        <h3>Why do animals need clean water?</h3>
-        <div class="qa-wrap">
-          <p>Fish, shrimp, and frogs live in water — dirty water harms them first.</p>
-          <div class="details" id="details-6"><p>Healthy streams and seas mean healthier environments for everyone.</p></div>
-        </div>
-        <span class="hint" aria-hidden="true">Tap me to unlock the fish!</span>
-      </article>
-
-      <!-- 7 -->
-      <article class="card" data-card="7" tabindex="0" aria-expanded="false" aria-controls="details-7">
-        <div class="hud" aria-hidden="true">
-          <div class="read-timer"><span class="read-dot"></span><span class="read-text">Keep reading… 4s</span></div>
-          <div class="check-badge">✓</div>
-        </div>
-        <h3>What is algal bloom?</h3>
-        <div class="qa-wrap">
-          <p>Too many nutrients make algae “explode” in number.</p>
-          <div class="details" id="details-7"><p>It reduces oxygen and can suffocate fish. Cut fertilizer runoff.</p></div>
-        </div>
-        <span class="hint" aria-hidden="true">Tap me to unlock the fish!</span>
-      </article>
-
-      <!-- 8 -->
-      <article class="card" data-card="8" tabindex="0" aria-expanded="false" aria-controls="details-8">
-        <div class="hud" aria-hidden="true">
-          <div class="read-timer"><span class="read-dot"></span><span class="read-text">Keep reading… 4s</span></div>
-          <div class="check-badge">✓</div>
-        </div>
-        <h3>What is sewer overflow?</h3>
-        <div class="qa-wrap">
-          <p>In big storms, mixed water may be released from treatment plants.</p>
-          <div class="details" id="details-8"><p>Check public advisories and avoid water play right after storms.</p></div>
-        </div>
-        <span class="hint" aria-hidden="true">Tap me to unlock the fish!</span>
-      </article>
-
-      <!-- 9 -->
-      <article class="card" data-card="9" tabindex="0" aria-expanded="false" aria-controls="details-9">
-        <div class="hud" aria-hidden="true">
-          <div class="read-timer"><span class="read-dot"></span><span class="read-text">Keep reading… 4s</span></div>
-          <div class="check-badge">✓</div>
-        </div>
-        <h3>Be a Water Helper!</h3>
-        <div class="qa-wrap">
-          <p>Reduce plastic, recycle, and join a beach or river clean-up.</p>
-          <div class="details" id="details-9"><p>Share what you learned so more people can protect our water together!</p></div>
-        </div>
-        <span class="hint" aria-hidden="true">Tap me to unlock the fish!</span>
-      </article>
+  <!-- celebration (background stays blurred) -->
+  <div class="celebration" id="celebration" aria-hidden="true">
+    <div class="glass-card">
+      <div class="media">
+        <!-- soft halo behind the platypus -->
+        <div class="halo-behind" aria-hidden="true"></div>
+        <!-- Platypus (middle) -->
+        <img class="platypus" src="{% static 'platypus_dance.gif' %}" alt="Dancing platypus">
+        <!-- WIN banner (front, full 16:9) -->
+        <img class="win-label" src="{% static 'win.png' %}" alt="Victory banner">
+      </div>
     </div>
   </div>
 
-  <!-- 下一題箭頭 -->
+  <!-- LEFT: fancy progress UI (donut + segments) -->
+  <aside class="progress-dock" id="progressDock">
+    <div class="ring" id="progressRing" role="progressbar" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" aria-label="Lesson progress">
+      <div class="ring-core">
+        <div class="ring-count"><span id="doneCount">0</span>/<span id="totalCount">0</span></div>
+        <div class="ring-caption">learned</div>
+      </div>
+    </div>
+    <div class="segbar" id="segbar" aria-hidden="true"></div>
+    <div class="progress-toast" id="progressToast" aria-live="polite"></div>
+  </aside>
+
+  <!-- RIGHT: single-card dock -->
+  <div class="card-dock">
+    <div class="cards" id="cards">
+      {% for c in db_cards %}
+      <article
+        class="card{% if c.is_starter %} card--starter{% endif %}{% if c.is_starter or forloop.first %} active{% endif %}"
+        data-card="{{ c.card_order }}"
+        data-read-sec="{{ c.read_seconds|default:4 }}"
+        tabindex="0"
+        aria-expanded="false"
+        aria-controls="details-{{ c.card_order }}">
+        <div class="hud" aria-hidden="true">
+          <div class="read-timer"><span class="read-dot"></span><span class="read-text">Keep reading… {{ c.read_seconds|default:4 }}s</span></div>
+          <div class="check-badge">✓</div>
+        </div>
+        <h3>{{ c.title }}</h3>
+        <div class="qa-wrap">
+          {{ c.lead_html|safe }}
+          <div class="details" id="details-{{ c.card_order }}">{{ c.detail_html|safe }}</div>
+        </div>
+        <span class="hint" aria-hidden="true">{{ c.hint_text }}</span>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- controls -->
   <button id="nextBtn" class="next-btn" type="button" aria-label="Next card">›</button>
+  <button id="finishBtn" class="finish-btn" type="button" aria-label="Finish">Finish</button>
 </section>
 {% endblock %}
 
 {% block page_scripts %}
 <script>
   window.pageInit = function(){
-    /* ===== 動態量測 header 高度，讓影片剛好鋪在 header 下方 ===== */
+    /* measure header so our ocean sits perfectly under it */
     const hdr = document.getElementById('siteHeader');
-    function applyHdrH(){
-      const h = (hdr && hdr.offsetHeight) ? hdr.offsetHeight : 80;
-      document.documentElement.style.setProperty('--hdrH', h + 'px');
-    }
-    applyHdrH();
-    window.addEventListener('resize', applyHdrH);
+    const applyHdrH = () => document.documentElement.style.setProperty('--hdrH', (hdr?.offsetHeight || 80) + 'px');
+    applyHdrH(); window.addEventListener('resize', applyHdrH);
 
-    const aquarium = document.getElementById('aquarium');
-    const fishVideo = document.getElementById('fishVideo');
-    const cardsWrap = document.getElementById('cards');
-    const nextBtn   = document.getElementById('nextBtn');
+    /* elements */
+    const aquarium   = document.getElementById('aquarium');
+    const fishVideo  = document.getElementById('fishVideo');
+    const celebration= document.getElementById('celebration');
+    const cardsWrap  = document.getElementById('cards');
+    const nextBtn    = document.getElementById('nextBtn');
+    const finishBtn  = document.getElementById('finishBtn');
 
-    const READ_MS = 4000; // 倒數秒數
+    const ring   = document.getElementById('progressRing');
+    const segbar = document.getElementById('segbar');
+    const toast  = document.getElementById('progressToast');
+    const doneEl = document.getElementById('doneCount');
+    const totalEl= document.getElementById('totalCount');
+
+    /* vessels */
+    const submarine = document.getElementById('submarineGif');
+    const boat = document.getElementById('boatGif');
+
+    /* cards */
     const cards = Array.from(cardsWrap.querySelectorAll('.card'));
-    let activeIndex = 0; // 目前顯示的卡
+    let activeIndex = cards.findIndex(c => c.classList.contains('active'));
+    if (activeIndex < 0) activeIndex = 0;
 
+    /* per-card state */
     const state = new Map(); // id -> {timerId, startTime, done}
     let fishUnlocked = false;
 
+    /* --- gating for vessel animations --- */
+    let gameStarted = false;           // 一開始可觸發
+    let postCelebrationWindow = false; // 慶祝結束後再開一次
+
+    /* 水位完成延遲（無視覺膜，僅用計時） */
+    const WATER_RISE_MS = 1400;  // 關燈: 水位上升
+    const WATER_FALL_MS = 1400;  // 開燈: 水位下降
+
+    /* 循環參數（可調） */
+    const VESSEL_RUN_MS = 9000;  // 必須與 .vessel.run 的 animation 時長一致
+    const LOOP_TOTAL_MS = 30000; // 每次觸發大約循環這麼久
+    const LOOP_GAP_MS   = 1000;  // 兩次穿越間隔
+
+    function canPlayVessel(){
+      return (!gameStarted) || postCelebrationWindow;
+    }
+
+    /* -------- 循環控制：右→左重覆航行一陣子 -------- */
+    let loopToken = 0; // 變更 token 可中止舊循環
+    function cancelVesselLoops(){
+      loopToken++;
+      submarine.classList.remove('run');
+      boat.classList.remove('run');
+    }
+
+    function startVesselLoop(el, preDelayMs){
+      if (!canPlayVessel()) return;
+      cancelVesselLoops();            // 切換時先收尾舊的
+      const myToken = ++loopToken;
+      let elapsed = 0;
+
+      const runOnce = ()=>{
+        if (myToken !== loopToken || !canPlayVessel()) return;
+        el.classList.remove('run');   // reset
+        void el.offsetWidth;          // reflow
+        el.classList.add('run');
+
+        // 下一輪
+        setTimeout(()=>{
+          if (myToken !== loopToken) { el.classList.remove('run'); return; }
+          elapsed += VESSEL_RUN_MS + LOOP_GAP_MS;
+          if (elapsed + VESSEL_RUN_MS <= LOOP_TOTAL_MS){
+            runOnce();
+          }else{
+            el.classList.remove('run'); // 結束時收乾淨
+          }
+        }, VESSEL_RUN_MS + LOOP_GAP_MS);
+      };
+
+      // 等待水位到位再開始第一趟
+      setTimeout(()=>{ if (myToken === loopToken) runOnce(); }, preDelayMs);
+    }
+
+    /* 監看 data-theme（開關燈） */
+    const docEl = document.documentElement;
+    const obs = new MutationObserver(muts=>{
+      muts.forEach(m=>{
+        if(m.type==='attributes' && m.attributeName==='data-theme'){
+          const theme = docEl.getAttribute('data-theme') || '';
+          if (theme === 'dark'){      // 關燈：水位上升後 -> 潛水艇連續航行
+            startVesselLoop(submarine, WATER_RISE_MS);
+          }else{                       // 開燈：水位下降後 -> 小船連續航行
+            startVesselLoop(boat, WATER_FALL_MS);
+          }
+        }
+      });
+    });
+    obs.observe(docEl, {attributes:true});
+
+    /* tiny state helpers */
     const ensure = (id)=>{
       if(!state.has(id)) state.set(id, {timerId:null, startTime:null, done:false});
       return state.get(id);
     };
 
-    /* 量測並鎖定每張卡最大高度（題目 + 答案） */
+    /* PROGRESS HUD */
+    const total = cards.length;
+    totalEl.textContent = String(total);
+    ring.setAttribute('aria-valuemax', String(total));
+
+    function buildSegbar(n){
+      segbar.innerHTML = '';
+      segbar.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+      for(let i=0;i<n;i++){
+        const s = document.createElement('span');
+        s.className = 'seg';
+        segbar.appendChild(s);
+      }
+    }
+    buildSegbar(total);
+
+    function popToast(msg, ms=3200){
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(()=> toast.classList.remove('show'), ms);
+    }
+
+    /* celebration timing */
+    const CELEB_IN_MS   = 600;
+    const CELEB_HOLD_MS = 4800;
+    const CELEB_OUT_MS  = 600;
+    const CELEB_START_FADE_OUT_AT = CELEB_IN_MS + CELEB_HOLD_MS;
+
+    function onCelebrationComplete(){
+      postCelebrationWindow = true;   // 慶祝結束後允許再次觸發船/潛水艇
+    }
+
+    function celebrateFinish(){
+      aquarium.classList.remove('bg-on');
+      try{ fishVideo.pause(); } catch(e){}
+      celebration.classList.add('show');
+      celebration.setAttribute('aria-hidden','false');
+      void celebration.offsetWidth;
+      celebration.classList.add('anim-in');
+      setTimeout(()=>{
+        celebration.classList.remove('anim-in');
+        celebration.classList.add('anim-out');
+        setTimeout(()=>{
+          celebration.classList.remove('anim-out','show');
+          celebration.setAttribute('aria-hidden','true');
+          onCelebrationComplete();
+        }, CELEB_OUT_MS);
+      }, CELEB_START_FADE_OUT_AT);
+    }
+
+    /* update donut + segments + milestones */
+    let lastDone = 0;
+    const segOn = ()=> Array.from(state.values()).filter(x=>x.done).length;
+    function updateProgress(){
+      const doneCount = segOn();
+      const p = total ? doneCount / total : 0;
+      ring.style.setProperty('--p', p);
+      ring.setAttribute('aria-valuenow', String(doneCount));
+      doneEl.textContent = String(doneCount);
+
+      const segs = segbar.querySelectorAll('.seg');
+      segs.forEach((seg, idx)=> seg.classList.toggle('on', idx < doneCount));
+
+      const stActive = ensure(String(cards[activeIndex].dataset.card));
+      nextBtn.classList.toggle('show', !!stActive.done && activeIndex < cards.length-1);
+
+      if(doneCount !== lastDone){
+        const halfway = Math.ceil(total/2);
+        if(doneCount === halfway) popToast('Halfway! Keep cruising 💧', 3600);
+        if(doneCount === total){
+          popToast('All done! Tap Finish 💧', 6600);
+          finishBtn.classList.add('show');
+        }
+      }
+      lastDone = doneCount;
+    }
+
+    /* height locking */
     function lockAllCardHeights() {
       cards.forEach((card) => {
         const details = card.querySelector('.details');
@@ -380,18 +682,15 @@
         const wasOpen = details.classList.contains('open');
         const wasRevealed = card.classList.contains('revealed');
 
-        // 題目狀態（僅題目）
         details.classList.remove('open');
         card.classList.remove('revealed');
         card.style.height = 'auto';
         const hClosed = card.scrollHeight;
 
-        // 答案狀態（題目 + 答案）
         details.classList.add('open');
         card.classList.add('revealed');
         const hOpen = card.scrollHeight;
 
-        // 還原
         details.classList.toggle('open', wasOpen);
         card.classList.toggle('revealed', wasRevealed);
 
@@ -401,32 +700,38 @@
       });
     }
 
+    /* only one card on stage */
     function showOnly(index){
       cards.forEach((c,i)=> c.classList.toggle('active', i===index));
-      const id = String(index+1);
+      const id = String(cards[index].dataset.card);
       const st = ensure(id);
       nextBtn.classList.toggle('show', !!st.done && index < cards.length-1);
     }
 
-    function setReading(cardEl, on){
-      cardEl.classList.toggle('reading', !!on);
-    }
-    function setDone(cardEl){
-      cardEl.classList.add('done');
-      setReading(cardEl,false);
-    }
+    /* helpers */
+    function setReading(cardEl, on){ cardEl.classList.toggle('reading', !!on); }
+    function setDone(cardEl){ cardEl.classList.add('done'); setReading(cardEl,false); }
+
     function stopTimer(id){
       const st = ensure(id);
       if(st.timerId!=null){ clearInterval(st.timerId); st.timerId=null; }
       st.startTime=null;
     }
+
+    function getReadMs(cardEl){
+      const sec = Number(cardEl.dataset.readSec);
+      return (!isNaN(sec) && sec > 0) ? sec * 1000 : 4000;
+    }
+
     function startTimer(cardEl, id){
       const st = ensure(id);
       stopTimer(id);
       st.startTime = Date.now();
       setReading(cardEl, true);
 
+      const READ_MS = getReadMs(cardEl);
       const readText = cardEl.querySelector('.read-text');
+
       const update = ()=>{
         if(!readText) return;
         const remain = Math.max(0, READ_MS - (Date.now() - st.startTime));
@@ -439,53 +744,57 @@
         update();
         if(elapsed >= READ_MS){
           stopTimer(id);
-          st.done = true;
-          setDone(cardEl);
+          if(!st.done){
+            st.done = true;
+            setDone(cardEl);
+            updateProgress();
 
-          // 完成當前卡 → 顯示下一題箭頭（若還有下一張）
-          const idx = Number(id) - 1;
-          if (idx === activeIndex && activeIndex < cards.length-1){
-            nextBtn.classList.add('show');
-          }
+            const idx = cards.indexOf(cardEl);
+            if (idx === activeIndex && activeIndex < cards.length-1){
+              nextBtn.classList.add('show');
+            }
 
-          // 第 1 張完成 → 顯示背景魚
-          if(id==='1' && !fishUnlocked){
-            fishUnlocked = true;
-            aquarium.classList.add('bg-on');
-            fishVideo?.play?.().catch(()=>{});
+            if(id==='1' && !fishUnlocked){
+              fishUnlocked = true;
+              aquarium.classList.add('bg-on');
+              fishVideo?.play?.().catch(()=>{});
+            }
           }
         }
       }, 100);
     }
 
-    /* 顯示答案一次後鎖卡 */
+    /* reveal once then lock */
     function revealOnce(card){
-      if(card.classList.contains('locked')) return; // 已鎖
+      if(card.classList.contains('locked')) return;
       const id = card.dataset.card;
       const details = document.getElementById('details-'+id);
       if(!details) return;
 
-      // 顯示答案（題目仍保留）
       card.classList.add('revealed');
       details.classList.add('open');
       card.setAttribute('aria-expanded', 'true');
 
-      // 立刻鎖卡：之後不能點擊／鍵盤觸發
       card.classList.add('locked');
       card.setAttribute('tabindex','-1');
 
       const st = ensure(id);
       if(!st.done) startTimer(card, id); else setDone(card);
+
+      /* 遊戲開始後停止船/潛水艇循環 */
+      gameStarted = true;
+      postCelebrationWindow = false;
+      cancelVesselLoops();
     }
 
-    // 點擊卡片：只作用於「未鎖且為目前顯示」的卡
+    /* click to reveal (only the active one) */
     cardsWrap.addEventListener('click', e=>{
       const card = e.target.closest('.card.active');
       if(!card || card.classList.contains('locked')) return;
       revealOnce(card);
     });
 
-    // 鍵盤：Enter/Space 只對「未鎖的 active 卡」有效
+    /* keyboard friendly */
     cardsWrap.addEventListener('keydown', e=>{
       const t = e.target;
       if(!t.classList?.contains('card') || !t.classList.contains('active')) return;
@@ -496,27 +805,46 @@
       }
     });
 
-    // 下一題
+    /* big next button */
     nextBtn.addEventListener('click', ()=>{
       if (activeIndex >= cards.length-1) return;
       activeIndex += 1;
       showOnly(activeIndex);
     });
 
-    // 初始化
+    /* finish button: only responds after all done */
+    finishBtn.addEventListener('click', ()=>{
+      const doneCount = Array.from(state.values()).filter(x=>x.done).length;
+      if(doneCount === total){ celebrateFinish(); }
+    });
+
+    /* boot sequence */
     showOnly(activeIndex);
     lockAllCardHeights();
+    updateProgress();
 
-    // 視窗尺寸改變時重新量測
+    /* keep heights honest on resize */
     window.addEventListener('resize', ()=>{
       cards.forEach(c => { c.classList.remove('fixed'); c.style.removeProperty('--fixedH'); });
       lockAllCardHeights();
     });
 
-    // 節能
+    /* power-saving for the bg video */
     document.addEventListener('visibilitychange', ()=>{
       if(!fishVideo) return;
       if(document.hidden) fishVideo.pause?.(); else if(aquarium.classList.contains('bg-on')) fishVideo.play?.();
+    });
+
+    /* tap overlay to skip the rest of the animation */
+    celebration.addEventListener('click', ()=>{
+      if(!celebration.classList.contains('show')) return;
+      celebration.classList.remove('anim-in');
+      celebration.classList.add('anim-out');
+      setTimeout(()=>{
+        celebration.classList.remove('anim-out','show');
+        celebration.setAttribute('aria-hidden','true');
+        onCelebrationComplete();
+      }, 600);
     });
   };
 </script>

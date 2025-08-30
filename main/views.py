@@ -3,6 +3,9 @@ from django.http import JsonResponse
 import json
 from django.views.decorators.http import require_GET
 from .services import for_kids_learn_play_service, future_family_safety_service, home_service, about_water_sanitation_service, pollution_sources_service, pollution_sources_service
+from .services.for_kids_learn_play_service import fetch_kids_cards
+
+
 
 # Create your views here.
 def home(request):
@@ -21,6 +24,10 @@ def future_family_safety(request):
 def pollution_sources(request):
     return render(request, "pollution_sources.html")
 
-
+"""
 def for_kids_learn_play(request):
     return render(request, "for_kids_learn_play.html")
+"""
+
+def for_kids_learn_play(request):
+    return render(request, "for_kids_learn_play.html", {"db_cards": fetch_kids_cards()})
