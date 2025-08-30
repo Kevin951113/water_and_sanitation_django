@@ -6,6 +6,7 @@
 {% block head_extras %}
 <link rel="preload" href="{% static 'fish1.mp4' %}" as="video">
 <link rel="preload" href="{% static 'platypus_dance.gif' %}" as="image">
+<link rel="preload" href="{% static 'platypus_sleep.gif' %}" as="image">
 <link rel="preload" href="{% static 'win.png' %}" as="image">
 <link rel="preload" href="{% static 'submarine.gif' %}" as="image">
 <link rel="preload" href="{% static 'boat.gif' %}" as="image">
@@ -58,6 +59,30 @@
     display: grid;
     align-items: center;
     justify-items: stretch;
+  }
+
+  /* ---- Sleepy platypus above the card ---- */
+  .sleepy-wrap{
+    position: absolute;
+    right: 0;
+    /* Positioned a short distance above the card (scaling alongside the screen width), 
+    it will not overlap the header if space is insufficient. */
+    top: clamp(-120px, -8vw, -84px);
+    width: min(560px, 44vw);   /* A guide rail matching the width of the card */
+    display: grid;
+    justify-items: end;        /* Align to the right, flush with the right edge of the card */
+    pointer-events: none;
+    z-index: 3;                /* Above the card tier, below the celebration tier (999) */
+  }
+  .sleepy-platypus{
+    width: min(420px, 36vw);   /* Slightly enlarged*/
+    transform: scale(1.08);
+    image-rendering: -webkit-optimize-contrast;
+    filter: drop-shadow(0 8px 22px rgba(0,0,0,.38));
+  }
+  @media (max-width: 980px){
+    .sleepy-wrap{ top: clamp(-80px, -10vw, -60px); }
+    .sleepy-platypus{ width: min(320px, 52vw); transform: scale(1.04); }
   }
 
   .cards{ display: contents; }
@@ -456,6 +481,11 @@
 
   <!-- RIGHT: single-card dock -->
   <div class="card-dock">
+    <!-- Fixed sleeping platypus: Position locked in the red box above the card-->
+    <div class="sleepy-wrap" aria-hidden="true">
+      <img class="sleepy-platypus" src="{% static 'platypus_sleep.gif' %}" alt="">
+    </div>
+
     <div class="cards" id="cards">
       {% for c in db_cards %}
       <article
@@ -522,24 +552,24 @@
     let fishUnlocked = false;
 
     /* --- gating for vessel animations --- */
-    let gameStarted = false;           // 一開始可觸發
-    let postCelebrationWindow = false; // 慶祝結束後再開一次
+    let gameStarted = false;
+    let postCelebrationWindow = false;
 
-    /* 水位完成延遲（無視覺膜，僅用計時） */
-    const WATER_RISE_MS = 1400;  // 關燈: 水位上升
-    const WATER_FALL_MS = 1400;  // 開燈: 水位下降
+    /* Water level completion delay (without visual membrane, timekeeping only) */
+    const WATER_RISE_MS = 1400;  // Switch off the lights: Rising water level
+    const WATER_FALL_MS = 1400;  // Switch on the lights: Falling water level
 
-    /* 循環參數（可調） */
-    const VESSEL_RUN_MS = 9000;  // 必須與 .vessel.run 的 animation 時長一致
-    const LOOP_TOTAL_MS = 30000; // 每次觸發大約循環這麼久
-    const LOOP_GAP_MS   = 1000;  // 兩次穿越間隔
+    /* Cycle parameters (adjustable) */
+    const VESSEL_RUN_MS = 5000;
+    const LOOP_TOTAL_MS = 60000;
+    const LOOP_GAP_MS   = 1000;
 
     function canPlayVessel(){
       return (!gameStarted) || postCelebrationWindow;
     }
 
-    /* -------- 循環控制：右→左重覆航行一陣子 -------- */
-    let loopToken = 0; // 變更 token 可中止舊循環
+    /* -------- Circular control: Right→Left repeated navigation for a while -------- */
+    let loopToken = 0;
     function cancelVesselLoops(){
       loopToken++;
       submarine.classList.remove('run');
@@ -548,41 +578,39 @@
 
     function startVesselLoop(el, preDelayMs){
       if (!canPlayVessel()) return;
-      cancelVesselLoops();            // 切換時先收尾舊的
+      cancelVesselLoops();
       const myToken = ++loopToken;
       let elapsed = 0;
 
       const runOnce = ()=>{
         if (myToken !== loopToken || !canPlayVessel()) return;
-        el.classList.remove('run');   // reset
-        void el.offsetWidth;          // reflow
+        el.classList.remove('run');
+        void el.offsetWidth;
         el.classList.add('run');
 
-        // 下一輪
         setTimeout(()=>{
           if (myToken !== loopToken) { el.classList.remove('run'); return; }
           elapsed += VESSEL_RUN_MS + LOOP_GAP_MS;
           if (elapsed + VESSEL_RUN_MS <= LOOP_TOTAL_MS){
             runOnce();
           }else{
-            el.classList.remove('run'); // 結束時收乾淨
+            el.classList.remove('run');
           }
         }, VESSEL_RUN_MS + LOOP_GAP_MS);
       };
 
-      // 等待水位到位再開始第一趟
       setTimeout(()=>{ if (myToken === loopToken) runOnce(); }, preDelayMs);
     }
 
-    /* 監看 data-theme（開關燈） */
+    /* Observe data-theme (light/dark mode switch) */
     const docEl = document.documentElement;
     const obs = new MutationObserver(muts=>{
       muts.forEach(m=>{
         if(m.type==='attributes' && m.attributeName==='data-theme'){
           const theme = docEl.getAttribute('data-theme') || '';
-          if (theme === 'dark'){      // 關燈：水位上升後 -> 潛水艇連續航行
+          if (theme === 'dark'){      // Switch off the lights: Rising water level
             startVesselLoop(submarine, WATER_RISE_MS);
-          }else{                       // 開燈：水位下降後 -> 小船連續航行
+          }else{                       // Switch on the lights: Falling water level
             startVesselLoop(boat, WATER_FALL_MS);
           }
         }
@@ -625,7 +653,7 @@
     const CELEB_START_FADE_OUT_AT = CELEB_IN_MS + CELEB_HOLD_MS;
 
     function onCelebrationComplete(){
-      postCelebrationWindow = true;   // 慶祝結束後允許再次觸發船/潛水艇
+      postCelebrationWindow = true;
     }
 
     function celebrateFinish(){
@@ -781,7 +809,7 @@
       const st = ensure(id);
       if(!st.done) startTimer(card, id); else setDone(card);
 
-      /* 遊戲開始後停止船/潛水艇循環 */
+      /* After the game begins, halt the ship/submarine cycle. */
       gameStarted = true;
       postCelebrationWindow = false;
       cancelVesselLoops();

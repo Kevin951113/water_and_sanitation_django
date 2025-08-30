@@ -221,6 +221,15 @@
       backdrop-filter: blur(6px);
     }
     .water-chip svg{ width:22px; height:22px; color: currentColor; }
+
+    .why-section{
+      position: relative;
+      margin: clamp(8px, 2.5vw, 12px) 2px;
+      border-radius: 22px;          /* The corners become rounded */
+      overflow: hidden;             /* The child layers (video/background) are clipped by the border radius */
+      box-shadow: var(--panel-shadow);
+      isolation: isolate;           /* Creates a new stacking context, preventing outer layers from affecting it */
+    }
   </style>
 {% endblock %}
 
