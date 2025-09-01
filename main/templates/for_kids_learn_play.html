@@ -4,7 +4,10 @@
 {% block title %}For Kids – Learn & Play | Water & Sanitation{% endblock %}
 
 {% block head_extras %}
+{% comment %}Preload the first few tracks for smoother switching.{% endcomment %}
 <link rel="preload" href="{% static 'fish1.mp4' %}" as="video">
+<link rel="preload" href="{% static 'fish2.mp4' %}" as="video">
+<link rel="preload" href="{% static 'fish3.mp4' %}" as="video">
 <link rel="preload" href="{% static 'platypus_dance.gif' %}" as="image">
 <link rel="preload" href="{% static 'platypus_sleep.gif' %}" as="image">
 <link rel="preload" href="{% static 'win.png' %}" as="image">
@@ -65,17 +68,15 @@
   .sleepy-wrap{
     position: absolute;
     right: 0;
-    /* Positioned a short distance above the card (scaling alongside the screen width), 
-    it will not overlap the header if space is insufficient. */
     top: clamp(-120px, -8vw, -84px);
-    width: min(560px, 44vw);   /* A guide rail matching the width of the card */
+    width: min(560px, 44vw);
     display: grid;
-    justify-items: end;        /* Align to the right, flush with the right edge of the card */
+    justify-items: end;
     pointer-events: none;
-    z-index: 3;                /* Above the card tier, below the celebration tier (999) */
+    z-index: 3;
   }
   .sleepy-platypus{
-    width: min(420px, 36vw);   /* Slightly enlarged*/
+    width: min(420px, 36vw);
     transform: scale(1.08);
     image-rendering: -webkit-optimize-contrast;
     filter: drop-shadow(0 8px 22px rgba(0,0,0,.38));
@@ -388,26 +389,26 @@
   /* --------- VESSELS (no blur layer; pure GIFs) ---------- */
   .vessels-layer{
     position: fixed;
-    inset: var(--hdrH) 0 0 0;   /* same stage as background */
-    z-index: 2;                 /* above ocean, under/over cards is OK */
+    inset: var(--hdrH) 0 0 0;
+    z-index: 2;
     pointer-events: none;
     overflow: visible;
   }
   .vessel{
     position:absolute;
-    top: calc(58%);             /* 航線高度 */
+    top: calc(58%);
     transform: translateX(110vw) scale(1.08);
     opacity: 0;
     will-change: transform, opacity;
     image-rendering: -webkit-optimize-contrast;
     filter: drop-shadow(0 8px 18px rgba(0,0,0,.35));
   }
-  .vessel.sub{ width: min(34vw, 460px); }   /* 放大一點 */
+  .vessel.sub{ width: min(34vw, 460px); }
   .vessel.boat{ width: min(30vw, 420px); }
 
   .vessel.run{
     opacity: 1;
-    animation: sail-left 9s linear forwards; /* 若修改這裡，也要同步更新 JS 的 VESSEL_RUN_MS */
+    animation: sail-left 9s linear forwards;
   }
   @keyframes sail-left{
     0%{    transform: translateX(110vw) scale(1.08); }
@@ -440,7 +441,7 @@
 
 {% block content %}
 <section class="kids-stage">
-  <!-- video: only fades in after card #1 finished -->
+  <!-- video: only fades in after first completed card -->
   <div class="aquarium" id="aquarium" aria-hidden="true">
     <video id="fishVideo" src="{% static 'fish1.mp4' %}" preload="metadata" autoplay muted loop playsinline></video>
   </div>
@@ -457,11 +458,8 @@
   <div class="celebration" id="celebration" aria-hidden="true">
     <div class="glass-card">
       <div class="media">
-        <!-- soft halo behind the platypus -->
         <div class="halo-behind" aria-hidden="true"></div>
-        <!-- Platypus (middle) -->
         <img class="platypus" src="{% static 'platypus_dance.gif' %}" alt="Dancing platypus">
-        <!-- WIN banner (front, full 16:9) -->
         <img class="win-label" src="{% static 'win.png' %}" alt="Victory banner">
       </div>
     </div>
@@ -481,7 +479,7 @@
 
   <!-- RIGHT: single-card dock -->
   <div class="card-dock">
-    <!-- Fixed sleeping platypus: Position locked in the red box above the card-->
+    <!-- fixed sleeping platypus -->
     <div class="sleepy-wrap" aria-hidden="true">
       <img class="sleepy-platypus" src="{% static 'platypus_sleep.gif' %}" alt="">
     </div>
@@ -518,6 +516,9 @@
 
 {% block page_scripts %}
 <script>
+  /* Dynamic group static file prefix (used to construct the path for fishN.mp4) */
+  const STATIC_BASE = "{% get_static_prefix %}";
+
   window.pageInit = function(){
     /* measure header so our ocean sits perfectly under it */
     const hdr = document.getElementById('siteHeader');
@@ -551,16 +552,68 @@
     const state = new Map(); // id -> {timerId, startTime, done}
     let fishUnlocked = false;
 
+    /* === Background fish video: Switch according to card sequence (including file absence fallback) === */
+    const MAX_FISH = 19;                 // Expected up to fish19.mp4
+    const knownMissing = new Set();      // Known missing IDs
+    const knownHave    = new Set([1]);   // Successfully loaded IDs
+    let fishSwitchToken = 0;
+
+    function fishUrl(n){ return STATIC_BASE + 'fish' + n + '.mp4'; }
+
+    function hideFish(){
+      aquarium.classList.remove('bg-on');
+      try{ fishVideo.pause(); }catch(e){}
+    }
+
+    function setFishForCard(i){
+      if (!fishUnlocked || !fishVideo) return;
+      const nRaw = parseInt(cards[i]?.dataset?.card, 10);
+      let n = isNaN(nRaw) ? (i+1) : nRaw;         // Use card_order as the primary key; otherwise, use the index.
+      n = Math.max(1, Math.min(MAX_FISH, n));
+
+      // Skip the number with the known missing file and proceed to locate the next existing one.
+      while(n > 1 && knownMissing.has(n)) n--;
+
+      const url = fishUrl(n);
+      if (fishVideo.getAttribute('src') === url){
+        fishVideo.play?.().catch(()=>{});
+        return;
+      }
+
+      const myToken = ++fishSwitchToken;
+
+      const onLoaded = () => {
+        if (myToken !== fishSwitchToken) return cleanup();
+        knownHave.add(n);
+        fishVideo.play?.().catch(()=>{});
+        cleanup();
+      };
+      const onError = () => {
+        if (myToken !== fishSwitchToken) return cleanup();
+        knownMissing.add(n);
+        cleanup();
+        if (n > 1) setFishForCard(i); // Due to updates in knownMissing, it will automatically search for the next available entry.
+      };
+      function cleanup(){
+        fishVideo.removeEventListener('loadeddata', onLoaded);
+        fishVideo.removeEventListener('error', onError);
+      }
+
+      fishVideo.addEventListener('loadeddata', onLoaded);
+      fishVideo.addEventListener('error', onError);
+      fishVideo.setAttribute('src', url);
+      fishVideo.load(); // Trigger reload
+    }
+
     /* --- gating for vessel animations --- */
     let gameStarted = false;
     let postCelebrationWindow = false;
 
-    /* Water level completion delay (without visual membrane, timekeeping only) */
-    const WATER_RISE_MS = 1400;  // Switch off the lights: Rising water level
-    const WATER_FALL_MS = 1400;  // Switch on the lights: Falling water level
+    const WATER_RISE_MS = 1400;
+    const WATER_FALL_MS = 1400;
 
-    /* Cycle parameters (adjustable) */
-    const VESSEL_RUN_MS = 5000;
+    /* Vessel/Submarine Recirculation Parameters (aligned with CSS 9s) */
+    const VESSEL_RUN_MS = 9000;
     const LOOP_TOTAL_MS = 60000;
     const LOOP_GAP_MS   = 1000;
 
@@ -568,7 +621,7 @@
       return (!gameStarted) || postCelebrationWindow;
     }
 
-    /* -------- Circular control: Right→Left repeated navigation for a while -------- */
+    /* -------- Circular navigation: Right to Left repeated for a while-------- */
     let loopToken = 0;
     function cancelVesselLoops(){
       loopToken++;
@@ -608,9 +661,9 @@
       muts.forEach(m=>{
         if(m.type==='attributes' && m.attributeName==='data-theme'){
           const theme = docEl.getAttribute('data-theme') || '';
-          if (theme === 'dark'){      // Switch off the lights: Rising water level
+          if (theme === 'dark'){
             startVesselLoop(submarine, WATER_RISE_MS);
-          }else{                       // Switch on the lights: Falling water level
+          }else{
             startVesselLoop(boat, WATER_FALL_MS);
           }
         }
@@ -657,8 +710,7 @@
     }
 
     function celebrateFinish(){
-      aquarium.classList.remove('bg-on');
-      try{ fishVideo.pause(); } catch(e){}
+      hideFish();
       celebration.classList.add('show');
       celebration.setAttribute('aria-hidden','false');
       void celebration.offsetWidth;
@@ -734,6 +786,18 @@
       const id = String(cards[index].dataset.card);
       const st = ensure(id);
       nextBtn.classList.toggle('show', !!st.done && index < cards.length-1);
+
+      // If the new card is not yet complete: revert to the "no video" default; 
+      // only completed cards display the corresponding fish video.
+      if (fishUnlocked){
+        if (st.done){
+          aquarium.classList.add('bg-on');
+          setFishForCard(index);
+          fishVideo?.play?.().catch(()=>{});
+        }else{
+          hideFish();
+        }
+      }
     }
 
     /* helpers */
@@ -782,11 +846,13 @@
               nextBtn.classList.add('show');
             }
 
-            if(id==='1' && !fishUnlocked){
-              fishUnlocked = true;
-              aquarium.classList.add('bg-on');
-              fishVideo?.play?.().catch(()=>{});
-            }
+            // The video will only be displayed once any card 
+            // has been completed for the first time.
+            if(!fishUnlocked) fishUnlocked = true;
+
+            aquarium.classList.add('bg-on');   // Card completed --> Display corresponding video
+            setFishForCard(idx);
+            fishVideo?.play?.().catch(()=>{});
           }
         }
       }, 100);
@@ -809,7 +875,7 @@
       const st = ensure(id);
       if(!st.done) startTimer(card, id); else setDone(card);
 
-      /* After the game begins, halt the ship/submarine cycle. */
+      /* Pause the ship/submarine cycle after the game begins. */
       gameStarted = true;
       postCelebrationWindow = false;
       cancelVesselLoops();
@@ -836,8 +902,10 @@
     /* big next button */
     nextBtn.addEventListener('click', ()=>{
       if (activeIndex >= cards.length-1) return;
+      hideFish();                 // Restore to the No video default setting
       activeIndex += 1;
-      showOnly(activeIndex);
+      showOnly(activeIndex);      // If the new card remains incomplete, 
+      // it will display no video until it has been read through.
     });
 
     /* finish button: only responds after all done */

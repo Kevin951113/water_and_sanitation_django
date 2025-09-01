@@ -1,0 +1,11 @@
+# config/quality_rules.yaml
+weights:
+  pH: 0.35
+  EC_uS_cm: 0.35
+  DO_mg_L: 0.20
+  redox_mV: 0.10
+
+categories:
+  good: 70   # ≥70 ---> good
+  fair: 40   # 40–69 ---> fair
+  poor: 0    # <40 ---> poor

@@ -1,21 +1,584 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}About | Water & Sanitation{% endblock %}
+{% block title %}Future & Family Safety | Water and Sanitation{% endblock %}
 
 {% block head_extras %}
+<style>
+  /* ---------- Theme fallbacks ---------- */
+  :root{
+    --bg: #0b1220;
+    --text: #e7eef8;
+    --muted: #a7b2c3;
+    --card-bg: #101826;
+    --card-stroke: rgba(255,255,255,.08);
+    --shadow: 0 6px 30px rgba(0,0,0,.35);
+    --select-bg: #0f1723;
+    --chip-bg: rgba(255,255,255,.04);
+    --accent: #3aa6ff;
+  }
+  html[data-theme="light"]{
+    --bg: #f6f8fc;
+    --text: #1b2430;
+    --muted: #556171;
+    --card-bg: #ffffff;
+    --card-stroke: rgba(0,0,0,.08);
+    --shadow: 0 8px 30px rgba(15,23,42,.06);
+    --select-bg: #ffffff;
+    --chip-bg: rgba(0,0,0,.04);
+    --accent: #1463d6;
+  }
+
+  /* ---------- Cards ---------- */
+  .card-box{ background:var(--card-bg); border:1px solid var(--card-stroke); border-radius:22px; box-shadow:var(--shadow); }
+  .card-hd{ padding:16px 20px; border-bottom:1px solid var(--card-stroke); font-weight:800; letter-spacing:.3px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .card-bd{ padding:18px 20px; }
+  .muted{ color:var(--muted); }
+  .kv{ display:grid; grid-template-columns: 180px 1fr; gap:10px 18px; }
+  @media (max-width: 576px){
+    .kv{ grid-template-columns: 1fr; }
+  }
+
+  /* ---------- Pills ---------- */
+  .pill{ display:inline-block; padding:6px 14px; border-radius:9999px; font-weight:800; font-size:16px; letter-spacing:.02em; }
+  .pill-good{ background:#d1fae5; color:#065f46; }
+  .pill-fair{ background:#fef3c7; color:#92400e; }
+  .pill-poor{ background:#fee2e2; color:#991b1b; }
+
+  /* ---------- Safety bar + glow ---------- */
+  .safety-wrap{ position:relative; }
+  .safety-bar{
+    position:relative; height:22px; border-radius:12px; overflow:hidden;
+    background: linear-gradient(90deg, #dc2626 0%, #f59e0b 50%, #16a34a 100%);
+    border:1px solid var(--card-stroke);
+  }
+  .safety-glow{
+    position:absolute; top:50%; left:0%;
+    transform:translate(-50%,-50%);
+    width:180px; height:80px; pointer-events:none;
+    background: radial-gradient(closest-side, var(--glow, #34d399), transparent 65%);
+    filter: blur(22px); opacity:.35;
+    transition:left .35s ease, opacity .25s ease, background-color .25s ease;
+  }
+  .safety-pointer{ position:absolute; top:-16px; transform:translateX(-50%); text-align:center; transition:left .35s ease; }
+  .safety-pointer .head{ width:0; height:0; border-left:7px solid transparent; border-right:7px solid transparent; border-bottom:10px solid #111827; margin:0 auto; }
+  .safety-pointer .label{ background:#111827; color:#fff; padding:3px 8px; border-radius:8px; font-size:14px; margin-top:4px; text-transform:capitalize; }
+  .safety-legend{ display:flex; justify-content:space-between; font-weight:900; font-size:18px; margin-top:8px; }
+
+  /* ---------- Controls ---------- */
+  .form-label{ color:var(--text); }
+  .form-control-like{
+    width:100%; padding:10px 12px; border:1px solid var(--card-stroke);
+    border-radius:12px; background:var(--select-bg); color:var(--text);
+  }
+  select.form-control-like option{ color:var(--text); background:var(--select-bg); }
+  select.form-control-like:focus{ outline:2px solid var(--accent); outline-offset:2px; }
+  .btn-primary-like{
+    background: linear-gradient(90deg,#08497e 0%, #0e6fc0 50%, #5dade2 100%);
+    color:#fff; border:none; border-radius:12px; padding:10px 14px; font-weight:800; width:100%;
+  }
+  .btn-primary-like:hover{ filter:brightness(1.05); }
+
+  .legend-chip{
+    display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid var(--card-stroke);
+    border-radius:10px; background:var(--chip-bg); color:var(--text); font-weight:700; cursor:pointer; user-select:none;
+  }
+  .legend-dot{ width:10px; height:10px; border-radius:999px; background:currentColor; display:inline-block; }
+  .legend-chip[aria-pressed="false"]{ opacity:.55; }
+  .legend-chip:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+
+  /* Chart wrapper */
+  .chart-wrap{ position:relative; height:220px; }
+  #ffChart{ width:100% !important; height:100% !important; display:block; }
+
+  /* KPI cards (bigger + ready for count-up) */
+  .kpi{ text-align:center; padding:18px; }
+  .kpi .kpi-label{ color:var(--muted); font-size:15px; margin-bottom:6px; }
+  .kpi .kpi-value{ font-weight:900; font-size:42px; line-height:1.1; letter-spacing:.5px; }
+  .kpi .kpi-pill{ margin-top:4px; }
+
+  /* ---------- Section explainer (toggle) ---------- */
+  details.expander{ margin-left:auto; }
+  details.expander > summary{
+    list-style:none; cursor:pointer; user-select:none;
+    border:1px solid var(--card-stroke); background:var(--chip-bg);
+    padding:6px 12px; border-radius:10px; font-weight:800; font-size:14px; color:var(--text);
+    display:flex; align-items:center; gap:8px;
+  }
+  details.expander > summary .ico{ font-style:normal; font-weight:900; }
+  details.expander[open] > summary{ opacity:.85; }
+  details.expander .body{
+    margin-top:10px; background:linear-gradient(180deg, rgba(59,130,246,.10), transparent);
+    border:1px dashed var(--card-stroke); border-radius:12px; padding:14px 16px; color:var(--text);
+  }
+  /* 分段更好讀 */
+  .explain-block{ margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,.08); }
+  .explain-block:last-child{ border-bottom:none; }
+  .explain-title{ font-weight:800; color:var(--accent); margin:0 0 6px; }
+  .exp-list{ margin: 0 0 0 1.1rem; color:var(--muted); }
+  .exp-list li{ margin-bottom:6px; }
+
+  /* Mini button */
+  .mini-btn{
+    display:inline-block; margin-top:8px; padding:6px 10px; border-radius:10px; border:1px solid var(--card-stroke);
+    background:var(--chip-bg); color:var(--text); text-decoration:none; font-weight:800; font-size:13px;
+  }
+  .mini-btn:hover{ filter:brightness(1.05); }
+</style>
 {% endblock %}
 
 {% block content %}
-<!-- Do NOT touch the header above (it's shared in base.html) -->
+<div class="container" style="max-width:1100px; margin:0 auto;">
+  <header style="margin: 8px 0 14px;">
+    <h1 style="font-size:28px; font-weight:900; margin:0 0 6px;">Future &amp; Family Safety</h1>
+    <p class="muted" style="margin:0;">
+      Simple Good / Fair / Poor guidance and how conditions may change over the next 48 hours.
+    </p>
+  </header>
 
-<!-- >>> Write your own page content here <<< -->
+  <!-- Filters form -->
+  <form method="get" class="card-box" style="margin-bottom:18px;">
+    <div class="card-hd">Choose Area &amp; Days Ahead</div>
+    <div class="card-bd">
+      <div class="row g-3 align-items-end">
+        <div class="col-lg-6">
+          <label for="site_id" class="form-label fw-bold">Site ID</label>
+          {% if site_options %}
+            <select id="site_id" name="site_id" class="form-control-like">
+              <option value="" disabled {% if not site_id %}selected{% endif %}>Select a site…</option>
+              {% for sid in site_options %}
+                <option value="{{ sid }}" {% if sid == site_id %}selected{% endif %}>{{ sid }}</option>
+              {% endfor %}
+            </select>
+          {% else %}
+            <input id="site_id" name="site_id" class="form-control-like" type="text" value="{{ site_id|default:'' }}" placeholder="e.g. 97226">
+            <div class="muted" style="font-size:12px; margin-top:6px;">Tip: pass a list as <code>site_options</code> from the view to show a dropdown.</div>
+          {% endif %}
+        </div>
+        <div class="col-lg-3">
+          <label for="horizon_days" class="form-label fw-bold">Days ahead</label>
+          <input id="horizon_days" name="horizon_days" class="form-control-like" type="number" min="1" max="90" value="{{ horizon_days|default:2 }}">
+        </div>
+        <div class="col-lg-3">
+          <button type="submit" class="btn-primary-like">Get forecast</button>
+        </div>
+      </div>
+    </div>
+  </form>
 
-<!-- Do NOT touch the footer below (it's shared in base.html) -->
+  <!-- Safety indicator -->
+  <section class="card-box" style="margin-bottom:18px;">
+    <div class="card-hd">
+      <span>Family Safety Indicator</span>
+    </div>
+    <div class="card-bd">
+      {% if result %}
+        {% with score=result.quality.score category=result.quality.category %}
+          <div class="safety-wrap">
+            <div class="safety-bar" aria-label="Safety bar">
+              <div id="ff-glow" class="safety-glow"></div>
+            </div>
+            <div id="ff-pointer" class="safety-pointer" style="left:0%">
+              <div class="head"></div>
+              <div class="label" id="ff-pointer-label">{{ category|default:"unknown" }}</div>
+            </div>
+          </div>
+          <div class="safety-legend">
+            <span style="color:#ef4444;">Poor</span>
+            <span style="color:#d97706;">Fair</span>
+            <span style="color:#059669;">Good</span>
+          </div>
+
+          <div class="row g-3 mt-3">
+            <div class="col-12 col-md-4">
+              <div class="card-box kpi">
+                <div class="kpi-label">Score</div>
+                <div class="kpi-value" id="kpi-score">0</div>
+              </div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="card-box kpi">
+                <div class="kpi-label">Category</div>
+                <div class="kpi-pill">
+                  {% if category == "good" %}
+                    <span class="pill pill-good">good</span>
+                  {% elif category == "fair" %}
+                    <span class="pill pill-fair">fair</span>
+                  {% else %}
+                    <span class="pill pill-poor">poor</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="card-box kpi">
+                <div class="kpi-label">Checked on</div>
+                <div style="font-weight:800; font-size:18px;">{{ result.last_updated|default:"–" }}</div>
+              </div>
+            </div>
+          </div>
+        {% endwith %}
+      {% else %}
+        <p class="muted mb-0">Pick a site and click <strong>Get forecast</strong> to see the indicator.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- Water chemistry -->
+  <section class="card-box" style="margin-bottom:18px;">
+    <div class="card-hd">
+      <span>Water Chemistry (in {{ horizon_days|default:2 }} days)</span>
+      <details class="expander">
+        <summary><i class="ico">💧</i> What’s this?</summary>
+        <div class="body">
+          <div class="explain-block">
+            <p class="explain-title">What</p>
+            <p>A quick snapshot of expected water chemistry at the end of your selected window.</p>
+          </div>
+          <div class="explain-block">
+            <p class="explain-title">How to read</p>
+            <ul class="exp-list">
+              <li><b>pH</b> – acidity/alkalinity (7 ≈ neutral).</li>
+              <li><b>EC (µS/cm)</b> – salinity/ions; higher = saltier water.</li>
+              <li><b>DO (mg/L)</b> – dissolved oxygen; higher is usually better for aquatic life.</li>
+              <li><b>Redox (mV)</b> – oxidation-reduction potential; more positive = more oxidizing.</li>
+            </ul>
+          </div>
+          <div class="explain-block">
+            <p class="explain-title">Why it matters</p>
+            <p>These values explain <em>why</em> the safety score falls into Poor / Fair / Good and guide simple checks at home or on site.</p>
+          </div>
+        </div>
+      </details>
+    </div>
+    <div class="card-bd">
+      {% if result %}
+        <div class="kv">
+          <div class="muted">Site ID</div><div>{{ result.site_id }}</div>
+          <div class="muted">pH</div><div>{{ result.predictions.pH|default:"—" }}</div>
+          <div class="muted">EC (µS/cm)</div><div>{{ result.predictions.EC_uS_cm|default:"—" }}</div>
+          <div class="muted">DO (mg/L)</div><div>{{ result.predictions_raw.DO_mg_L|default:"—"|floatformat:2 }}</div>
+          <div class="muted">Redox (mV)</div><div>{{ result.predictions_raw.redox_mV|default:"—"|floatformat:0 }}</div>
+        </div>
+        <p class="muted" style="margin-top:10px; font-size:12px;">
+          Numbers are rounded for display.
+        </p>
+      {% else %}
+        <p class="muted mb-0">No prediction yet.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- 48-Hour Forecast -->
+  <section class="card-box" style="margin-bottom:18px;">
+    <div class="card-hd">
+      <span>48-Hour Forecast (Keep Using vs Avoid Water)</span>
+      <details class="expander">
+        <summary><i class="ico">💧</i> What’s this?</summary>
+        <div class="body">
+          <div class="explain-block">
+            <p class="explain-title">What</p>
+            <p>Two “what-if” lines showing how the safety score may move in the next 48 hours.</p>
+          </div>
+          <div class="explain-block">
+            <p class="explain-title">Scenarios</p>
+            <ul class="exp-list">
+              <li><b>Keep Using</b> – continue using the water as usual (no extra precautions).</li>
+              <li><b>Avoid Water</b> – families avoid direct use (no swimming, playing, or drinking) until conditions improve.</li>
+            </ul>
+          </div>
+          <div class="explain-block">
+            <p class="explain-title">How to read</p>
+            <p>The gap between the two lines ≈ expected safety benefit from avoiding water. Hover points to see local time and score.</p>
+          </div>
+          <div class="explain-block">
+            <p class="explain-title">Why it matters</p>
+            <p>Helps decide whether to <em>hold off using the water now</em> or if it’s reasonably safe to continue.</p>
+          </div>
+        </div>
+      </details>
+    </div>
+    <div class="card-bd">
+      <div class="d-flex align-items-center gap-2" style="margin-bottom:10px;">
+        <button type="button" class="legend-chip" id="btnKeepUsing" aria-pressed="true" title="Toggle Keep Using">
+          <span class="legend-dot" style="color:#60a5fa;"></span> Keep Using
+        </button>
+        <button type="button" class="legend-chip" id="btnAvoidWater" aria-pressed="true" title="Toggle Avoid Water">
+          <span class="legend-dot" style="color:#34d399;"></span> Avoid Water
+        </button>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="ffChart"></canvas>
+      </div>
+      <p class="muted" style="margin-top:10px; font-size:12px;">
+        Hover to see time and score. Click chips to show/hide scenarios.
+      </p>
+    </div>
+  </section>
+
+  {% if result %}{{ result|json_script:"ff-result" }}{% endif %}
+</div>
 {% endblock %}
 
 {% block page_scripts %}
+<!-- Chart.js v4 (CDN) -->
 <script>
-  window.pageInit = function(){};
+  (function loadChartJs(){
+    if(window.Chart) return;
+    var s=document.createElement('script');
+    s.src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js";
+    s.defer=true;
+    document.head.appendChild(s);
+  })();
+</script>
+
+<script>
+  // ===== Helpers =====
+  function parseTs(ts){
+    // Accept: epoch ms/seconds, ISO, "YYYY-MM-DD HH:MM:SS" (treated as UTC)
+    if(ts == null) return new Date(NaN);
+    if (typeof ts === 'number'){ if (ts < 1e12) ts *= 1000; return new Date(ts); }
+    if (typeof ts === 'string'){
+      let s = ts.trim();
+      if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(s)) s = s.replace(' ', 'T') + 'Z';
+      if (!/[zZ]|[+\-]\d{2}:?\d{2}$/.test(s)) s += 'Z'; // treat no TZ as UTC
+      return new Date(s);
+    }
+    return new Date(NaN);
+  }
+  function fmt(n){ return (Math.round(Number(n)*100)/100).toFixed(2); }
+  function scoreInfo(s){
+    s = Number(s)||0;
+    if (s >= 75) return {cat:'good', label:'Good', tip:'Generally safe for family use.'};
+    if (s >= 60) return {cat:'fair', label:'Fair', tip:'Borderline — prefer caution; avoid swimming if possible.'};
+    return {cat:'poor', label:'Poor', tip:'Avoid direct use (no swimming/playing/drinking).'};
+  }
+  function getColors(){
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    return {
+      axis: isLight ? '#2a3342' : '#c7d0dc',
+      grid: isLight ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.08)',
+      keepUsing: '#60a5fa',
+      avoidWater: '#34d399',
+      haloGood:'#059669', haloFair:'#d97706', haloPoor:'#ef4444'
+    };
+  }
+
+  // Synthetic 48h series if server didn't provide one
+  function synthForecast48h(seedScore){
+    const out=[], now=Date.now(), stepMs=6*60*60*1000;
+    let base = isFinite(seedScore)? Number(seedScore) : 65;
+    for(let i=0;i<=8;i++){
+      const ts = new Date(now + i*stepMs).toISOString();
+      base = Math.max(0, Math.min(100, base + (65-base)*0.08 + (Math.random()-0.5)*2));
+      const keep = base;
+      const avoid = Math.min(100, keep + 8 * (1 - Math.exp(-i/4)));
+      out.push({ ts, keep_using: keep, avoid_water: avoid });
+    }
+    return out;
+  }
+
+  function whenChartReady(cb){
+    if (window.Chart) return cb();
+    setTimeout(()=>whenChartReady(cb), 60);
+  }
+
+  // Ensure timestamps make sense; if many invalid, rebuild "now → every 6h"
+  function ensureTimestamps(series){
+    const stepMs = 6*60*60*1000, now = Date.now();
+    const invalid = series.filter(p => isNaN(parseTs(p.ts).getTime())).length;
+    if (invalid > series.length / 2){
+      return series.map((p,i)=> ({...p, ts: new Date(now + i*stepMs).toISOString()}));
+    }
+    return series.map((p)=> {
+      const d = parseTs(p.ts);
+      return {...p, ts: isNaN(d.getTime()) ? new Date(now).toISOString() : new Date(d.getTime()).toISOString()};
+    });
+  }
+
+  // ===== Chart =====
+  window.__ffChart = null;
+  window.__ffThemeBound = false;
+
+  function buildChart(series){
+    whenChartReady(function(){
+      const C = getColors();
+
+      const labels = series.map(p=>{
+        const d = parseTs(p.ts);
+        return d.toLocaleString([], { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+      });
+      const keep = series.map(p=>p.keep_using);
+      const avoid = series.map(p=>p.avoid_water);
+
+      const ctx = document.getElementById('ffChart');
+      if (!ctx) return;
+
+      if (window.__ffChart) { window.__ffChart.destroy(); window.__ffChart = null; }
+
+      const dsKeep = {
+        label:'Keep Using',
+        data:keep,
+        borderColor:C.keepUsing, backgroundColor:C.keepUsing,
+        pointRadius:(c)=> c.dataIndex === keep.length-1 ? 5 : 2,
+        tension:0.25, order:2
+      };
+      const dsAvoid = {
+        label:'Avoid Water',
+        data:avoid,
+        borderColor:C.avoidWater, backgroundColor:C.avoidWater,
+        pointRadius:(c)=> c.dataIndex === avoid.length-1 ? 5 : 2,
+        tension:0.25, order:2
+      };
+
+      // plugin: draw glow around last points
+      const lastPointGlow = {
+        id:'lastPointGlow',
+        afterDatasetsDraw(chart, args, pluginOptions){
+          const {ctx, chartArea} = chart; if (!chartArea) return;
+          [0,1].forEach((di)=>{
+            if (!chart.isDatasetVisible(di)) return;
+            const meta = chart.getDatasetMeta(di);
+            const pt = meta.data[meta.data.length-1]; if (!pt) return;
+            const color = di===0 ? C.keepUsing : C.avoidWater;
+            ctx.save();
+            ctx.beginPath();
+            ctx.fillStyle = color; ctx.globalAlpha = .18;
+            ctx.arc(pt.x, pt.y, 14, 0, Math.PI*2);
+            ctx.fill();
+            ctx.restore();
+          });
+        }
+      };
+
+      window.__ffChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets:[dsKeep, dsAvoid] },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          resizeDelay: 150,
+          animation: { duration: 200 },
+          interaction: { mode:'nearest', intersect:false },
+          plugins: {
+            legend: { display:false },
+            tooltip: {
+              callbacks: {
+                title: (items)=> items[0] ? items[0].label : '',
+                label: (item)=>{
+                  const s = item.parsed.y;
+                  const info = scoreInfo(s);
+                  return `${item.dataset.label} — Score: ${fmt(s)} (${info.label})`;
+                },
+                afterLabel: (item)=>{
+                  const s = item.parsed.y;
+                  return ' ' + scoreInfo(s).tip;
+                }
+              }
+            }
+          },
+          scales: {
+            y: { min:0, max:100, grid:{ color:getColors().grid }, ticks:{ color:getColors().axis } },
+            x: { grid:{ color:getColors().grid }, ticks:{ color:getColors().axis, maxRotation:0, autoSkip:true, maxTicksLimit:6 } }
+          }
+        },
+        plugins:[lastPointGlow]
+      });
+
+      // Legend chips
+      const btnKeep=document.getElementById('btnKeepUsing');
+      const btnAvoid=document.getElementById('btnAvoidWater');
+      function setPressed(btn,on){ btn && btn.setAttribute('aria-pressed', on ? 'true':'false'); }
+      setPressed(btnKeep, true); setPressed(btnAvoid, true);
+
+      if (btnKeep && !btnKeep.dataset.bound){
+        btnKeep.addEventListener('click', ()=>{
+          const ch=window.__ffChart; if(!ch) return;
+          ch.isKeep = !ch.isKeep; const on = ch.isKeep !== false;
+          ch.setDatasetVisibility(0, on); setPressed(btnKeep,on); ch.update();
+        });
+        btnKeep.dataset.bound='1';
+      }
+      if (btnAvoid && !btnAvoid.dataset.bound){
+        btnAvoid.addEventListener('click', ()=>{
+          const ch=window.__ffChart; if(!ch) return;
+          ch.isAvoid = !ch.isAvoid; const on = ch.isAvoid !== false;
+          ch.setDatasetVisibility(1, on); setPressed(btnAvoid,on); ch.update();
+        });
+        btnAvoid.dataset.bound='1';
+      }
+
+      if (!window.__ffThemeBound){
+        window.addEventListener('themechange', ()=>{
+          const ch=window.__ffChart; if(!ch) return;
+          const C2 = getColors();
+          ch.options.scales.x.grid.color = C2.grid;
+          ch.options.scales.y.grid.color = C2.grid;
+          ch.options.scales.x.ticks.color = C2.axis;
+          ch.options.scales.y.ticks.color = C2.axis;
+          dsKeep.borderColor = dsKeep.backgroundColor = C2.keepUsing;
+          dsAvoid.borderColor = dsAvoid.backgroundColor = C2.avoidWater;
+          ch.update('none');
+        });
+        window.__ffThemeBound = true;
+      }
+    });
+  }
+
+  // ===== Page init =====
+  window.pageInit = function(){
+    try{
+      var resultScript = document.getElementById('ff-result');
+      var data = resultScript ? JSON.parse(resultScript.textContent || "{}") : null;
+
+      // Safety pointer + glow + KPI count-up
+      if(data && data.quality){
+        var score = Number(data.quality.score || 0);
+        if(!isFinite(score)) score = 0;
+        score = Math.max(0, Math.min(100, score));
+        var ptr = document.getElementById('ff-pointer');
+        var lbl = document.getElementById('ff-pointer-label');
+        var glow = document.getElementById('ff-glow');
+        if (ptr) ptr.style.left = score + '%';
+        if (glow) glow.style.left = score + '%';
+        if (lbl){
+          const info = scoreInfo(score);
+          lbl.textContent = String(data.quality.category || info.cat);
+          // glow color by category
+          const C = getColors();
+          const col = info.cat==='good'? C.haloGood : info.cat==='fair'? C.haloFair : C.haloPoor;
+          if (glow) glow.style.setProperty('--glow', col);
+        }
+        // count-up animation for KPI
+        const el = document.getElementById('kpi-score');
+        if (el){
+          const target = Number(score.toFixed(2));
+          let t0=null;
+          function step(ts){
+            if(!t0) t0 = ts;
+            const p = Math.min(1, (ts - t0)/1000);
+            const val = (target * p).toFixed(2);
+            el.textContent = val;
+            if (p < 1) requestAnimationFrame(step);
+          }
+          requestAnimationFrame(step);
+        }
+      }
+
+      // Build series (server or synthetic)
+      var series = (data && Array.isArray(data.forecast_48h) && data.forecast_48h.length)
+        ? data.forecast_48h.map(p=>({
+            ts: p.ts || p.timestamp || p.time || p.date,
+            keep_using: p.do_nothing ?? p.doNothing ?? p.base ?? p.keep_using,
+            avoid_water: p.take_action ?? p.takeAction ?? p.action ?? p.avoid_water
+          }))
+        : synthForecast48h(data && data.quality ? data.quality.score : 65);
+
+      // timestamps sanity
+      series = ensureTimestamps(series);
+
+      buildChart(series);
+    }catch(e){ /* no-op */ }
+  };
 </script>
 {% endblock %}

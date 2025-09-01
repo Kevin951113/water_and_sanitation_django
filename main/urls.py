@@ -9,4 +9,7 @@ urlpatterns = [
     path("future_family_safety/", views.future_family_safety, name="future_family_safety"),
     path("pollution_sources/", views.pollution_sources, name="pollution_sources"),
     path("for_kids_learn_play/", views.for_kids_learn_play, name="for_kids_learn_play"),
+
+    path("api/sites", views.api_sites, name="api_sites"),
+    path("api/family-safety/forecast", views.api_family_safety_forecast, name="api_family_safety_forecast"),
 ]
