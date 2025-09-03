@@ -6,7 +6,7 @@
   <title>{% block title %}[Water and Sanitation]{% endblock %}</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-  <!-- super-early theme boot so there’s no flash -->
+  <!-- Early theme boot to avoid FOUC -->
   <script>
     (function () {
       try {
@@ -22,14 +22,17 @@
     })();
   </script>
 
-  <!-- Bootstrap (for responsive navbar collapse only) -->
+  <!-- Bootstrap (navbar collapse only) -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-  <!-- assets we want asap -->
+  <!-- Assets we want asap -->
   <link rel="preload" href="{% static 'lightoff_logo.png' %}" as="image">
   <link rel="preload" href="{% static 'lighton_logo.png' %}" as="image">
   <link rel="preload" href="{% static 'giphy1.gif' %}" as="image"><!-- loading GIF -->
+  <!-- NEW: preload vessel GIFs so first sail is smooth -->
+  <link rel="preload" href="{% static 'submarine.gif' %}" as="image">
+  <link rel="preload" href="{% static 'boat.gif' %}" as="image">
 
   {% block head_extras %}{% endblock %}
 
@@ -46,6 +49,7 @@
     }
     .menu .submenu a { display: block; padding: 10px 14px; text-decoration: none; white-space: nowrap; }
     .menu .submenu a:hover, .menu .submenu a:focus { background: rgba(255,255,255,0.08); }
+
     .menu .dropdown:hover .submenu, .menu .dropdown:focus-within .submenu { display: block; }
 
     /* Light theme dropdown panel */
@@ -74,6 +78,8 @@
       --glow-inner: 0 0 10px color-mix(in srgb, var(--header-glow) 90%, transparent);
       --ico-sun: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l-1.4-1.4M20.4 20.4 19 19M5 19l-1.4 1.4M20.4 3.6 19 5'/%3E%3C/svg%3E");
       --ico-moon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 1 0 9.8 9.8z'/%3E%3C/svg%3E");
+      /* NEW: header height for background layers to sit just below the sticky header */
+      --hdrH: 80px;
     }
     html[data-theme="light"]{
       --bg:#fff; --text:#0e1420; --muted:#4a5a6c;
@@ -256,7 +262,7 @@
       .menu .dropdown:focus-within .submenu,
       .menu .dropdown:hover .submenu{ display:block; }
 
-      /* ===== Light button: icon-only on small screens (keep original gradient colors) ===== */
+      /* ===== Light button: icon-only on small screens ===== */
       #lightBtn{
         width: clamp(40px, 9.5vw, 46px);
         height: clamp(40px, 9.5vw, 46px);
@@ -399,9 +405,41 @@
     }
     .why-note{ margin-top:6px; font-size:.92rem; color:var(--muted); text-align:center; }
 
-    /* ===== fixed at the bottom of the water surface ===== */
+    /* ===== Fixed background water & ripples ===== */
     #water-stage{ position:fixed; inset:0; z-index:0; pointer-events:none; }
     #water-canvas{ width:100%; height:100%; display:block; }
+
+    /* ===== NEW: Vessels layer (submarine / boat) =====
+       Sits just below the sticky header, above the water/ripples but below main content.
+       We use only CSS keyframes; JS toggles the "run" class to restart the sail animation. */
+    .vessels-layer{
+      position: fixed;
+      inset: var(--hdrH) 0 0 0;   /* keep clear of sticky header */
+      z-index: 0;                 /* background-ish: main content has z-index:1 */
+      pointer-events: none;
+      overflow: visible;
+    }
+    .vessel{
+      position:absolute;
+      top: 58%;                   /* a comfy height that feels like sitting on water */
+      transform: translateX(110vw) scale(1.06);  /* start off-screen on the right */
+      opacity: 0;
+      image-rendering: -webkit-optimize-contrast;
+      filter: drop-shadow(0 8px 18px rgba(0,0,0,.35));
+      will-change: transform, opacity;
+    }
+    .vessel.sub  { width: min(34vw, 460px); }
+    .vessel.boat { width: min(30vw, 420px); }
+
+    /* When "run" is added via JS, the GIF sails from right to left. */
+    .vessel.run{
+      opacity: 1;
+      animation: sail-left 15s linear forwards;
+    }
+    @keyframes sail-left{
+      0%   { transform: translateX(110vw)  scale(1.06); }
+      100% { transform: translateX(-130vw) scale(1.06); }
+    }
 
     /* Button style */
     .dashboard-btn {
@@ -442,17 +480,32 @@
       -webkit-text-stroke: 2px rgba(0, 50, 200, 0.7);
       text-shadow: 0 0 12px #3d5afeaa, 0 0 20px #536dfeaa, 0 0 28px #91a6ffaa, 0 0 4px #fff8, 0 2px 8px #e0e9ffcc;
     }
+
+    #platypureLogo {
+      max-height: 75px;
+    }
+
+    @media (max-width: 768px) {
+      #platypureLogo {
+        max-height: 45px;
+      }
+    }
   </style>
 </head>
 <body>
   <header id="siteHeader" class="container-fluid">
     <div class="d-flex align-items-center w-100 gap-2 position-relative">
       <!-- Brand -->
-      <div class="brand" aria-label="Brand">
+      <div class="brand text-center text-lg-start" aria-label="Brand">
         <span class="logo" aria-hidden="true">
           <img id="brandLogo" src="{% static 'lightoff_logo.png' %}" alt="Brand logo (lights off)">
         </span>
-        <h1>[Water and Sanitation]</h1>
+        <h1 class="m-0">
+          <img src="{% static 'Platypure.png' %}" 
+              alt="Platypure Logo" 
+              class="img-fluid" 
+              id="platypureLogo">
+        </h1>
       </div>
 
       <!-- Hamburger (small screens only) -->
@@ -520,6 +573,12 @@
   </div>
   <div id="ripple-layer" aria-hidden="true"></div>
 
+  <!-- NEW: Vessels layer (decorative, non-interactive) -->
+  <div class="vessels-layer" id="vessels" aria-hidden="true">
+    <img id="submarineGif" class="vessel sub" src="{% static 'submarine.gif' %}" alt="">
+    <img id="boatGif" class="vessel boat" src="{% static 'boat.gif' %}" alt="">
+  </div>
+
   <!-- Main content -->
   <main class="wrap">
     {% block content %}{% endblock %}
@@ -538,7 +597,7 @@
     </div>
   </div>
 
-  <!-- Shared JS: GSAP loading + light switch + logo switching + water surface animation + background ripples -->
+  <!-- Shared JS: GSAP loading + light switch + logo switching + water surface animation + background ripples + vessels -->
   <script>
     /************ GSAP Multi-CDN Loading ************/
     const GSAP_URLS = [
@@ -592,6 +651,7 @@
       let meta=document.querySelector('meta[name="theme-color"]');
       if(!meta){ meta=document.createElement("meta"); meta.name="theme-color"; document.head.appendChild(meta); }
       meta.content=getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
+      /* Broadcast theme changes so background systems can respond */
       window.dispatchEvent(new CustomEvent('themechange', { detail: { isLight } }));
       if (window.waterStage && window.waterStage.transitionTo){
         window.waterStage.transitionTo(isLight);
@@ -605,7 +665,7 @@
       }
     });
 
-    /* --- Desktop/mobile nav guard so nav never disappears on wide screens --- */
+    /* Keep nav healthy across breakpoints */
     function resetNavForBreakpoint(){
       const nav = document.getElementById('primaryNav');
       if (!nav) return;
@@ -624,7 +684,7 @@
     window.addEventListener('resize', resetNavForBreakpoint);
     window.addEventListener('load', resetNavForBreakpoint);
 
-    /************ Background Water Ripple (GSAP) ************/
+    /************ Background Ripple (GSAP) ************/
     function initBackgroundRipple(){
       const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (prefersReduced) return;
@@ -820,6 +880,89 @@
       };
     }
 
+    /* ===== NEW: Vessels controller (CSS-only animation, JS scheduling) =====
+       - Light theme ---> Boat sails.
+       - Dark theme  ---> Submarine sails.
+       - We just toggle the .run class to restart the keyframes.
+       - We also respect prefers-reduced-motion. */
+    function initVessels(){
+      const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const layer = document.getElementById('vessels');
+      if (!layer || prefersReduced) return;
+
+      const submarine = document.getElementById('submarineGif');
+      const boat = document.getElementById('boatGif');
+      if (!submarine || !boat) return;
+
+      // Keep this in sync with CSS animation duration
+      const VESSEL_RUN_MS = 9000;
+      const LOOP_TOTAL_MS = 60000; // stop looping after ~1 minute
+      const LOOP_GAP_MS   = 1000;
+
+      let loopToken = 0;
+      function cancelLoops(){
+        loopToken++;
+        submarine.classList.remove('run');
+        boat.classList.remove('run');
+      }
+      function restart(el){
+        el.classList.remove('run');           // reset animation state
+        void el.offsetWidth;                  // force reflow to restart keyframes
+        el.classList.add('run');
+      }
+      function startLoop(el, preDelayMs){
+        cancelLoops();
+        const myToken = ++loopToken;
+        let elapsed = 0;
+        function runOnce(){
+          if (myToken !== loopToken) return;
+          restart(el);
+          setTimeout(()=>{
+            if (myToken !== loopToken) { el.classList.remove('run'); return; }
+            elapsed += VESSEL_RUN_MS + LOOP_GAP_MS;
+            if (elapsed + VESSEL_RUN_MS <= LOOP_TOTAL_MS){
+              runOnce();
+            }else{
+              el.classList.remove('run');
+            }
+          }, VESSEL_RUN_MS + LOOP_GAP_MS);
+        }
+        setTimeout(()=>{ if (myToken === loopToken) runOnce(); }, preDelayMs || 0);
+      }
+
+      // Keep vessels below the sticky header using --hdrH
+      function applyHeaderHeight(){
+        const hdr = document.getElementById('siteHeader');
+        const h = (hdr && hdr.offsetHeight) ? hdr.offsetHeight : 80;
+        document.documentElement.style.setProperty('--hdrH', h + 'px');
+      }
+      applyHeaderHeight();
+      window.addEventListener('resize', applyHeaderHeight);
+
+      // Respond to our explicit 'themechange' event
+      window.addEventListener('themechange', (e)=>{
+        const light = !!(e.detail && e.detail.isLight);
+        if (light) startLoop(boat, 200); else startLoop(submarine, 200);
+      });
+
+      // Fallback: also observe data-theme attribute in case someone toggles it outside setTheme()
+      const mo = new MutationObserver((muts)=>{
+        for (const m of muts){
+          if (m.type === 'attributes' && m.attributeName === 'data-theme'){
+            const light = document.documentElement.getAttribute('data-theme') === 'light';
+            if (light) startLoop(boat, 150); else startLoop(submarine, 150);
+          }
+        }
+      });
+      mo.observe(document.documentElement, { attributes:true });
+
+      // Kick off once on load to match current theme
+      const isLightNow = document.documentElement.getAttribute('data-theme') === 'light';
+      if (isLightNow) startLoop(boat, 250); else startLoop(submarine, 250);
+
+      return { cancel: cancelLoops };
+    }
+
     (async function boot(){
       const ok = await ensureGSAP();
       if(!ok) return;
@@ -834,6 +977,10 @@
         if(!meta){ meta=document.createElement("meta"); meta.name="theme-color"; document.head.appendChild(meta); }
         meta.content=getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
       })();
+
+      /* NEW: initialize vessels after GSAP systems boot (order not strictly required, but neat) */
+      window.vessels = initVessels();
+
       if (window.pageInit) window.pageInit();
     })();
   </script>
