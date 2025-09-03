@@ -6,496 +6,45 @@
   <title>{% block title %}[Water and Sanitation]{% endblock %}</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-  <!-- Early theme boot to avoid FOUC -->
+  <!-- We boot the theme super early, so we avoid the flash... and we read localStorage... then we set data-theme. -->
   <script>
     (function () {
       try {
         var saved = localStorage.getItem('theme'); // 'light' | 'dark' | null
         var isLight;
-        if (saved === 'light')      { isLight = true; }
-        else if (saved === 'dark')  { isLight = false; }
+        if (saved === 'light')      { isLight = true; }   // we remember the choice and respect it
+        else if (saved === 'dark')  { isLight = false; }  // and if it’s dark we keep it dark
         else {
+          // we fall back to OS preference, so the page feels native, then we apply it
           isLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
         }
         document.documentElement.setAttribute('data-theme', isLight ? 'light' : 'dark');
-      } catch(e) {}
+      } catch(e) { /* we keep silent because this is just UX sugar */ }
     })();
   </script>
 
-  <!-- Bootstrap (navbar collapse only) -->
+  <!-- We import Bootstrap just for the navbar collapse... and it’s tiny... so we’re fine. -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-  <!-- Assets we want asap -->
+  <!-- We preload a few images so the header looks crisp... and the loading mask feels instant. -->
   <link rel="preload" href="{% static 'lightoff_logo.png' %}" as="image">
   <link rel="preload" href="{% static 'lighton_logo.png' %}" as="image">
   <link rel="preload" href="{% static 'giphy1.gif' %}" as="image"><!-- loading GIF -->
-  <!-- NEW: preload vessel GIFs so first sail is smooth -->
+  <!-- We also preload the vessels, so the first sail is smooth, then the animation starts nicely. -->
   <link rel="preload" href="{% static 'submarine.gif' %}" as="image">
   <link rel="preload" href="{% static 'boat.gif' %}" as="image">
 
   {% block head_extras %}{% endblock %}
 
-  <style>
-    /* ===== Dropdown ===== */
-    .menu .dropdown { position: relative; display: inline-block; }
-    .menu .dropdown > a { display: inline-flex; align-items: center; }
-    .menu .submenu {
-      display: none; position: absolute; top: 100%; left: 0; min-width: 260px;
-      background: rgba(5, 8, 15, 0.96);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow: 0 12px 28px rgba(0,0,0,0.35);
-      padding: 6px 0; z-index: 1000; backdrop-filter: saturate(120%) blur(6px);
-    }
-    .menu .submenu a { display: block; padding: 10px 14px; text-decoration: none; white-space: nowrap; }
-    .menu .submenu a:hover, .menu .submenu a:focus { background: rgba(255,255,255,0.08); }
-
-    .menu .dropdown:hover .submenu, .menu .dropdown:focus-within .submenu { display: block; }
-
-    /* Light theme dropdown panel */
-    html[data-theme="light"] .menu .submenu{
-      background: color-mix(in srgb, var(--card-bg) 92%, var(--header-glow) 8%);
-      border: 1px solid rgba(0,0,0,.08);
-      box-shadow: 0 12px 24px rgba(0,0,0,.12);
-    }
-    html[data-theme="light"] .menu .submenu a{ color: var(--text); }
-    html[data-theme="light"] .menu .submenu a:hover,
-    html[data-theme="light"] .menu .submenu a:focus {
-      background: color-mix(in srgb, var(--header-glow) 16%, white 84%);
-      color: var(--header-glow);
-      text-shadow: 0 0 6px color-mix(in srgb, var(--header-glow) 70%, white 30%);
-    }
-
-    /* ===== Theme Variables ===== */
-    :root{
-      --bg:#0e1420; --text:#f2f5f9; --muted:#9fb0c3;
-      --header-bg:rgba(14,20,32,.65); --hairline:rgba(255,255,255,.1);
-      --card-bg:#111; --shadow:0 10px 30px rgba(0,0,0,.35); --card-stroke:rgba(255,255,255,.08);
-      --card-radius:22px; --gap:18px;
-      --header-glow:#9ad7ff;
-      --stroke: rgba(0,0,0,.78);
-      --glow-outer: 0 0 28px color-mix(in srgb, var(--header-glow) 95%, transparent);
-      --glow-inner: 0 0 10px color-mix(in srgb, var(--header-glow) 90%, transparent);
-      --ico-sun: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l-1.4-1.4M20.4 20.4 19 19M5 19l-1.4 1.4M20.4 3.6 19 5'/%3E%3C/svg%3E");
-      --ico-moon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 1 0 9.8 9.8z'/%3E%3C/svg%3E");
-      /* NEW: header height for background layers to sit just below the sticky header */
-      --hdrH: 80px;
-    }
-    html[data-theme="light"]{
-      --bg:#fff; --text:#0e1420; --muted:#4a5a6c;
-      --header-bg:rgba(255,255,255,.75); --hairline:rgba(0,0,0,.1);
-      --card-bg:#f5f7fb; --shadow:0 10px 30px rgba(0,0,0,.12); --card-stroke:rgba(0,0,0,.06);
-      --header-glow:#1b4fff;
-      --stroke: rgba(0,0,0,.55);
-      --glow-outer: 0 0 14px color-mix(in srgb, var(--header-glow) 65%, transparent);
-      --glow-inner: 0 0 3px  color-mix(in srgb, var(--header-glow) 70%, transparent);
-      --ico-sun: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l-1.4-1.4M20.4 20.4 19 19M5 19l-1.4 1.4M20.4 3.6 19 5'/%3E%3C/svg%3E");
-      --ico-moon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 1 0 9.8 9.8z'/%3E%3C/svg%3E");
-    }
-
-    *{box-sizing:border-box}
-    html,body{ margin:0; height:100%; background:var(--bg); color:var(--text);
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji"; }
-
-    /* ===== Header ===== */
-    header{
-      position:sticky; top:0; z-index:10; backdrop-filter:blur(10px);
-      background:var(--header-bg); border-bottom:1px solid var(--hairline);
-      padding:12px 18px; display:flex; align-items:center; gap:16px;
-    }
-    .brand{display:flex; align-items:center; gap:10px}
-    .brand .logo{ width:clamp(40px, 10vw, 110px); height:clamp(40px, 10vw, 110px); display:inline-block; }
-    .brand .logo img{width:100%; height:100%; object-fit:contain; display:block}
-    header h1{
-      margin:0;
-      font-size:clamp(16px, 4.2vw, 22px);
-      letter-spacing:.5px; white-space:nowrap;
-      -webkit-text-stroke:.4px var(--stroke);
-      text-shadow:0 1px 0 rgba(0,0,0,.25);
-    }
-    @media (max-width:575.98px){
-      header{ padding:10px 12px; }
-      .brand{ gap:8px; }
-    }
-
-    /* ===== Menu with slot effect ===== */
-    nav.menu{flex:1; justify-content:center; gap:28px; flex-wrap:wrap;}
-    nav.menu a, nav.menu .menu-link{
-      position:relative; display:inline-block; color:var(--text); text-decoration:none;
-      font-weight:800; letter-spacing:.08em; font-size:14px; text-transform:uppercase;
-      padding:8px 10px; border-radius:10px;
-      -webkit-text-stroke:.35px var(--stroke);
-      text-shadow: 0 1px 0 rgba(0,0,0,.22);
-    }
-    .slot-window{ display:block; height:1.2em; overflow:hidden; line-height:1.2em; }
-    .slot-track{ display:block; }
-    .slot-item{ display:block; line-height:1.2em; }
-    @keyframes slotSpin{
-      0%{transform:translateY(0)}45%{transform:translateY(-105%)}60%{transform:translateY(5%)}100%{transform:translateY(0)}
-    }
-    nav.menu a:hover .slot-track{ animation: slotSpin 1.1s cubic-bezier(.22,.72,.17,1) both; }
-    nav.menu a:focus-visible{outline:2px solid var(--text); outline-offset:4px; border-radius:6px}
-
-    /* hover/focus/active */
-    nav.menu a:hover, nav.menu a:focus-visible, nav.menu a.active,
-    nav.menu .menu-link:hover, nav.menu .menu-link:focus-visible, nav.menu .menu-link.active{
-      color: var(--header-glow);
-      text-shadow: var(--glow-outer), var(--glow-inner), 0 1px 1px rgba(0,0,0,.18);
-      background: color-mix(in srgb, var(--header-glow) 12%, transparent);
-    }
-    nav.menu a::after, nav.menu .menu-link::after{
-      content:""; position:absolute; left:12px; right:12px; bottom:4px; height:6px; border-radius:999px;
-      background: radial-gradient(60% 120% at 50% 50%, color-mix(in srgb, var(--header-glow) 65%, transparent), transparent 70%);
-      opacity:0; transform:translateY(4px); transition:opacity .18s, transform .18s; pointer-events:none; filter:blur(.8px);
-    }
-    nav.menu a:hover::after, nav.menu a.active::after,
-    nav.menu .menu-link:hover::after, nav.menu .menu-link.active::after{ opacity:1; transform:translateY(0); }
-
-    html[data-theme="light"] nav.menu a:hover,
-    html[data-theme="light"] nav.menu a:focus-visible,
-    html[data-theme="light"] nav.menu a.active{
-      text-shadow:0 1px 1px rgba(0,0,0,.28), 0 0 10px color-mix(in srgb, var(--header-glow) 40%, transparent);
-      background: color-mix(in srgb, var(--header-glow) 12%, white 88%);
-      border-radius: 8px; -webkit-text-stroke:.25px rgba(0,0,0,.35);
-    }
-
-    header button{
-      appearance:none; border:1px solid var(--hairline); background:transparent; color:var(--text);
-      border-radius:999px; padding:8px 12px; cursor:pointer; font-size:12px;
-    }
-    header button:hover{background:rgba(127,127,127,.12)}
-    header button:focus-visible{outline:2px solid var(--text); outline-offset:2px}
-
-    /* ===== Sun + Moon visuals only ===== */
-    #lightBtn{ position:relative; }
-    #lightBtn::before,
-    #lightBtn::after{
-      content:""; position:absolute; top:50%; transform:translateY(-50%);
-      width:18px; height:18px; opacity:.95; pointer-events:none;
-      background-repeat:no-repeat; background-position:center; background-size:contain;
-      filter: drop-shadow(0 0 4px rgba(255,255,255,.45));
-    }
-    #lightBtn::before{ left:.1em; background-image: var(--ico-sun); }
-    #lightBtn::after{  right:.1em; background-image: var(--ico-moon); }
-
-    /* Make ONLY the light button responsive on larger screens too */
-    #lightBtn{
-      min-height: clamp(38px, 4.2vw, 46px);
-      padding: clamp(.56em, .8vw, .72em) clamp(1em, 1.6vw, 1.8em);
-      font-size: clamp(.95rem, .5vw + .7rem, 1rem);
-    }
-    #lightBtn::before,
-    #lightBtn::after{
-      width: clamp(16px, 1.2vw + 10px, 20px);
-      height: clamp(16px, 1.2vw + 10px, 20px);
-    }
-
-    /* ===== Responsive navbar ===== */
-    @media (min-width: 992px){
-      nav.menu{ display:flex; }
-      nav.menu.collapse,
-      nav.menu.collapse:not(.show){
-        display:flex !important;
-        height:auto !important;
-        visibility:visible !important;
-      }
-    }
-    @media (max-width: 991.98px){
-      nav.menu{ display:block; }
-      nav.menu.collapse:not(.show){ display:none !important; }
-    }
-
-    /* Hamburger */
-    .hamburger-btn{
-      border:1px solid var(--hairline); color:var(--text); background:transparent;
-      padding:.45rem .7rem; border-radius:10px; line-height:1; font-weight:900;
-      min-width:40px; min-height:40px; box-shadow:none; transition:color .15s ease;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .hamburger-btn:hover,
-    .hamburger-btn:focus-visible,
-    .hamburger-btn[aria-expanded="true"]{
-      color: var(--header-glow);
-      background: transparent;
-      text-shadow: none;
-      box-shadow: none;
-      transform: none;
-      outline: none;
-    }
-
-    /* ===== Mobile: menu panel + FIX no-shift during .collapsing ===== */
-    @media (max-width: 991.98px){
-      header{ position:sticky; top:0; }
-
-      /* Keep the nav OUT of the flex flow for the whole animation */
-      #primaryNav.collapse,
-      #primaryNav.collapsing,
-      #primaryNav.collapse.show{
-        position:absolute; left:0; right:0; top:100%;
-        background: var(--header-bg);
-        border-top:1px solid var(--hairline);
-        padding:10px 18px 12px;
-        z-index: 9;
-        box-shadow: 0 10px 30px rgba(0,0,0,.35);
-        backdrop-filter: blur(10px);
-        width:100%;
-        border-radius: 0 0 18px 18px;
-      }
-
-      /* Hidden state still fully removed */
-      #primaryNav.collapse:not(.show){ display:none !important; }
-
-      header .menu a,
-      header .menu .menu-link{
-        display:block; padding:10px 12px; margin:6px 0;
-        color: var(--header-glow);
-        background: transparent;
-        text-shadow:none;
-        border-radius:12px;
-      }
-
-      /* dropdown submenu becomes inline */
-      .menu .submenu{
-        position: static; display: none; padding: 4px 0; border: 0; box-shadow:none;
-        background: transparent;
-      }
-      .menu .dropdown:focus-within .submenu,
-      .menu .dropdown:hover .submenu{ display:block; }
-
-      /* ===== Light button: icon-only on small screens ===== */
-      #lightBtn{
-        width: clamp(40px, 9.5vw, 46px);
-        height: clamp(40px, 9.5vw, 46px);
-        padding: 0;
-        border-radius: 999px;
-        font-size: 0;         /* hide text visually */
-        min-width: auto;
-        gap: 0;
-      }
-      #lightBtn::after{ display:none; } /* only one icon */
-      #lightBtn::before{
-        left:50%; right:auto; transform:translate(-50%, -50%);
-        width: clamp(18px, 4.3vw, 22px);
-        height: clamp(18px, 4.3vw, 22px);
-      }
-      html[data-theme="light"] #lightBtn::before{ background-image: var(--ico-sun); }
-      html[data-theme="dark"]  #lightBtn::before{ background-image: var(--ico-moon); }
-    }
-
-    /* ===== Hero / Panels ===== */
-    .hero{ max-width:1300px; margin:22px auto 0; padding:0; position:relative; z-index:1; }
-    .panel{
-      position:relative; aspect-ratio:9/14; overflow:hidden; border-radius:var(--card-radius);
-      background:var(--card-bg); box-shadow:var(--shadow); border:1px solid var(--card-stroke);
-      isolation:isolate; transform:translateY(0) scale(1);
-      transition:transform .35s cubic-bezier(.2,.7,.2,1), box-shadow .35s; will-change:transform; z-index:1;
-    }
-    .panel-hero{ aspect-ratio:auto; height:clamp(160px, 28vw, 380px); background:#000; margin-bottom:var(--gap); }
-    .panel video{
-      position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
-      filter:saturate(1.05) contrast(1.02); transform:scale(1);
-      transition:transform .6s ease, filter .35s ease; z-index:0; pointer-events:none; will-change:transform;
-    }
-    .panel:hover{ transform:translateY(-8px) scale(1.02); box-shadow:0 18px 50px rgba(0,0,0,.45) }
-    .panel:hover video{ transform:scale(1.06); filter:saturate(1.1) contrast(1.05) }
-
-    .tint{
-      position:absolute; inset:0; pointer-events:none; z-index:1;
-      background:linear-gradient(135deg, rgba(26,92,255,.35), rgba(0,178,255,.15));
-      mix-blend-mode:soft-light; opacity:.75; transition:opacity .35s ease;
-    }
-    .panel-hero .tint{
-      background: radial-gradient(120% 80% at 80% 10%, rgba(0,0,0,.28), transparent 60%),
-                  linear-gradient(135deg, rgba(26,92,255,.35), rgba(0,178,255,.15));
-      opacity:.85;
-    }
-    html[data-theme="light"] .panel .tint{opacity:.45}
-
-    .wrap{max-width:1300px; margin:28px auto; padding:0 18px 36px; position:relative; z-index:1; }
-    .grid{display:grid; grid-template-columns:1fr; gap:var(--gap)}
-    @media (min-width:900px){ .grid{grid-template-columns:1fr 1fr} }
-    @media (min-width:1200px){ .grid{grid-template-columns:1fr 1fr 1fr} }
-
-    .overlay{position:absolute; inset:0; display:grid; place-items:center; pointer-events:none; z-index:2; padding:18px}
-    .centerline{
-      font-weight:800; letter-spacing:.5px; text-transform:uppercase;
-      font-size:clamp(14px, 2vw, 22px); text-align:center; line-height:1.2;
-      color:var(--text); padding:0 12px; text-shadow:0 2px 8px rgba(0,0,0,.35);
-    }
-    .title-row{
-      display:inline-flex; align-items:center; gap:10px; pointer-events:auto;
-      padding:6px 10px; border-radius:10px;
-      background:rgba(0,0,0,.22); box-shadow:0 4px 20px rgba(0,0,0,.25);
-    }
-    html[data-theme="light"] .centerline{ text-shadow:none; }
-    html[data-theme="light"] .title-row{ background: color-mix(in srgb, white 75%, var(--header-glow) 25%); box-shadow:none; }
-
-    .water-chip{ width:28px; height:28px; border-radius:999px; display:inline-flex;
-      align-items:center; justify-content:center; flex:0 0 auto;
-      background: radial-gradient(circle at 60% 30%, #8fd3ff 0%, #3db7ff 40%, #0a62cc 100%);
-      box-shadow: 0 0 0 2px rgba(255,255,255,.25), 0 6px 18px rgba(0, 150, 255, .35);
-      overflow:hidden; position:relative; cursor:pointer; transition: filter .2s ease; }
-    .water-chip:hover{ filter:brightness(1.05) saturate(1.1); }
-    .water-chip svg{ width:70%; height:70%; display:block; }
-    .water-chip .ring{ fill:none; stroke:#d8efff; opacity:.85; stroke-width:1.8; }
-    .water-chip .drop{ fill:#e9f7ff; }
-    .water-chip .bubble{ fill:#e9f7ff; opacity:.95; }
-
-    @media (prefers-reduced-motion: reduce){
-      .panel, .panel video, .tint{transition:none}
-      .panel:hover{transform:none}
-      .panel:hover video{transform:none}
-      nav.menu a:hover .slot-track{animation:none}
-      #ripple-layer{ display:none !important; }
-    }
-
-    .hint{position:fixed; right:12px; bottom:10px; color:var(--muted); font-size:12px; opacity:.75; user-select:none}
-
-    /* ===== Background Ripple Layer ===== */
-    #ripple-layer{ position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.9; }
-    html[data-theme="dark"] #ripple-layer{ mix-blend-mode:screen; }
-    html[data-theme="light"] #ripple-layer{ mix-blend-mode:multiply; }
-    .ripple{
-      position:absolute; left:0; top:0; width:160px; height:160px; border-radius:999px;
-      transform:translate(-50%,-50%) scale(.25); opacity:.8; will-change:transform,opacity,filter;
-      background:radial-gradient(circle, rgba(180,235,255,.75) 0%, rgba(150,215,255,.35) 35%, rgba(150,215,255,0) 70%);
-      filter:blur(.8px); box-shadow:0 0 28px rgba(120,190,255,.35);
-    }
-    html[data-theme="light"] .ripple{
-      background:radial-gradient(circle, rgba(40,110,255,.22) 0%, rgba(40,110,255,.10) 35%, rgba(40,110,255,0) 70%);
-      filter:blur(.6px); box-shadow:0 0 20px rgba(40,110,255,.12); opacity:.7;
-    }
-
-    /* ===== WHY ===== */
-    .why-section{
-      position:relative; display:flex; align-items:flex-start; min-height:460px; overflow:hidden; padding:48px 0 0 0;
-      background: linear-gradient(135deg,#0b1f36 0%, #0c3d66 55%, #0e6fc0 100%);
-      border-top:1px solid var(--card-stroke); border-bottom:1px solid var(--card-stroke);
-    }
-    html[data-theme="light"] .why-section{ background: linear-gradient(135deg,#eaf3ff 0%, #d8ebff 55%, #cfe7ff 100%); }
-    .lottie-bg{ position:absolute; left:-70px; bottom:-70px; z-index:0; opacity:.65; pointer-events:none; user-select:none; width:700px; height:700px; filter: saturate(1.1) contrast(1.03); }
-    .lottie-bg video{ width:100%; height:100%; object-fit:cover; opacity:.75; }
-    .why-main-content{ z-index:1; margin:0 auto; width:100%; max-width:1300px; display:flex; flex-direction:column; align-items:center; position:relative; }
-    .why-title{
-      font-size:2.1rem; font-weight:900; margin-bottom:32px; text-align:center; letter-spacing:.7px; color:#fff;
-      text-shadow:0 4px 18px rgba(0,0,0,.28), 0 1px 0 rgba(0,0,0,.35);
-    }
-    html[data-theme="light"] .why-title{
-      color:#0e1420; text-shadow:none;
-      background:linear-gradient(90deg,#1a5cff,#00b2ff);
-      -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent;
-    }
-    .why-list{ display:flex; flex-direction:column; gap:22px; width:100%; max-width:740px; margin:0 auto 18px auto; font-size:1.12rem; font-weight:600; z-index:1; line-height:1.45; }
-    .why-list-item{
-      display:flex; align-items:center; gap:18px; cursor:pointer;
-      transition:transform .28s cubic-bezier(.4,2,.6,1), background .25s ease;
-      will-change:transform; border-radius:10px; padding:.18em .34em .18em .18em; background:none; position:relative;
-    }
-    .why-list-item:hover{ transform:scale(1.045); background: color-mix(in srgb, var(--header-glow) 12%, transparent); }
-    .why-icon-bullet{
-      display:flex; align-items:center; justify-content:center; border-radius:50%;
-      width:46px; height:46px; font-size:1.4em; background:#0d2036; color:var(--header-glow);
-      border:2px solid transparent; box-shadow: 0 2px 14px rgba(24,110,255,.35);
-      transition: box-shadow .24s, border .24s, transform .24s;
-    }
-    .why-list-item:hover .why-icon-bullet{
-      box-shadow: 0 0 0 4px color-mix(in srgb, var(--header-glow) 35%, transparent), 0 6px 26px color-mix(in srgb, var(--header-glow) 45%, transparent);
-      border:2px solid color-mix(in srgb, var(--header-glow) 55%, transparent);
-      transform: translateY(-1px);
-    }
-    .why-note{ margin-top:6px; font-size:.92rem; color:var(--muted); text-align:center; }
-
-    /* ===== Fixed background water & ripples ===== */
-    #water-stage{ position:fixed; inset:0; z-index:0; pointer-events:none; }
-    #water-canvas{ width:100%; height:100%; display:block; }
-
-    /* ===== NEW: Vessels layer (submarine / boat) =====
-       Sits just below the sticky header, above the water/ripples but below main content.
-       We use only CSS keyframes; JS toggles the "run" class to restart the sail animation. */
-    .vessels-layer{
-      position: fixed;
-      inset: var(--hdrH) 0 0 0;   /* keep clear of sticky header */
-      z-index: 0;                 /* background-ish: main content has z-index:1 */
-      pointer-events: none;
-      overflow: visible;
-    }
-    .vessel{
-      position:absolute;
-      top: 58%;                   /* a comfy height that feels like sitting on water */
-      transform: translateX(110vw) scale(1.06);  /* start off-screen on the right */
-      opacity: 0;
-      image-rendering: -webkit-optimize-contrast;
-      filter: drop-shadow(0 8px 18px rgba(0,0,0,.35));
-      will-change: transform, opacity;
-    }
-    .vessel.sub  { width: min(34vw, 460px); }
-    .vessel.boat { width: min(30vw, 420px); }
-
-    /* When "run" is added via JS, the GIF sails from right to left. */
-    .vessel.run{
-      opacity: 1;
-      animation: sail-left 15s linear forwards;
-    }
-    @keyframes sail-left{
-      0%   { transform: translateX(110vw)  scale(1.06); }
-      100% { transform: translateX(-130vw) scale(1.06); }
-    }
-
-    /* Button style */
-    .dashboard-btn {
-      background: linear-gradient(90deg,#08497e 0%, #0e6fc0 50%, #5dade2 100%);
-      color: #fff; border: none; border-radius: 1.6em; padding: .72em 1.8em;
-      font-weight: 800; font-size: 1rem; margin-top: .2em; cursor: pointer;
-      box-shadow: 0 3px 13px rgba(14,111,192,.3);
-      transition: background .18s, color .18s, box-shadow .18s, transform .18s;
-      display: inline-flex; align-items: center; gap: .5em; position: relative; z-index: 2; -webkit-tap-highlight-color: transparent;
-    }
-    .dashboard-btn:hover{ background: linear-gradient(90deg, #5dade2 0%, #0e6fc0 100%); color: #eaf6ff; box-shadow: 0 8px 28px rgba(14,111,192,.5); transform: translateY(-1px) scale(1.02); }
-    .dashboard-btn:focus{ outline:none; }
-    .dashboard-btn:focus-visible{ background: linear-gradient(90deg, #5dade2 0%, #0e6fc0 100%); color: #eaf6ff; box-shadow: 0 0 0 3px rgba(90,173,226,.45), 0 8px 28px rgba(14,111,192,.5); transform: translateY(-1px) scale(1.02); }
-    .dashboard-btn:active{ transform: translateY(0) scale(.98); box-shadow: 0 2px 10px rgba(14,111,192,.35); }
-
-    footer{
-      padding:16px; border-top:1px solid var(--card-stroke); text-align:center; color:var(--muted);
-      position:relative; z-index:1; background:transparent;
-    }
-
-    /* ===== Full Page Loading Mask ===== */
-    #loadingMask{
-      display:none; position:fixed; inset:0; z-index:10000; background:rgba(14,20,32,0.16); backdrop-filter:blur(2.5px);
-      align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .22s ease;
-    }
-    #loadingMask.active{ display:flex !important; opacity:1; pointer-events:auto; }
-    .loading-card{
-      background:#ffffff3c; border-radius:26px; padding:32px 44px;
-      box-shadow:0 8px 28px rgba(66,29,121,.38); display:flex; flex-direction:column; align-items:center; gap:12px;
-      transform:scale(.985); transition:transform .6s ease, opacity .25s ease; opacity:.99;
-    }
-    #loadingMask.active .loading-card{ transform:scale(1); }
-    .loading-gif{ width:min(420px, 72vw); height:auto; display:block; }
-    .loading-text {
-      font-size: clamp(28px,4.6vw,44px); font-weight: 900; letter-spacing: .8px; line-height: 1.08;
-      background: linear-gradient(90deg,#d7e7ff 0%, #91a6ff 50%, #3d5afe 100%);
-      -webkit-background-clip: text; background-clip: text; color: transparent;
-      -webkit-text-stroke: 2px rgba(0, 50, 200, 0.7);
-      text-shadow: 0 0 12px #3d5afeaa, 0 0 20px #536dfeaa, 0 0 28px #91a6ffaa, 0 0 4px #fff8, 0 2px 8px #e0e9ffcc;
-    }
-
-    #platypureLogo {
-      max-height: 75px;
-    }
-
-    @media (max-width: 768px) {
-      #platypureLogo {
-        max-height: 45px;
-      }
-    }
-  </style>
+  <!-- We moved inline styles to a proper static file, so caching works and diffs are cleaner. -->
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
 </head>
 <body>
+  <!-- We keep the header sticky, and we keep it light, so navigation feels stable. -->
   <header id="siteHeader" class="container-fluid">
     <div class="d-flex align-items-center w-100 gap-2 position-relative">
-      <!-- Brand -->
+      <!-- Brand: we show the platypus logo, and we keep it responsive, so it scales on phones. -->
       <div class="brand text-center text-lg-start" aria-label="Brand">
         <span class="logo" aria-hidden="true">
           <img id="brandLogo" src="{% static 'lightoff_logo.png' %}" alt="Brand logo (lights off)">
@@ -508,7 +57,7 @@
         </h1>
       </div>
 
-      <!-- Hamburger (small screens only) -->
+      <!-- On small screens we toggle the menu... and we keep it accessible, so keyboard users are happy. -->
       <button class="hamburger-btn d-lg-none ms-auto"
               type="button"
               data-bs-toggle="collapse"
@@ -518,7 +67,7 @@
               aria-label="Toggle menu">☰</button>
 
       {% with current=request.resolver_match.url_name %}
-      <!-- Nav -->
+      <!-- Our primary nav: we highlight the active page, and we keep classes simple, so teammates can read it. -->
       <nav id="primaryNav"
            class="menu collapse d-lg-flex flex-lg-row justify-content-center gap-3 mx-lg-auto"
            aria-label="Primary">
@@ -528,7 +77,7 @@
           </span></span>
         </a>
 
-        <!-- dropdown item -->
+        <!-- We group “water insights” under a dropdown, and we keep it short, so the header stays clean. -->
         <div class="dropdown menu-item">
           <a href="#"
              class="menu-link has-submenu {% if current == 'explore_water_quality' or current == 'pollution_sources' or current == 'future_family_safety' %}active{% endif %}"
@@ -540,13 +89,15 @@
             </span></span>
           </a>
           <div class="submenu" role="menu">
-            <a role="menuitem" href="{% url 'explore_water_quality' %}" class="{% if current == 'explore_water_quality' %}active{% endif %}">[Explore Water Quality]</a>
-            <a role="menuitem" href="{% url 'pollution_sources' %}" class="{% if current == 'pollution_sources' %}active{% endif %}">[Pollution Sources]</a>
+            <!-- we keep older pages commented, so we can bring them back later without hunting history -->
+            <!-- <a role="menuitem" href="{% url 'explore_water_quality' %}" class="{% if current == 'explore_water_quality' %}active{% endif %}">[Explore Water Quality]</a>
+            <a role="menuitem" href="{% url 'pollution_sources' %}" class="{% if current == 'pollution_sources' %}active{% endif %}">[Pollution Sources]</a>-->
             <a role="menuitem" href="{% url 'future_family_safety' %}" class="{% if current == 'future_family_safety' %}active{% endif %}">[Community Reporting & Family Safety]</a>
           </div>
         </div>
 
-        <a href="{% url 'for_kids_learn_play' %}" class="{% if current == 'for_kids_learn_play' %}active{% endif %}">
+        <!-- we’ll add more pages when needed… and we keep them consistent, so users don’t get lost -->
+       <!--  <a href="{% url 'for_kids_learn_play' %}" class="{% if current == 'for_kids_learn_play' %}active{% endif %}">
           <span class="slot-window"><span class="slot-track">
             <span class="slot-item">[For Kids – Learn & Play]</span><span class="slot-item" aria-hidden="true">[For Kids – Learn & Play]</span>
           </span></span>
@@ -556,40 +107,40 @@
           <span class="slot-window"><span class="slot-track">
             <span class="slot-item">[About Our Water]</span><span class="slot-item" aria-hidden="true">[About Our Water]</span>
           </span></span>
-        </a>
+        </a>-->
       </nav>
       {% endwith %}
 
-      <!-- Light switch -->
+      <!-- The light switch: we keep the text simple, and we sync the logo, so the brand feels alive. -->
       <button id="lightBtn" class="dashboard-btn ms-lg-3" aria-pressed="false" aria-label="Toggle lights">
         Lights: Off
       </button>
     </div>
   </header>
 
-  <!-- Fixed water surface and background ripples (shared) -->
+  <!-- We mount the water canvas behind everything, and we lock it full-screen, so it feels immersive. -->
   <div id="water-stage" aria-hidden="true">
     <canvas id="water-canvas"></canvas>
   </div>
   <div id="ripple-layer" aria-hidden="true"></div>
 
-  <!-- NEW: Vessels layer (decorative, non-interactive) -->
+  <!-- We also have a vessels layer… and we let the boat/sub glide… so the page feels playful. -->
   <div class="vessels-layer" id="vessels" aria-hidden="true">
     <img id="submarineGif" class="vessel sub" src="{% static 'submarine.gif' %}" alt="">
     <img id="boatGif" class="vessel boat" src="{% static 'boat.gif' %}" alt="">
   </div>
 
-  <!-- Main content -->
+  <!-- Our main content goes here… and we keep blocks clean, so each page can focus on one story. -->
   <main class="wrap">
     {% block content %}{% endblock %}
   </main>
 
-  <!-- Shared Footer -->
+  <!-- Tiny footer… and we keep the year dynamic, so we don’t forget to update it later. -->
   <footer>
     © {% now "Y" %} Water & Sanitation • All rights reserved.
   </footer>
 
-  <!-- Full Page Loading Mask -->
+  <!-- Loading mask: we show it during internal navigations, and we hide it smartly, so it feels fast. -->
   <div id="loadingMask" aria-hidden="true">
     <div class="loading-card" role="status" aria-live="polite">
       <img class="loading-gif" src="{% static 'giphy1.gif' %}" alt="Loading..." style="width:740px;height:460px;display:block;">
@@ -597,15 +148,15 @@
     </div>
   </div>
 
-  <!-- Shared JS: GSAP loading + light switch + logo switching + water surface animation + background ripples + vessels -->
+  <!-- Shared JS: we namespace things with water_* so teammates see the theme and avoid collisions. -->
   <script>
-    /************ GSAP Multi-CDN Loading ************/
-    const GSAP_URLS = [
+    /************ GSAP Multi-CDN Loading (we try multiple CDNs… and we stop at the first that works) ************/
+    const water_GSAP_URLS = [
       "https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js",
       "https://unpkg.com/gsap@3.12.5/dist/gsap.min.js",
       "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"
     ];
-    function loadScript(url){
+    function water_load_script(url){
       return new Promise((resolve,reject)=>{
         const s=document.createElement('script');
         s.src=url; s.async=true;
@@ -614,59 +165,62 @@
         document.head.appendChild(s);
       });
     }
-    async function ensureGSAP(){
-      if(window.gsap) return true;
-      for(const url of GSAP_URLS){
-        try{ await loadScript(url); if(window.gsap) return true; }catch(e){}
+    async function water_ensure_gsap(){
+      if(window.gsap) return true;                                   // we already have it, and we reuse it, so no extra fetch
+      for(const url of water_GSAP_URLS){                              // we iterate through options, and we bail out early, so it’s quick
+        try{ await water_load_script(url); if(window.gsap) return true; }catch(e){}
       }
-      console.error("[GSAP] failed to load from all CDNs.");
+      console.error("[GSAP] failed to load from all CDNs.");          // we log once, and we degrade gracefully, so the app still runs
       return false;
     }
 
-    /************ Theme switching ************/
-    const lightBtn=document.getElementById("lightBtn");
-    const htmlEl=document.documentElement;
-    const logoImg=document.getElementById("brandLogo");
-    const LOGO_DARK="{% static 'lightoff_logo.png' %}";
-    const LOGO_LIGHT="{% static 'lighton_logo.png' %}";
-    let isLight = htmlEl.getAttribute("data-theme") === "light";
+    /************ Theme switching (we store the choice… and we broadcast a custom event… then the water reacts) ************/
+    const water_btn_light = document.getElementById("lightBtn");
+    const water_html_root = document.documentElement;
+    const water_logo_img  = document.getElementById("brandLogo");
+    const WATER_LOGO_DARK = "{% static 'lightoff_logo.png' %}";
+    const WATER_LOGO_LIGHT= "{% static 'lighton_logo.png' %}";
+    let water_is_light    = water_html_root.getAttribute("data-theme") === "light";
 
-    function updateLogo(isLight){
-      logoImg.src=isLight?LOGO_LIGHT:LOGO_DARK;
-      logoImg.alt=isLight?"Brand logo (lights on)":"Brand logo (lights off)";
+    function water_update_logo(isLight){
+      water_logo_img.src = isLight ? WATER_LOGO_LIGHT : WATER_LOGO_DARK;  // we swap image source, and we keep alt in sync
+      water_logo_img.alt = isLight ? "Brand logo (lights on)" : "Brand logo (lights off)";
     }
-    function updateButton(isLight){
-      lightBtn.textContent=`Lights: ${isLight ? "On" : "Off"}`;
-      lightBtn.setAttribute("aria-pressed", String(isLight));
+    function water_update_button(isLight){
+      water_btn_light.textContent = `Lights: ${isLight ? "On" : "Off"}`;  // we keep the label friendly, and we toggle aria-pressed
+      water_btn_light.setAttribute("aria-pressed", String(isLight));
     }
-    updateButton(isLight);
-    updateLogo(isLight);
+    water_update_button(water_is_light);
+    water_update_logo(water_is_light);
 
-    function setTheme(nextIsLight){
-      isLight = !!nextIsLight;
-      htmlEl.setAttribute("data-theme", isLight ? "light" : "dark");
-      updateButton(isLight);
-      updateLogo(isLight);
-      try { localStorage.setItem('theme', isLight ? 'light' : 'dark'); } catch(e){}
+    function water_set_theme(nextIsLight){
+      // we normalize the flag, and we write attributes, so CSS variables flip instantly
+      water_is_light = !!nextIsLight;
+      water_html_root.setAttribute("data-theme", water_is_light ? "light" : "dark");
+      water_update_button(water_is_light);
+      water_update_logo(water_is_light);
+      try { localStorage.setItem('theme', water_is_light ? 'light' : 'dark'); } catch(e){}
+      // we sync the browser’s theme-color, so mobile UIs look consistent, then we notify sub-systems
       let meta=document.querySelector('meta[name="theme-color"]');
       if(!meta){ meta=document.createElement("meta"); meta.name="theme-color"; document.head.appendChild(meta); }
       meta.content=getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
-      /* Broadcast theme changes so background systems can respond */
-      window.dispatchEvent(new CustomEvent('themechange', { detail: { isLight } }));
-      if (window.waterStage && window.waterStage.transitionTo){
-        window.waterStage.transitionTo(isLight);
+      // we broadcast, and the canvas/vessels can listen, so animations react without coupling
+      window.dispatchEvent(new CustomEvent('themechange', { detail: { isLight: water_is_light } }));
+      if (window.water_stage && window.water_stage.transitionTo){
+        window.water_stage.transitionTo(water_is_light);
       }
     }
-    lightBtn.addEventListener("click",()=>{ setTheme(!isLight); });
+    water_btn_light.addEventListener("click",()=>{ water_set_theme(!water_is_light); });
     window.addEventListener('storage', (e)=>{
+      // we listen to cross-tab storage changes, and we sync state, so multiple tabs stay consistent
       if (e.key === 'theme' && e.newValue) {
         const wantLight = e.newValue === 'light';
-        if (wantLight !== isLight) setTheme(wantLight);
+        if (wantLight !== water_is_light) water_set_theme(wantLight);
       }
     });
 
-    /* Keep nav healthy across breakpoints */
-    function resetNavForBreakpoint(){
+    /* We reset the collapse styles on breakpoint changes… and we avoid weird heights… so the layout doesn’t jump. */
+    function water_reset_nav_for_breakpoint(){
       const nav = document.getElementById('primaryNav');
       if (!nav) return;
       if (window.innerWidth >= 992){
@@ -681,14 +235,14 @@
         nav.style.removeProperty('display');
       }
     }
-    window.addEventListener('resize', resetNavForBreakpoint);
-    window.addEventListener('load', resetNavForBreakpoint);
+    window.addEventListener('resize', water_reset_nav_for_breakpoint);
+    window.addEventListener('load',   water_reset_nav_for_breakpoint);
 
-    /************ Background Ripple (GSAP) ************/
-    function initBackgroundRipple(){
+    /************ Background Ripple (we animate small dots… and we avoid header/banners… so it looks subtle) ************/
+    function water_init_background_ripple(){
       const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (prefersReduced) return;
-      const layer = document.getElementById('ripple-layer');
+      if (prefersReduced) return;                         // we respect the user’s preference… so accessibility comes first
+      const layer    = document.getElementById('ripple-layer');
       if (!layer || !window.gsap) return;
       const headerEl = document.getElementById('siteHeader');
       const bannerEl = document.getElementById('bannerHero');
@@ -723,7 +277,8 @@
         gsap.killTweensOf(el);
         gsap.fromTo(el,{scale:0.25,opacity:0.7},{scale:1.7,opacity:0,duration:dur,ease:'sine.out'});
       }
-      window.spawnRipple = function(x,y,v){
+      // we expose a tiny hook for fun, and we name it clearly, so teammates can call it in demos
+      window.water_spawn_ripple = function(x,y,v){
         if (blocked) return;
         spawn(x,y,v);
       };
@@ -735,7 +290,7 @@
         const x=e.clientX, y=e.clientY; if(isInDeadZone(x,y)) return;
         let v=0.6;
         if(forceV!=null){ v=forceV; }
-        else if(lastX!==null){ const dx=x-lastX, dy=y-lastY, dt=(now-lastT); v=Math.hypot(dx,dy)/Math.max(1,dt); }
+        else if(lastX!==null){ const dx=x-lastX; const dy=y-lastY; const dt=(now-lastT); v=Math.hypot(dx,dy)/Math.max(1,dt); }
         lastX=x; lastY=y; lastT=now; spawn(x,y,v);
       }
       function onMove(e){
@@ -750,9 +305,9 @@
       window.addEventListener('pointerdown', e=>handlePointer(e,1.2), { passive:true });
     }
 
-    /************ Water surface ************/
-    function initWaterStage(){
-      if (!window.gsap) return null;
+    /************ Water surface (we draw 3 layered sine-waves… and we lerp colors… so it feels like real water) ************/
+    function water_init_stage(){
+      if (!window.gsap) return null;                                  // we need gsap for tweens, and we bail if missing
       const canvas = document.getElementById('water-canvas');
       const ctx = canvas.getContext('2d');
       const DPR = window.devicePixelRatio || 1;
@@ -763,7 +318,7 @@
       const darkTop=[6,18,38],   darkBot=[8,60,110];
       const lightTop=[190,230,255], lightBot=[140,205,255];
       const lerp = (a,b,t)=> a+(b-a)*t;
-      function waterGradient(){
+      function water_gradient(){
         const t = state.colorT;
         const top = [
           Math.round(lerp(darkTop[0], lightTop[0], t)),
@@ -823,7 +378,7 @@
           c.lineTo(w.x + w.width, w.y + w.height);
           c.lineTo(w.x, w.y + w.height);
           c.closePath();
-          c.fillStyle = waterGradient();
+          c.fillStyle = water_gradient();
           c.fill();
         }
         w.init = init; w.resize = resize; w.draw = draw; w.kill = kill;
@@ -844,8 +399,7 @@
       function resumeOscillation(){ waves.forEach(w=>w.tweens.forEach(t=>t.paused(false))); }
 
       function draw(){
-        const ctx2 = ctx;
-        ctx2.clearRect(0,0,vw,vh);
+        ctx.clearRect(0,0,vw,vh);
         const level = state.baseLevel + state.scrolling;
         waves[0].draw(level +  0);
         waves[1].draw(level +  8);
@@ -880,12 +434,8 @@
       };
     }
 
-    /* ===== NEW: Vessels controller (CSS-only animation, JS scheduling) =====
-       - Light theme ---> Boat sails.
-       - Dark theme  ---> Submarine sails.
-       - We just toggle the .run class to restart the keyframes.
-       - We also respect prefers-reduced-motion. */
-    function initVessels(){
+    /* Vessels: Light -> boat sails, Dark -> sub sails… and we restart keyframes by toggling a class. */
+    function water_init_vessels(){
       const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const layer = document.getElementById('vessels');
       if (!layer || prefersReduced) return;
@@ -894,9 +444,9 @@
       const boat = document.getElementById('boatGif');
       if (!submarine || !boat) return;
 
-      // Keep this in sync with CSS animation duration
+      // we align this with CSS timing, so the loop math stays accurate
       const VESSEL_RUN_MS = 9000;
-      const LOOP_TOTAL_MS = 60000; // stop looping after ~1 minute
+      const LOOP_TOTAL_MS = 60000; // we stop after ~1 minute, and we keep the page calm
       const LOOP_GAP_MS   = 1000;
 
       let loopToken = 0;
@@ -906,8 +456,8 @@
         boat.classList.remove('run');
       }
       function restart(el){
-        el.classList.remove('run');           // reset animation state
-        void el.offsetWidth;                  // force reflow to restart keyframes
+        el.classList.remove('run');           // we reset animation state…
+        void el.offsetWidth;                  // and we force a reflow, so keyframes restart
         el.classList.add('run');
       }
       function startLoop(el, preDelayMs){
@@ -930,7 +480,7 @@
         setTimeout(()=>{ if (myToken === loopToken) runOnce(); }, preDelayMs || 0);
       }
 
-      // Keep vessels below the sticky header using --hdrH
+      // we keep vessels under the sticky header using a CSS var, so they never overlap the navbar
       function applyHeaderHeight(){
         const hdr = document.getElementById('siteHeader');
         const h = (hdr && hdr.offsetHeight) ? hdr.offsetHeight : 80;
@@ -939,13 +489,13 @@
       applyHeaderHeight();
       window.addEventListener('resize', applyHeaderHeight);
 
-      // Respond to our explicit 'themechange' event
+      // we respond to our custom themechange event, and we choose the right vessel, then we sail
       window.addEventListener('themechange', (e)=>{
         const light = !!(e.detail && e.detail.isLight);
         if (light) startLoop(boat, 200); else startLoop(submarine, 200);
       });
 
-      // Fallback: also observe data-theme attribute in case someone toggles it outside setTheme()
+      // fallback: we also observe the data-theme attribute, so we react even if someone toggles it manually
       const mo = new MutationObserver((muts)=>{
         for (const m of muts){
           if (m.type === 'attributes' && m.attributeName === 'data-theme'){
@@ -956,80 +506,83 @@
       });
       mo.observe(document.documentElement, { attributes:true });
 
-      // Kick off once on load to match current theme
+      // we kick off once on load to match the current theme, so users see movement immediately
       const isLightNow = document.documentElement.getAttribute('data-theme') === 'light';
       if (isLightNow) startLoop(boat, 250); else startLoop(submarine, 250);
 
       return { cancel: cancelLoops };
     }
 
-    (async function boot(){
-      const ok = await ensureGSAP();
+    // We boot the whole scene: we load GSAP… and we init ripples + water + vessels… then we sync theme-color.
+    (async function water_boot(){
+      const ok = await water_ensure_gsap();
       if(!ok) return;
 
-      initBackgroundRipple();
-      window.waterStage = initWaterStage();
-      if (window.waterStage){
-        window.waterStage.setModeImmediate(isLight);
+      water_init_background_ripple();
+      window.water_stage = water_init_stage();
+      if (window.water_stage){
+        window.water_stage.setModeImmediate(water_is_light);
       }
-      (function syncThemeColor(){
+      (function water_sync_theme_color(){
         let meta=document.querySelector('meta[name="theme-color"]');
         if(!meta){ meta=document.createElement("meta"); meta.name="theme-color"; document.head.appendChild(meta); }
         meta.content=getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
       })();
 
-      /* NEW: initialize vessels after GSAP systems boot (order not strictly required, but neat) */
-      window.vessels = initVessels();
+      // we start vessels after the GSAP systems are up, so the first loop doesn’t stutter
+      window.water_vessels = water_init_vessels();
 
+      // page-level hook: if pages have a pageInit(), we call it, so they can attach extra logic
       if (window.pageInit) window.pageInit();
     })();
   </script>
 
-  <!-- Jump to Loading + Prefetch + collapse events -->
+  <!-- Navigation helpers + Prefetch + Collapse events: we keep names water_* so the intent is obvious. -->
   <script>
-    function showLoadingMask(){
+    function water_show_loading_mask(){
       const mask = document.getElementById('loadingMask');
       if(!mask) return;
       mask.style.display = 'flex';
       requestAnimationFrame(()=> mask.classList.add('active'),10);
     }
-    function hideLoadingMask(){
+    function water_hide_loading_mask(){
       const mask = document.getElementById('loadingMask');
       if(!mask) return;
       mask.classList.remove('active');
       setTimeout(()=>{ mask.style.display='none'; }, 650);
     }
-    function forceHideLoadingMask(){
+    function water_force_hide_loading_mask(){
       const mask = document.getElementById('loadingMask');
       if(!mask) return;
       mask.classList.remove('active');
       mask.style.display='none';
     }
-    function isBackForwardNav(){
+    function water_is_back_forward_nav(){
       try{
         const nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
         return nav && nav.type === 'back_forward';
       }catch(e){ return false; }
     }
 
-    function hideMaskWhenHeroReady(e){
-      if ((e && e.persisted) || isBackForwardNav()){
-        forceHideLoadingMask(); return;
+    // we wait for the hero to be ready, and we hide the mask, so the first frame isn’t blank
+    function water_hide_mask_when_hero_ready(e){
+      if ((e && e.persisted) || water_is_back_forward_nav()){
+        water_force_hide_loading_mask(); return;
       }
       const hero = document.getElementById('heroVid');
-      if (!hero){ hideLoadingMask(); return; }
-      const done = () => { clearTimeout(tid); hideLoadingMask(); };
+      if (!hero){ water_hide_loading_mask(); return; }
+      const done = () => { clearTimeout(tid); water_hide_loading_mask(); };
       if (hero.readyState >= 2){ done(); return; }
       hero.addEventListener('loadeddata', done, { once:true });
       const tid = setTimeout(done, 1600);
     }
 
-    window.addEventListener('pageshow', hideMaskWhenHeroReady);
-    window.addEventListener('load', hideMaskWhenHeroReady);
-    window.addEventListener('pagehide', forceHideLoadingMask);
-    document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState === 'hidden') forceHideLoadingMask(); });
+    window.addEventListener('pageshow', water_hide_mask_when_hero_ready);
+    window.addEventListener('load',     water_hide_mask_when_hero_ready);
+    window.addEventListener('pagehide', water_force_hide_loading_mask);
+    document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState === 'hidden') water_force_hide_loading_mask(); });
 
-    function isInternalLink(a){
+    function water_is_internal_link(a){
       if(!a || !a.href) return false;
       if(a.target === '_blank') return false;
       const href = a.getAttribute('href') || '';
@@ -1039,33 +592,35 @@
         return url.origin === window.location.origin;
       }catch(e){ return false; }
     }
-    function hasModifierKey(e){ return e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button === 1; }
+    function water_has_mod_key(e){ return e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button === 1; }
 
+    // we intercept header links, and we show the mask, so the transition feels guided
     document.querySelectorAll('header .menu a').forEach(a=>{
       a.addEventListener('click', (e)=>{
-        if(hasModifierKey(e)) return;
-        if(!isInternalLink(a)) return;
+        if(water_has_mod_key(e)) return;
+        if(!water_is_internal_link(a)) return;
         e.preventDefault();
-        showLoadingMask();
+        water_show_loading_mask();
         setTimeout(()=>{ window.location.href = a.href; }, 1000);
       });
     });
 
+    // we do the same for any button with data-href, so the UX stays consistent
     document.querySelectorAll('button.dashboard-btn[data-href]').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
-        if(hasModifierKey(e)) return;
+        if(water_has_mod_key(e)) return;
         const href = btn.dataset.href;
         if(!href) return;
         e.preventDefault();
-        showLoadingMask();
+        water_show_loading_mask();
         setTimeout(()=>{ window.location.href = href; }, 1000);
       });
     });
 
-    /* Prefetch home videos */
-    const HOME_PATH = new URL("{% url 'home' %}", window.location.origin).pathname;
-    const isOnHome = window.location.pathname === HOME_PATH;
-    const HOME_VIDEOS = [
+    /* Prefetch home videos: we prewarm assets when the network is good, so the home feels instant. */
+    const water_HOME_PATH   = new URL("{% url 'home' %}", window.location.origin).pathname;
+    const water_is_on_home  = window.location.pathname === water_HOME_PATH;
+    const water_HOME_VIDEOS = [
       "{% static 'file1.mp4' %}",
       "{% static 'file2.mp4' %}",
       "{% static 'file3.mp4' %}",
@@ -1073,34 +628,35 @@
       "{% static 'file5.mp4' %}"
     ];
 
-    let homePrefetched = false;
-    function canPrefetchNow(){
+    let water_home_prefetched = false;
+    function water_can_prefetch_now(){
       const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
       const fastNet = !conn || ['4g','5g','wifi'].includes(conn.effectiveType || '');
       return fastNet;
     }
-    function prefetchHomeVideos(){
-      if (homePrefetched || isOnHome || !canPrefetchNow()) return;
-      homePrefetched = true;
-      HOME_VIDEOS.forEach(src=>{
+    function water_prefetch_home_videos(){
+      if (water_home_prefetched || water_is_on_home || !water_can_prefetch_now()) return;
+      water_home_prefetched = true;
+      water_HOME_VIDEOS.forEach(src=>{
         const l=document.createElement('link');
         l.rel='prefetch'; l.as='video'; l.href=src; l.crossOrigin='anonymous';
         document.head.appendChild(l);
       });
-      HOME_VIDEOS.forEach(src=>{
+      water_HOME_VIDEOS.forEach(src=>{
         try{ fetch(src, { mode:'no-cors', cache:'force-cache', priority:'low' }).catch(()=>{}); }catch(e){}
       });
     }
 
-    const homeLink = Array.from(document.querySelectorAll('header .menu a'))
-      .find(a => { try { return new URL(a.href, location.href).pathname === HOME_PATH; } catch(e){ return false; }});
-    if (homeLink){ homeLink.addEventListener('pointerenter', prefetchHomeVideos, { once:true, passive:true }); }
+    const water_home_link = Array.from(document.querySelectorAll('header .menu a'))
+      .find(a => { try { return new URL(a.href, location.href).pathname === water_HOME_PATH; } catch(e){ return false; }});
+    if (water_home_link){ water_home_link.addEventListener('pointerenter', water_prefetch_home_videos, { once:true, passive:true }); }
 
-    if (!isOnHome){
-      const idle = window.requestIdleCallback || (fn=>setTimeout(fn, 2000));
-      idle(()=> prefetchHomeVideos());
+    if (!water_is_on_home){
+      const water_idle = window.requestIdleCallback || (fn=>setTimeout(fn, 2000));
+      water_idle(()=> water_prefetch_home_videos());
     }
 
+    // we poke the layout when the bootstrap collapse opens/closes, so the viewport calc refreshes
     document.addEventListener('shown.bs.collapse', e => {
       if (e.target && e.target.id === 'primaryNav') window.dispatchEvent(new Event('resize'));
     });
