@@ -46,6 +46,7 @@ def _detect_base_dir() -> Path:
 BASE_DIR: Path = _detect_base_dir()
 ARTIFACTS_DIR: Path = BASE_DIR / "artifacts"
 CLEAN_DIR: Path = ARTIFACTS_DIR / "clean"
+OUTPUT_CSV = CLEAN_DIR / "output.csv"
 CONFIG_DIR: Path = BASE_DIR / "config"
 
 # Core parameters (kept in sync with training)
@@ -526,15 +527,20 @@ def _normalize_site_id(val: Any) -> Optional[str]:
     except Exception:
         return str(val).strip()
 
-def list_sites() -> List[str]:
-    """Union of site IDs appearing in either field or lab tables (clean)."""
-    field_df, lab_wide_df = _load_clean_safe()
-    s1, s2 = set(), set()
-    if not field_df.empty and "site_id" in field_df.columns:
-        s1 = set(_normalize_site_id(v) for v in field_df["site_id"].dropna().unique())
-    if not lab_wide_df.empty and "site_id" in lab_wide_df.columns:
-        s2 = set(_normalize_site_id(v) for v in lab_wide_df["site_id"].dropna().unique())
-    return sorted(x for x in s1.union(s2) if x is not None)
+def list_sites():
+    try:
+        df = pd.read_csv(OUTPUT_CSV)
+        # ensure only necessary cols
+        if "Site ID" in df.columns and "Victorian Suburb" in df.columns:
+            df_unique = df.drop_duplicates(subset=["Site ID"])
+            return [
+                {"id": str(row["Site ID"]), "suburb": row["Victorian Suburb"]}
+                for _, row in df_unique.iterrows()
+            ]
+        else:
+            return []
+    except Exception:
+        return []
 
 def predict_site(site_id: str, horizon_days: int = 30) -> Dict[str, Any]:
     """
