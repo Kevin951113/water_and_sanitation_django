@@ -480,12 +480,14 @@ html[data-theme="light"] .range-card {
     <div class="card-bd">
       <div class="row g-3 align-items-end">
         <div class="col-lg-6">
-          <label for="site_id" class="form-label fw-bold">Site ID</label>
+          <label for="site_id" class="form-label fw-bold">Site ID - Suburb</label>
           {% if site_options %}
             <select id="site_id" name="site_id" class="form-control-like">
               <option value="" disabled {% if not site_id %}selected{% endif %}>Select a site…</option>
-              {% for sid in site_options %}
-                <option value="{{ sid }}" {% if sid == site_id %}selected{% endif %}>{{ sid }}</option>
+              {% for site in site_options %}
+                <option value="{{ site.id }}" {% if site.id == site_id %}selected{% endif %}>
+                  {{ site.id }} – {{ site.suburb }}
+                </option>
               {% endfor %}
             </select>
           {% else %}
@@ -1065,14 +1067,14 @@ html[data-theme="light"] .range-card {
         e.preventDefault();
         if(window.Swal){
           Swal.fire({
-            title: 'Select a Site ID',
-            text: 'Please choose a Site ID before requesting a forecast.',
+            title: 'Select a Site ID - Suburb',
+            text: 'Please choose a Site ID - Suburb before requesting a forecast.',
             icon: 'warning',
             confirmButtonText: 'OK',
             confirmButtonColor: '#1E6FFF'
           }).then(highlightAndScroll);
         }else{
-          alert('Please choose a Site ID before requesting a forecast.');
+          alert('Please choose a Site ID - Suburb before requesting a forecast.');
           highlightAndScroll();
         }
         return;
