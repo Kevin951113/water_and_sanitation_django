@@ -8,7 +8,7 @@ from .services.for_kids_learn_play_service import fetch_kids_cards
 
 from django.http import JsonResponse, HttpRequest
 from django.shortcuts import render
-from .services.future_family_safety_service import predict_site, list_sites
+from .services.future_family_safety_service import predict_site, list_sites, health_payload
 
 # Create your views here.
 def home(request):
@@ -79,6 +79,14 @@ def api_family_safety_forecast(request: HttpRequest):
         return JsonResponse(result)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+# --------------------------------------------------------------------
+# NEW: Health check endpoint
+# --------------------------------------------------------------------
+def healthz(request: HttpRequest):
+    """Lightweight health check for Nginx/Docker/ELB probes."""
+    return JsonResponse(health_payload())
+
 
 #--------------------------------------------------------------------
 

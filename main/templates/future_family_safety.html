@@ -288,13 +288,16 @@
       z-index: 10;  
       pointer-events: none;
 
-
       filter: drop-shadow(0 -3px 4px rgba(0,0,0,0.3))
               drop-shadow(0 0 8px rgba(30,111,255,0.4));
       transform: translateY(30%); 
     }
 
-
+    /* --------- MOBILE ONLY: hide platypus + range table --------- */
+    @media (max-width: 1000px){
+      .platypus-sleep{ display:none !important; }
+      details.range-card{ display:none !important; }
+    }
 
     .range-card {
   margin: 18px 0 22px;
@@ -460,8 +463,6 @@ html[data-theme="light"] .range-card {
     inset 0 0 10px rgba(30,111,255,0.12),
     0 0 18px rgba(30,111,255,0.28);
 }
-
-
 </style>
 {% endblock %}
 
@@ -613,8 +614,8 @@ html[data-theme="light"] .range-card {
     <img src="{% static 'family_camping.png' %}" alt="Family camping illustration" class="family-img">
   </div>
 
-  <!-- Platypus sleeping at bottom right -->
-  <img src="{% static 'platypus_family_sleep.png' %}" alt="Platypus sleeping" class="platypus-sleep">
+  <!-- Platypus sleeping at bottom right (hidden on mobile) -->
+  <img src="{% static 'platypus_family_sleep.png' %}" alt="Platypus sleeping" class="platypus-sleep d-none d-md-block">
 
   <h3 style="margin-top:12px; font-weight:900; font-size:20px; color:var(--ws-blue-2);">
     Family & Water Safety
@@ -731,43 +732,44 @@ html[data-theme="light"] .range-card {
       {% endif %}
     </div>
 
-    <details class="range-card" open>
-  <summary style="font-weight:800; font-size:15px; cursor:pointer;">
-    Show safe ranges for EC / DO / Redox
-  </summary>
-  <div class="body" style="margin-top:12px;">
-    <table class="range-table">
-      <thead>
-        <tr>
-          <th>Metric</th>
-          <th>Safe</th>
-          <th>Borderline</th>
-          <th>Unsafe</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><strong>EC (µS/cm)</strong></td>
-          <td class="range-safe">&lt; 1,500</td>
-          <td class="range-borderline">1,500–5,000</td>
-          <td class="range-unsafe">&gt; 5,000</td>
-        </tr>
-        <tr>
-          <td><strong>DO (mg/L)</strong></td>
-          <td class="range-safe">&gt; 5</td>
-          <td class="range-borderline">3–5</td>
-          <td class="range-unsafe">&lt; 3</td>
-        </tr>
-        <tr>
-          <td><strong>Redox (mV)</strong></td>
-          <td class="range-safe">+200–600</td>
-          <td class="range-borderline">0–200</td>
-          <td class="range-unsafe">&lt; 0</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</details>
+    <!-- Safe ranges table (hidden on mobile) -->
+    <details class="range-card d-none d-md-block" open>
+      <summary style="font-weight:800; font-size:15px; cursor:pointer;">
+        Show safe ranges for EC / DO / Redox
+      </summary>
+      <div class="body" style="margin-top:12px;">
+        <table class="range-table">
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Safe</th>
+              <th>Borderline</th>
+              <th>Unsafe</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>EC (µS/cm)</strong></td>
+              <td class="range-safe">&lt; 1,500</td>
+              <td class="range-borderline">1,500–5,000</td>
+              <td class="range-unsafe">&gt; 5,000</td>
+            </tr>
+            <tr>
+              <td><strong>DO (mg/L)</strong></td>
+              <td class="range-safe">&gt; 5</td>
+              <td class="range-borderline">3–5</td>
+              <td class="range-unsafe">&lt; 3</td>
+            </tr>
+            <tr>
+              <td><strong>Redox (mV)</strong></td>
+              <td class="range-safe">+200–600</td>
+              <td class="range-borderline">0–200</td>
+              <td class="range-unsafe">&lt; 0</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
 
   </section>
   

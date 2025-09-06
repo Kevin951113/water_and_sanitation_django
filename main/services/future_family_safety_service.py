@@ -2,11 +2,25 @@
 """
 Pure-Python predictor used by Django.
 
-- Loads artifacts/ (clean CSVs, trained joblib models, stats) produced by training
-- Computes per-parameter forecasts with the same logic used in training
-- Chooses among: per-site model | baseline | global | decay-to-median | median
-- Scores → category via YAML thresholds (good=70, fair=40, poor<40 by your config)
-- Adds display rounding, "Last updated" timestamp, and a 48h 2-scenario series
+Key changes vs your previous version
+------------------------------------
+1) Global in-process caches:
+   - CSVs (field/lab) are loaded once and reused.
+   - Stats JSON (or computed stats) is cached.
+   - Joblib models (per-site and global) are cached.
+   This removes heavy I/O on every request and avoids timeouts/502.
+
+2) Safer/lazier loading:
+   - Lazy (on first use) instead of at import time to keep worker boot quick.
+   - Low-memory CSV read options and usecols to reduce RAM.
+
+3) Small hardening:
+   - Horizon clamp to a sensible max (default 365 days).
+   - list_sites() reads only needed columns and caches unique site list.
+   - Optional mmap for joblib.load to reduce memory duplication.
+
+Everything else (forecasting/scoring/categories/48h paths) is functionally
+equivalent to your logic with bug-safe guards.
 """
 
 from __future__ import annotations
@@ -14,7 +28,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 import json
+import os
 import re
+import threading
 import numpy as np
 import pandas as pd
 import joblib
@@ -22,26 +38,29 @@ import yaml
 import datetime as dt
 import warnings
 
-# silence sklearn joblib version warnings (optional)
+# Silence sklearn joblib version warnings (optional)
 try:
     from sklearn.exceptions import InconsistentVersionWarning
     warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
 except Exception:
     pass
 
-# ensure joblib can unpickle scikit estimators used at train time
+# Ensure joblib can unpickle scikit estimators used at train time
 from sklearn.linear_model import Ridge  # noqa: F401
+
 
 # --------------------------------------------------------------------------------------
 # Paths & constants
 # --------------------------------------------------------------------------------------
 def _detect_base_dir() -> Path:
+    """Find Django BASE_DIR if available, otherwise traverse up to project root."""
     try:
         from django.conf import settings  # type: ignore
         return Path(settings.BASE_DIR)
     except Exception:
         # services/ -> main/ -> project root
         return Path(__file__).resolve().parents[2]
+
 
 BASE_DIR: Path = _detect_base_dir()
 ARTIFACTS_DIR: Path = BASE_DIR / "artifacts"
@@ -65,11 +84,20 @@ ROUNDING_RULES: Dict[str, int] = {
     # "redox_mV": 0,
 }
 
+# Sensible limits to avoid excessive CPU on big horizons
+MAX_HORIZON_DAYS = int(os.environ.get("FFS_MAX_HORIZON_DAYS", "365"))
+
+# Use joblib memory map to reduce memory duplication across workers (optional)
+JOBLIB_MMAP_MODE = os.environ.get("FFS_JOBLIB_MMAP", "r")  # set to "" to disable
+
+
 # --------------------------------------------------------------------------------------
 # Small utils
 # --------------------------------------------------------------------------------------
 def file_safe(s: str) -> str:
+    """Make a filesystem-safe token from a string."""
     return re.sub(r"[^A-Za-z0-9._-]+", "_", str(s))
+
 
 def load_config() -> Dict[str, Any]:
     """
@@ -92,7 +120,7 @@ def load_config() -> Dict[str, Any]:
     with open(cfg_path, "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
 
-    # sensible defaults for any missing keys
+    # Sensible defaults for any missing keys
     cfg.setdefault("default_base_score", 65.0)
     cfg.setdefault(
         "fallback",
@@ -105,19 +133,33 @@ def load_config() -> Dict[str, Any]:
     cfg.setdefault("baseline_window", 5)
     return cfg
 
+
 def _load_clean_safe() -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Read cleaned field/lab tables produced during training. If missing, return empty frames."""
+    """
+    Read cleaned field/lab tables produced during training.
+    If missing, return empty frames with expected columns.
+    """
+    # Use low_memory=False to avoid DtypeWarning and get consistent dtypes
     try:
-        field_df = pd.read_csv(FIELD_CLEAN_CSV, parse_dates=["datetime"])
+        field_df = pd.read_csv(
+            FIELD_CLEAN_CSV,
+            parse_dates=["datetime"],
+            low_memory=False,
+        )
     except Exception:
         field_df = pd.DataFrame(columns=["site_id", "datetime"] + PARAMS_CORE)
 
     try:
-        lab_wide_df = pd.read_csv(LAB_CLEAN_WIDE_CSV, parse_dates=["datetime"])
+        lab_wide_df = pd.read_csv(
+            LAB_CLEAN_WIDE_CSV,
+            parse_dates=["datetime"],
+            low_memory=False,
+        )
     except Exception:
         lab_wide_df = pd.DataFrame(columns=["site_id", "datetime"] + PARAMS_CORE)
 
     return field_df, lab_wide_df
+
 
 def _latest_updated_iso() -> Optional[str]:
     """Newest mtime among important artifacts → ISO string for 'Last updated'."""
@@ -139,6 +181,93 @@ def _latest_updated_iso() -> Optional[str]:
     ts = dt.datetime.fromtimestamp(max(mtimes))
     return ts.isoformat(timespec="seconds")
 
+
+# --------------------------------------------------------------------------------------
+# Global in-process caches (thread-safe)
+# --------------------------------------------------------------------------------------
+_cache_lock = threading.RLock()
+_field_df_cache: Optional[pd.DataFrame] = None
+_lab_wide_df_cache: Optional[pd.DataFrame] = None
+_stats_cache: Optional[Dict[str, Any]] = None
+_models_cache: Dict[str, Dict[str, Any]] = {}  # key: f"{param}:{site_id}" or f"{param}:__GLOBAL__"
+_sites_cache: Optional[List[Dict[str, str]]] = None  # cache for list_sites()
+
+
+def get_clean_data() -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Return cached field/lab DataFrames; load on first use."""
+    global _field_df_cache, _lab_wide_df_cache
+    with _cache_lock:
+        if _field_df_cache is None or _lab_wide_df_cache is None:
+            _field_df_cache, _lab_wide_df_cache = _load_clean_safe()
+        return _field_df_cache, _lab_wide_df_cache
+
+
+def get_stats() -> Dict[str, Any]:
+    """Return cached stats; load JSON or compute once."""
+    global _stats_cache
+    with _cache_lock:
+        if _stats_cache is None:
+            if STATS_JSON.exists():
+                with open(STATS_JSON, "r", encoding="utf-8") as f:
+                    _stats_cache = json.load(f)
+            else:
+                field_df, lab_wide_df = get_clean_data()
+                _stats_cache = compute_stats_for_scoring(field_df, lab_wide_df)
+        return _stats_cache
+
+
+def _joblib_load(path: Path) -> Any:
+    """Wrapper around joblib.load that optionally uses memory mapping."""
+    if JOBLIB_MMAP_MODE:
+        return joblib.load(path, mmap_mode=JOBLIB_MMAP_MODE)
+    return joblib.load(path)
+
+
+def get_model(param: str, site_id: str) -> Optional[Dict[str, Any]]:
+    """
+    Load a per-site model if it exists (cached).
+    Returns the saved model_obj dict (what you persisted at train time), or None.
+    """
+    global _models_cache
+    key = f"{param}:{file_safe(site_id)}"
+    with _cache_lock:
+        if key in _models_cache:
+            return _models_cache[key]
+        model_path = ARTIFACTS_DIR / "models" / param / f"{file_safe(site_id)}.joblib"
+        if model_path.exists():
+            _models_cache[key] = _joblib_load(model_path)
+            return _models_cache[key]
+        return None
+
+
+def get_global_model(param: str) -> Optional[Dict[str, Any]]:
+    """
+    Load the global model for a parameter (cached).
+    Expected shape: {"model": sklearn_estimator, "meta": {...}}
+    """
+    global _models_cache
+    key = f"{param}:__GLOBAL__"
+    with _cache_lock:
+        if key in _models_cache:
+            return _models_cache[key]
+        gpath = ARTIFACTS_DIR / "models" / param / "__GLOBAL__.joblib"
+        if gpath.exists():
+            _models_cache[key] = _joblib_load(gpath)
+            return _models_cache[key]
+        return None
+
+
+def clear_caches() -> None:
+    """Manual cache clear (useful for admin tasks or hot-reload hooks)."""
+    global _field_df_cache, _lab_wide_df_cache, _stats_cache, _models_cache, _sites_cache
+    with _cache_lock:
+        _field_df_cache = None
+        _lab_wide_df_cache = None
+        _stats_cache = None
+        _models_cache = {}
+        _sites_cache = None
+
+
 # --------------------------------------------------------------------------------------
 # Features & forecasting helpers
 # --------------------------------------------------------------------------------------
@@ -154,6 +283,7 @@ def make_time_features(dtser: pd.Series) -> pd.DataFrame:
         {"sin_doy": sin_doy, "cos_doy": cos_doy, "sin_woy": sin_woy, "cos_woy": cos_woy}
     )
 
+
 def _rolling_mean_forecast(last_vals: List[float], window: int) -> float:
     v = pd.Series(last_vals).dropna().values
     if len(v) == 0:
@@ -161,20 +291,22 @@ def _rolling_mean_forecast(last_vals: List[float], window: int) -> float:
     w = min(max(1, int(window)), len(v))
     return float(np.mean(v[-w:]))
 
+
 # --------------------------------------------------------------------------------------
 # Feature alignment helper
 # --------------------------------------------------------------------------------------
 CANONICAL_FEATURE_ORDER = [
     # lags
-    "lag1","lag2","lag3","lag4","lag5","lag6","lag7","lag14",
+    "lag1", "lag2", "lag3", "lag4", "lag5", "lag6", "lag7", "lag14",
     # rolling means
-    "rollmean_3","rollmean_5","rollmean_7",
+    "rollmean_3", "rollmean_5", "rollmean_7",
     # time features
-    "sin_doy","cos_doy","sin_woy","cos_woy",
+    "sin_doy", "cos_doy", "sin_woy", "cos_woy",
     # EC-only log features that *might* exist in some models
-    "log_lag1","log_lag2","log_lag3","log_lag4","log_lag5","log_lag6","log_lag7","log_lag14",
-    "log_rollmean_3","log_rollmean_5","log_rollmean_7",
+    "log_lag1", "log_lag2", "log_lag3", "log_lag4", "log_lag5", "log_lag6", "log_lag7", "log_lag14",
+    "log_rollmean_3", "log_rollmean_5", "log_rollmean_7",
 ]
+
 
 def _align_row_to_model(row_df: pd.DataFrame, model_obj: Dict[str, Any], model) -> np.ndarray:
     """
@@ -209,6 +341,7 @@ def _align_row_to_model(row_df: pd.DataFrame, model_obj: Dict[str, Any], model) 
 
     # last resort
     return row_df.values
+
 
 # --------------------------------------------------------------------------------------
 # Forecasting
@@ -278,6 +411,7 @@ def step_forecast(model_obj: Dict[str, Any], horizon_days: int) -> List[Dict[str
             last_vals = last_vals[-14:]
     return preds
 
+
 def _global_model_predict_one_step(
     model, meta: Dict[str, Any], sid: str, last_vals: List[float], cur_dt: pd.Timestamp
 ) -> float:
@@ -334,6 +468,7 @@ def _global_model_predict_one_step(
 
     return float(model.predict(X_row)[0])
 
+
 # --------------------------------------------------------------------------------------
 # Stats + scoring
 # --------------------------------------------------------------------------------------
@@ -359,7 +494,11 @@ def compute_stats_for_scoring(
                 stats[p] = {"q10": float(s.quantile(0.10)), "q50": float(s.quantile(0.50)), "q90": float(s.quantile(0.90))}
     return stats
 
+
 def quality_penalties(pred: Dict[str, float], stats: Dict[str, Any]) -> Dict[str, float]:
+    """
+    Convert raw predictions into penalty scores in [0,1] (lower is better).
+    """
     pens: Dict[str, float] = {}
     if "pH" in pred and pred["pH"] is not None:
         pens["pH"] = min(1.0, abs(pred["pH"] - 7.0) / 1.5)
@@ -376,6 +515,7 @@ def quality_penalties(pred: Dict[str, float], stats: Dict[str, Any]) -> Dict[str
         pens["redox_mV"] = min(1.0, abs(v - med) / (abs(stats["redox_mV"]["q90"] - med) + 1e-9))
     return pens
 
+
 def score_from_penalties(pens: Dict[str, float], weights: Dict[str, float], default_if_empty: float = 65.0) -> float:
     active = {k: v for k, v in weights.items() if k in pens}
     if not active:
@@ -384,6 +524,7 @@ def score_from_penalties(pens: Dict[str, float], weights: Dict[str, float], defa
     s = sum((1.0 - pens[k]) * (w / total_w) for k, w in active.items())
     return 100.0 * s
 
+
 def category_from_score(score: float, cats: Dict[str, float]) -> str:
     # Your YAML already has poor:0, but logic keeps "else → poor" for safety
     if score >= cats.get("good", 70.0):
@@ -391,6 +532,7 @@ def category_from_score(score: float, cats: Dict[str, float]) -> str:
     elif score >= cats.get("fair", 40.0):
         return "fair"
     return "poor"
+
 
 # --------------------------------------------------------------------------------------
 # Data access for fallbacks & confidence
@@ -414,6 +556,7 @@ def _last_obs_for_site_param(
     cand.sort(key=lambda t: t[0])
     return cand[-1]
 
+
 def _last_k_obs_for_site_param(
     site_id: str, param: str, field_df: pd.DataFrame, lab_wide_df: pd.DataFrame, k: int = 14
 ) -> Tuple[pd.Timestamp, List[float]]:
@@ -431,6 +574,7 @@ def _last_k_obs_for_site_param(
     vals = df["y"].tail(k).tolist()
     return last_dt, vals
 
+
 def _count_points_for_site_param(site_id: str, param: str, field_df: pd.DataFrame, lab_wide_df: pd.DataFrame) -> int:
     frames = []
     if not field_df.empty and param in field_df.columns:
@@ -442,6 +586,7 @@ def _count_points_for_site_param(site_id: str, param: str, field_df: pd.DataFram
     df = pd.concat(frames, ignore_index=True)
     return int(pd.to_numeric(df[param], errors="coerce").notna().sum())
 
+
 def _global_medians(stats: Dict[str, Any], cfg: Dict[str, Any]) -> Dict[str, float]:
     out: Dict[str, float] = {}
     typ = cfg.get("fallback", {}).get("typicals", {})
@@ -451,6 +596,7 @@ def _global_medians(stats: Dict[str, Any], cfg: Dict[str, Any]) -> Dict[str, flo
         else:
             out[p] = float(typ.get(p, np.nan))
     return out
+
 
 def _decay_to_median(
     last_val: float,
@@ -466,6 +612,7 @@ def _decay_to_median(
     w = np.exp(-age_days / max(1.0, float(tau_days)))
     return float(w * last_val + (1.0 - w) * median_val)
 
+
 def _apply_rounding(preds: Dict[str, float]) -> Dict[str, float]:
     out: Dict[str, float] = {}
     for k, v in preds.items():
@@ -477,6 +624,7 @@ def _apply_rounding(preds: Dict[str, float]) -> Dict[str, float]:
         else:
             out[k] = float(v)
     return out
+
 
 # --------------------------------------------------------------------------------------
 # 48h dual-scenario series (for Chart.js)
@@ -512,6 +660,7 @@ def _forecast_48h_series(seed_score: float, confidence: float) -> List[Dict[str,
         })
     return out
 
+
 # --------------------------------------------------------------------------------------
 # Public API (used by Django views)
 # --------------------------------------------------------------------------------------
@@ -527,36 +676,54 @@ def _normalize_site_id(val: Any) -> Optional[str]:
     except Exception:
         return str(val).strip()
 
-def list_sites():
-    try:
-        df = pd.read_csv(OUTPUT_CSV)
-        # ensure only necessary cols
-        if "Site ID" in df.columns and "Victorian Suburb" in df.columns:
+
+def list_sites() -> List[Dict[str, str]]:
+    """
+    Return cached list of (id, suburb) pairs for the UI dropdown.
+
+    Uses only the two columns we need to minimize memory.
+    """
+    global _sites_cache
+    with _cache_lock:
+        if _sites_cache is not None:
+            return _sites_cache
+
+        if not OUTPUT_CSV.exists():
+            _sites_cache = []
+            return _sites_cache
+
+        try:
+            df = pd.read_csv(
+                OUTPUT_CSV,
+                usecols=["Site ID", "Victorian Suburb"],
+                dtype={"Site ID": "string", "Victorian Suburb": "string"},
+                low_memory=False,
+            )
             df_unique = df.drop_duplicates(subset=["Site ID"])
-            return [
-                {"id": str(row["Site ID"]), "suburb": row["Victorian Suburb"]}
+            _sites_cache = [
+                {"id": str(row["Site ID"]), "suburb": str(row["Victorian Suburb"])}
                 for _, row in df_unique.iterrows()
             ]
-        else:
-            return []
-    except Exception:
-        return []
+            return _sites_cache
+        except Exception:
+            _sites_cache = []
+            return _sites_cache
+
 
 def predict_site(site_id: str, horizon_days: int = 30) -> Dict[str, Any]:
     """
     Main entrypoint used by Django code.
     Returns a JSON-serializable dict with predictions, score, category, etc.
     """
+    # Clamp horizon to avoid runaway CPU
+    horizon_days = max(1, min(int(horizon_days or 1), MAX_HORIZON_DAYS))
+
     cfg = load_config()
     default_score = float(cfg.get("default_base_score", 65.0))
 
-    # Load cleaned tables + global stats
-    field_df, lab_wide_df = _load_clean_safe()
-    if STATS_JSON.exists():
-        with open(STATS_JSON, "r", encoding="utf-8") as f:
-            stats = json.load(f)
-    else:
-        stats = compute_stats_for_scoring(field_df, lab_wide_df)
+    # Load cached tables + global stats
+    field_df, lab_wide_df = get_clean_data()
+    stats = get_stats()
 
     medians = _global_medians(stats, cfg)
     preds: Dict[str, float] = {}
@@ -565,13 +732,11 @@ def predict_site(site_id: str, horizon_days: int = 30) -> Dict[str, Any]:
     horizon_anchor = pd.Timestamp.today().normalize()
 
     for p in PARAMS_CORE:
-        model_path = ARTIFACTS_DIR / "models" / p / f"{file_safe(site_id)}.joblib"
         chosen_val: Optional[float] = None
 
         # 1) Try per-site model (and compare to trailing-mean baseline)
-        if model_path.exists():
-            model_obj = joblib.load(model_path)
-
+        model_obj = get_model(p, site_id)
+        if model_obj is not None:
             # model forecast to horizon end (safe call)
             try:
                 horizon = step_forecast(model_obj, horizon_days=horizon_days)
@@ -604,9 +769,8 @@ def predict_site(site_id: str, horizon_days: int = 30) -> Dict[str, Any]:
 
         # 2) Fall back to global (site-aware) model
         if chosen_val is None or not np.isfinite(chosen_val):
-            gpath = ARTIFACTS_DIR / "models" / p / "__GLOBAL__.joblib"
-            if gpath.exists():
-                gobj = joblib.load(gpath)
+            gobj = get_global_model(p)
+            if gobj is not None:
                 gmodel, meta = gobj["model"], gobj["meta"]
                 last_dt, last_vals = _last_k_obs_for_site_param(site_id, p, field_df, lab_wide_df, k=14)
                 if len(last_vals) > 0:
@@ -700,4 +864,19 @@ def predict_site(site_id: str, horizon_days: int = 30) -> Dict[str, Any]:
         "forecast_48h": _forecast_48h_series(    # dual-scenario series for Chart.js
             seed_score=score_final, confidence=confidence
         ),
+    }
+
+
+# --------------------------------------------------------------------------------------
+# Optional: a tiny health payload (exposed by your Django view if you want)
+# --------------------------------------------------------------------------------------
+def health_payload() -> Dict[str, Any]:
+    """
+    A tiny helper you can return from a /healthz Django view.
+    It does not touch heavy caches; just proves the process is alive.
+    """
+    return {
+        "ok": True,
+        "ts": dt.datetime.utcnow().isoformat() + "Z",
+        "artifacts_dir": str(ARTIFACTS_DIR),
     }

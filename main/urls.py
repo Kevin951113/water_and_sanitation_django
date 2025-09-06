@@ -12,4 +12,5 @@ urlpatterns = [
 
     path("api/sites", views.api_sites, name="api_sites"),
     path("api/family-safety/forecast", views.api_family_safety_forecast, name="api_family_safety_forecast"),
+    path("healthz", views.healthz, name="healthz"), # New prediction health check endpoint
 ]
