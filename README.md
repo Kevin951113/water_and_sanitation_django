@@ -2,6 +2,12 @@
 
 # Development Approach – How our Django Site Works (v2.0)
 
+**Team Info**
+
+https://docs.google.com/document/d/1VmfBaVlIy4fYxsx_ftrh-jJre13BI7cf
+
+
+---
 
 <p align="left">
   <img src="https://drive.google.com/uc?export=view&id=1JD3NYBU6dElmMshxYhPH2gNuNlkW8GiT"  width="800"/>
