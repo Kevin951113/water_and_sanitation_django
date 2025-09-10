@@ -255,12 +255,12 @@ The objective is to share information and knowledge about water quality and how 
 
 | Where | What it is (simple) | Main job | What a normal user sees | Iteration |
 |-------|----------------------|----------|--------------------------|-----------|
-| ~~`main/services/explore_water_quality_service.py`~~ | ~~Data for bubble map~~ | ~~Suburb list, scores, filters~~ | — | Future |
-| ~~`main/templates/explore_water_quality.html`~~ | ~~Interactive bubble map~~ | ~~Colored bubbles, click card~~ | ~~Score, trend, safety~~ | Future |
-| ~~`main/services/pollution_sources_service.py`~~ | ~~Data for charts~~ | ~~Pie + bar data~~ | — | Future |
-| ~~`main/templates/pollution_sources.html`~~ | ~~Pollution Sources~~ | ~~Charts + table~~ | ~~Charts of pollutants~~ | Future |
-| ~~`main/services/about_water_sanitation_service.py`~~ | ~~About data~~ | ~~Dataset sources & info~~ | — | Future |
-| ~~`main/templates/about_water_sanitation.html`~~ | ~~About Our Water~~ | ~~Info page~~ | ~~Simple info~~ | Future |
+| ~~`main/services/explore_water_quality_service.py`~~ | Data for bubble map | Suburb list, scores, filters | — | Future |
+| ~~`main/templates/explore_water_quality.html`~~ | Interactive bubble map | Colored bubbles, click card | Score, trend, safety | Future |
+| ~~`main/services/pollution_sources_service.py`~~ | Data for charts | Pie + bar data | — | Future |
+| ~~`main/templates/pollution_sources.html`~~ | Pollution Sources | Charts + table | Charts of pollutants | Future |
+| ~~`main/services/about_water_sanitation_service.py`~~ | About data | Dataset sources & info | — | Future |
+| ~~`main/templates/about_water_sanitation.html`~~ | About Our Water | Info page | Simple info | Future |
 
 ---
 
