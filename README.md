@@ -201,7 +201,7 @@ The objective is to share information and knowledge about water quality and how 
 
 ---
 
-# Plan for Iteration 3.5 (Epic)
+# Plan for Iteration 2
 
 ## Epic 3.5 – Prediction Page Improvement
 
@@ -219,8 +219,6 @@ The objective is to share information and knowledge about water quality and how 
 
 ---
 
-# Plan for Iteration 5 (Epic)
-
 ## Epic 5.0 – Kids Interactive Page: Water & Animals
 
 **Must Have**
@@ -236,8 +234,6 @@ The objective is to share information and knowledge about water quality and how 
 - Positions the platform as **fun**, not just a data portal
 
 ---
-
-# Plan for Iteration 6 (Epic)
 
 ## Epic 6.0 – Water Body Quality Prediction
 
