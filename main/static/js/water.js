@@ -27,20 +27,17 @@
     window.addEventListener('resize', resize);
     resize();
 
-    // TODO: 把你原本的 wave 建立 / draw / timeline 動畫搬進來
     function drawFlat(level){
       ctx.clearRect(0,0,vw,vh);
       ctx.fillStyle = '#0e6fc0';
       ctx.fillRect(0, level, vw, vh-level);
     }
 
-    // 初始（暗色系較低）
     state.baseLevel = vh * 0.18;
     drawFlat(state.baseLevel);
 
     return {
       transitionTo(isLight){
-        // 這裡示範一個簡單 tween，你可換成原本的 timeline
         const target = isLight ? vh*0.80 : vh*0.18;
         const start = state.baseLevel;
         const dur = 900; // ms

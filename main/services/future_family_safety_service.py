@@ -682,6 +682,10 @@ def list_sites() -> List[Dict[str, str]]:
     Return cached list of (id, suburb) pairs for the UI dropdown.
 
     Uses only the two columns we need to minimize memory.
+
+    If a suburb has only one site --> show suburb
+
+   If a suburb has multiple sites ---> label as 'Suburb - 1 Area', 'Suburb - 2 Area', ...
     """
     global _sites_cache
     with _cache_lock:
@@ -699,12 +703,25 @@ def list_sites() -> List[Dict[str, str]]:
                 dtype={"Site ID": "string", "Victorian Suburb": "string"},
                 low_memory=False,
             )
-            df_unique = df.drop_duplicates(subset=["Site ID"])
-            _sites_cache = [
-                {"id": str(row["Site ID"]), "suburb": str(row["Victorian Suburb"])}
-                for _, row in df_unique.iterrows()
-            ]
+
+            # ensure unique Site IDs and sort by suburb then site
+            df = df.drop_duplicates(subset=["Site ID"])
+            df = df.sort_values(["Victorian Suburb", "Site ID"], ascending=[True, True])
+
+            result = []
+            # group by suburb
+            for suburb, g in df.groupby("Victorian Suburb", sort=False):
+                if len(g) == 1:
+                    result.append({"id": str(g.iloc[0]["Site ID"]), "suburb": suburb})
+                else:
+                    # multiple sites with assign numeric suffix
+                    for i, (_, row) in enumerate(g.iterrows(), start=1):
+                        label = f"{suburb} - {i} Area"
+                        result.append({"id": str(row["Site ID"]), "suburb": label})
+
+            _sites_cache = result
             return _sites_cache
+
         except Exception:
             _sites_cache = []
             return _sites_cache
@@ -849,7 +866,7 @@ def predict_site(site_id: str, horizon_days: int = 30) -> Dict[str, Any]:
     preds_rounded = _apply_rounding(preds)
 
     return {
-        "site_id": site_id,
+        #"site_id": site_id,
         "predictions": preds_rounded,            # rounded for UI
         "predictions_raw": preds,                # raw if you need analytics
         "quality": {

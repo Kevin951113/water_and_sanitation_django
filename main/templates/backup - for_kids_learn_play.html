@@ -1,0 +1,947 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}For Kids – Learn & Play | Water & Sanitation{% endblock %}
+
+{% block head_extras %}
+{% comment %}Preload the first few tracks for smoother switching.{% endcomment %}
+<link rel="preload" href="{% static 'fish1.mp4' %}" as="video">
+<link rel="preload" href="{% static 'fish2.mp4' %}" as="video">
+<link rel="preload" href="{% static 'fish3.mp4' %}" as="video">
+<link rel="preload" href="{% static 'platypus_dance.gif' %}" as="image">
+<link rel="preload" href="{% static 'platypus_sleep.gif' %}" as="image">
+<link rel="preload" href="{% static 'win.png' %}" as="image">
+<link rel="preload" href="{% static 'submarine.gif' %}" as="image">
+<link rel="preload" href="{% static 'boat.gif' %}" as="image">
+<style>
+  :root{
+    --card-radius: 18px;
+    --hdrH: 80px;            /* JS measures header height */
+    --card-text: #fff;
+    --card-text-shadow: 0 2px 6px rgba(0,0,0,.65);
+    --title-grad: linear-gradient(90deg,#98caff 0%, #58b2ff 50%, #1f8aff 100%);
+  }
+  [data-theme="light"]{
+    --card-text:#fff;
+    --card-text-shadow: 0 2px 8px rgba(0,0,0,.6);
+  }
+
+  /* kill site-wide ripple so this page keeps its own vibes */
+  #ripple-layer{ display:none !important; }
+
+  /* ===== stage: video fills viewport under header ===== */
+  .kids-stage{ position:relative; min-height: calc(100svh - var(--hdrH)); }
+  .aquarium,
+  .ripples{
+    position: fixed;
+    left:0; right:0;
+    top: var(--hdrH);
+    bottom:0;
+    pointer-events:none;
+  }
+  .aquarium{ z-index:0; opacity:0; transition:opacity .6s ease; }
+  .aquarium.bg-on{ opacity:1; }
+  .aquarium video{ width:100%; height:100%; object-fit:cover; filter:saturate(1.05) contrast(1.02) brightness(1.05); }
+  .ripples{
+    z-index:1; opacity:.75;
+    background:
+      radial-gradient(1000px 500px at 12% 18%, rgba(91,200,255,.30), transparent 60%),
+      radial-gradient(800px 400px at 85% 28%, rgba(40,150,255,.22), transparent 60%);
+    animation:rippleMove 14s linear infinite;
+  }
+  @keyframes rippleMove{ 0%{transform:translateY(0)} 50%{transform:translateY(2px)} 100%{transform:translateY(0)} }
+
+  /* ===== right dock: single active card sits here ===== */
+  .card-dock{
+    position: fixed;
+    right: clamp(12px, 3vw, 28px);
+    top: calc(var(--hdrH) + clamp(12px, 1.5vw, 18px));
+    bottom: clamp(12px, 2vw, 20px);
+    width: min(560px, 44vw);
+    z-index: 2;
+    display: grid;
+    align-items: center;
+    justify-items: stretch;
+  }
+
+  /* ---- Sleepy platypus above the card ---- */
+  .sleepy-wrap{
+    position: absolute;
+    right: 0;
+    top: clamp(-120px, -8vw, -84px);
+    width: min(560px, 44vw);
+    display: grid;
+    justify-items: end;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .sleepy-platypus{
+    width: min(420px, 36vw);
+    transform: scale(1.08);
+    image-rendering: -webkit-optimize-contrast;
+    filter: drop-shadow(0 8px 22px rgba(0,0,0,.38));
+  }
+  @media (max-width: 980px){
+    .sleepy-wrap{ top: clamp(-80px, -10vw, -60px); }
+    .sleepy-platypus{ width: min(320px, 52vw); transform: scale(1.04); }
+  }
+
+  .cards{ display: contents; }
+  .card{ display:none; }
+  .card.active{
+    display:flex;
+    flex-direction: column;  /* title + content same width */
+  }
+
+  /* ===== glassy card styling ===== */
+  .card{
+    background:
+      linear-gradient(180deg, rgba(5,12,24,.80), rgba(8,18,36,.74)),
+      rgba(8,18,38,.42);
+    border:1px solid rgba(160,210,255,.30);
+    border-radius:14px;
+    padding: clamp(16px, 2vw, 22px);
+    backdrop-filter: blur(12px) saturate(130%);
+    color: var(--card-text);
+    text-shadow: var(--card-text-shadow);
+    min-height: 240px;
+    box-shadow: 0 14px 34px rgba(0,20,60,.48);
+    position:relative;
+    overflow:hidden;
+  }
+
+  .card h3{
+    font-weight: 900;
+    font-size: clamp(20px, 2.4vw, 26px);
+    margin: 0 0 10px;
+    letter-spacing: .2px;
+    background: var(--title-grad);
+    -webkit-background-clip: text; background-clip:text; color: transparent;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 1px 0 rgba(0,0,0,.45), 0 0 14px rgba(40,120,220,.35);
+  }
+  [data-theme="light"] .card h3{
+    background: none !important;
+    -webkit-background-clip: initial; background-clip: initial;
+    -webkit-text-fill-color: initial;
+    color: #fff !important;
+    text-shadow: 0 2px 8px rgba(0,0,0,.6);
+  }
+
+  .card > *{ min-width:0; }
+  .qa-wrap{ width:100%; display:grid; }
+  .qa-wrap > p, .details p{
+    margin:0 0 12px;
+    font-size: clamp(16px, 1.2vw, 18px);
+    line-height:1.6;
+    overflow-wrap:anywhere;
+  }
+
+  /* fade in details instead of reflowing height */
+  .details{
+    max-height: none !important;
+    opacity: 0; transition: opacity .25s ease; width: 100%;
+  }
+  .card.revealed .details{ opacity: 1; }
+
+  /* ===== HUD ===== */
+  .hud{
+    position:absolute; top:12px; right:12px; z-index:3;
+    display:grid; align-items:center; justify-items:end; pointer-events:none;
+  }
+  .hud > *{ grid-area: 1 / 1; }
+  .read-timer{
+    height:28px; padding:0 10px; border-radius:999px;
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:12px; font-weight:800; color:#0a2a6b;
+    background:linear-gradient(180deg,#d7fbe8,#b5f1d4);
+    border:1px solid rgba(24,192,109,.6);
+    box-shadow: 0 2px 10px rgba(24,192,109,.25), inset 0 1px 0 #fff;
+    opacity:0; transform:translateY(-6px);
+    transition:opacity .2s ease, transform .2s ease;
+  }
+  .card.reading .read-timer{ opacity:1; transform:translateY(0); }
+  .read-dot{ width:8px; height:8px; border-radius:50%; background:#18c06d; box-shadow:0 0 0 3px rgba(24,192,109,.25); }
+
+  .check-badge{
+    width:28px; height:28px; border-radius:999px;
+    display:grid; place-items:center; font-size:18px; line-height:1;
+    background:#18c06d; color:#fff; border:none;
+    box-shadow: 0 4px 16px rgba(24,192,109,.45), inset 0 -2px 0 rgba(0,0,0,.18);
+    transform:scale(.82); opacity:0; transition:opacity .2s ease, transform .2s ease;
+  }
+  .card.done .check-badge{ opacity:1; transform:scale(1); }
+
+  .hint{
+    position:absolute; right:12px; bottom:12px;
+    background:rgba(255,255,255,.16);
+    border:1px dashed rgb(255,255,255);
+    font-size:12px; padding:4px 8px; border-radius:999px; color:#fff;
+    text-shadow:0 1px 0 rgba(255,254,254,.45); pointer-events:none;
+  }
+
+  /* next arrow */
+  .next-btn{
+    position: fixed;
+    right: calc(clamp(12px, 3vw, 28px) + min(560px, 44vw) + 10px);
+    top: 50%; transform: translateY(-50%);
+    z-index: 2; width: 54px; height: 54px; border-radius: 999px;
+    display: grid; place-items: center;
+    background: linear-gradient(180deg,#e8f5ff,#cfe9ff);
+    border: 1px solid rgba(120,170,255,.6);
+    box-shadow: 0 8px 26px rgba(30,90,200,.35);
+    color:#0a2a6b; font-size: 22px; cursor: pointer;
+    opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease;
+  }
+  .next-btn.show{ opacity: 1; pointer-events: auto; }
+  .next-btn:active{ transform: translateY(-50%) scale(.96); }
+  @media (max-width:980px){
+    .next-btn{ right: clamp(12px, 3vw, 28px); top:auto; bottom: calc(12px + env(safe-area-inset-bottom)); transform:none; }
+    .next-btn:active{ transform: scale(.96); }
+  }
+
+  /* glossy FINISH button */
+  .finish-btn{
+    position: fixed;
+    right: calc(clamp(12px, 3vw, 28px) + min(560px, 44vw) + 10px);
+    top: 50%; transform: translateY(-50%);
+    z-index: 2;
+    padding: 12px 18px;
+    border-radius: 999px;
+    font-weight: 900;
+    letter-spacing: .02em;
+    font-size: 14px;
+    color: #6b4a00;
+    background: linear-gradient(180deg,#fff3b0,#ffd069);
+    border: 1px solid rgba(160,120,20,.6);
+    box-shadow: 0 10px 26px rgba(180,140,30,.45), inset 0 1px 0 #fff;
+    cursor: pointer;
+    opacity: 0; pointer-events: none; transform-origin: center;
+    transition: opacity .2s ease, transform .2s ease;
+    overflow: hidden;
+  }
+  .finish-btn.show{ opacity:1; pointer-events:auto; }
+  .finish-btn:hover{ transform: translateY(-50%) scale(1.03); }
+  .finish-btn::after{
+    content:"";
+    position:absolute;
+    top:-120%; left:-60%;
+    width:45%; height:320%;
+    background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.65), rgba(255,255,255,0));
+    transform: rotate(25deg);
+    animation: sheen 2.2s linear infinite;
+  }
+  @keyframes sheen{
+    0%{ left:-60%; }
+    100%{ left: 140%; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .aquarium, .ripples{ transition:none; animation:none; }
+    .aquarium video{ filter:none; }
+    .finish-btn::after{ animation: none; }
+  }
+
+  .card.fixed{ height: var(--fixedH); }
+  .card.locked{ pointer-events:none; }
+
+  /* ============================================================
+     PROGRESS DOCK
+     ============================================================ */
+  .progress-dock{
+    position: fixed;
+    left: clamp(12px, 3vw, 28px);
+    top: calc(var(--hdrH) + clamp(12px, 1.5vw, 18px));
+    z-index: 2;
+    display: grid;
+    gap: 14px;
+    width: min(340px, 40vw);
+    align-content: start;
+  }
+  .ring{
+    --p: 0;
+    --track: rgba(255,255,255,.14);
+    --fillA: #40dd75;
+    --fillB: #3ee6ff;
+    width: 140px; height: 140px; border-radius: 50%;
+    position: relative;
+    background:
+      conic-gradient(var(--fillA), var(--fillB)) 0/0 0 no-repeat,
+      conic-gradient(var(--fillB) calc(var(--p)*1turn), var(--track) 0);
+    box-shadow: 0 10px 30px rgba(30,140,255,.35), 0 0 0 1px rgba(160,210,255,.25) inset;
+    transition: background .6s ease;
+  }
+  .ring::before{
+    content:""; position:absolute; inset:8px; border-radius:50%;
+    background: rgba(7,15,30,.92);
+    box-shadow: inset 0 0 0 1px rgba(160,210,255,.25);
+  }
+  .ring::after{
+    content:""; position:absolute; inset:-6px; border-radius:50%;
+    background:
+      radial-gradient(closest-side, rgba(64,221,117,.28), transparent),
+      radial-gradient(closest-side, rgba(62,230,255,.25), transparent);
+    filter: blur(8px); opacity:.7; pointer-events:none;
+  }
+  .ring-core{ position:absolute; inset:0; display:grid; place-items:center; text-align:center; }
+  .ring-count{ font-weight:900; font-size: 28px; letter-spacing:.4px; color:#eaf7ff; }
+  .ring-caption{ font-size:12px; opacity:.85; text-transform: uppercase; letter-spacing:.12em; color:#dff3ff; }
+
+  .segbar{
+    display: grid; grid-auto-flow: column; gap: 6px; align-items: center;
+    background: rgba(8,18,38,.42);
+    border:1px solid rgba(160,210,255,.30);
+    box-shadow: 0 8px 22px rgba(0,20,60,.28);
+    padding: 10px 12px; border-radius: 12px;
+  }
+  .seg{ height: 8px; width: 100%; border-radius: 6px; background: rgba(255,255,255,.18); }
+  .seg.on{ background: linear-gradient(90deg, #40dd75, #3ee6ff); box-shadow: 0 0 16px rgba(64,221,117,.55); }
+
+  .progress-toast{
+    min-height: 22px; width: max-content; font-size: 12px; font-weight:800; color:#0a2a6b;
+    background: linear-gradient(180deg,#fffbd1,#ffe27a);
+    border:1px solid rgba(180,160,60,.6);
+    border-radius: 999px; padding: 4px 10px;
+    opacity: 0; transform: translateY(-6px);
+    transition: opacity .25s ease, transform .25s ease;
+    box-shadow: 0 8px 18px rgba(180,160,60,.35);
+  }
+  .progress-toast.show{ opacity:1; transform: translateY(0); }
+
+  /* ===== celebration overlay ===== */
+  .celebration{
+    position: fixed;
+    inset: var(--hdrH) 0 0 0;
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 999;
+    background:
+      radial-gradient(1200px 600px at 20% 10%, rgba(140,200,255,.15), transparent 55%),
+      radial-gradient(1000px 500px at 80% 20%, rgba(60,170,255,.12), transparent 60%),
+      rgba(10,18,34,.35);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    opacity: 0;
+  }
+  .celebration.show{ display:flex; }
+  .celebration .glass-card{
+    position:relative;
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    border: 0;
+    box-shadow: none;
+    transform: translateY(8px) scale(.985);
+    opacity: 0;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    text-align: center;
+  }
+  .media{
+    position:relative;
+    width: min(86vw, 1100px);
+    aspect-ratio: 16 / 9;
+    display: block;
+  }
+
+  /* --- Soft yellow halo behind the platypus GIF --- */
+  .halo-behind{
+    position:absolute;
+    left:50%; top:50%;
+    transform: translate(-50%, -50%);
+    width: min(60%, 700px);
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    z-index: 1;
+    pointer-events:none;
+    mix-blend-mode: screen;
+    background:
+      radial-gradient(closest-side,
+        rgba(255,240,170,.75) 0%,
+        rgba(255,225,120,.45) 35%,
+        rgba(255,210,100,.28) 55%,
+        rgba(255,195,80,.18) 70%,
+        rgba(255,180,60,0) 85%);
+    filter: blur(18px) brightness(1.2) saturate(1.1);
+  }
+
+  /* WIN banner (front) */
+  .media .win-label{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    object-fit: contain;
+    image-rendering: -webkit-optimize-contrast;
+    filter: drop-shadow(0 10px 22px rgba(0,0,0,.5));
+    z-index: 3; pointer-events:none;
+  }
+
+  /* platypus GIF */
+  .media .platypus{
+    position:absolute; left:50%; top:50%;
+    transform: translate(-50%, -50%);
+    height: min(62%, 520px);
+    width: auto;
+    image-rendering: -webkit-optimize-contrast;
+    filter: drop-shadow(0 12px 28px rgba(0,0,0,.45));
+    z-index: 2;
+  }
+
+  /* --------- VESSELS (no blur layer; pure GIFs) ---------- */
+  .vessels-layer{
+    position: fixed;
+    inset: var(--hdrH) 0 0 0;
+    z-index: 2;
+    pointer-events: none;
+    overflow: visible;
+  }
+  .vessel{
+    position:absolute;
+    top: calc(58%);
+    transform: translateX(110vw) scale(1.08);
+    opacity: 0;
+    will-change: transform, opacity;
+    image-rendering: -webkit-optimize-contrast;
+    filter: drop-shadow(0 8px 18px rgba(0,0,0,.35));
+  }
+  .vessel.sub{ width: min(34vw, 460px); }
+  .vessel.boat{ width: min(30vw, 420px); }
+
+  .vessel.run{
+    opacity: 1;
+    animation: sail-left 9s linear forwards;
+  }
+  @keyframes sail-left{
+    0%{    transform: translateX(110vw) scale(1.08); }
+    100%{  transform: translateX(-130vw) scale(1.08); }
+  }
+
+  /* entrance & exit animations (overlay + inner container) */
+  @keyframes celebIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes cardIn  { 0%{ opacity:0; transform: translateY(12px) scale(.975); }
+                       100%{ opacity:1; transform: translateY(0) scale(1);} }
+  @keyframes celebOut{ from { opacity: 1; } to { opacity: 0; } }
+  @keyframes cardOut { 0%{ opacity:1; transform: translateY(0) scale(1);}
+                       100%{ opacity:0; transform: translateY(10px) scale(.985);} }
+
+  .celebration.anim-in{ animation: celebIn 600ms ease forwards; }
+  .celebration.anim-in .glass-card{ animation: cardIn 700ms cubic-bezier(.2,.9,.2,1.0) 80ms forwards; }
+  .celebration.anim-out{ animation: celebOut 600ms ease forwards; }
+  .celebration.anim-out .glass-card{ animation: cardOut 500ms ease forwards; }
+
+  /* responsive tweak */
+  @media (max-width: 560px){
+    .media{ width: min(94vw, 560px); }
+    .media .platypus{ height: min(64%, 360px); }
+    .finish-btn{ right: clamp(12px, 3vw, 28px); top:auto; bottom: calc(12px + env(safe-area-inset-bottom)); transform:none; }
+    .vessel.sub{ width: min(56vw, 420px); }
+    .vessel.boat{ width: min(52vw, 400px); }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="kids-stage">
+  <!-- video: only fades in after first completed card -->
+  <div class="aquarium" id="aquarium" aria-hidden="true">
+    <video id="fishVideo" src="{% static 'fish1.mp4' %}" preload="metadata" autoplay muted loop playsinline></video>
+  </div>
+  <!-- soft ripple overlay -->
+  <div class="ripples" aria-hidden="true"></div>
+
+  <!-- vessels layer (no blur) -->
+  <div class="vessels-layer" id="vessels" aria-hidden="true">
+    <img id="submarineGif" class="vessel sub" src="{% static 'submarine.gif' %}" alt="">
+    <img id="boatGif" class="vessel boat" src="{% static 'boat.gif' %}" alt="">
+  </div>
+
+  <!-- celebration (background stays blurred) -->
+  <div class="celebration" id="celebration" aria-hidden="true">
+    <div class="glass-card">
+      <div class="media">
+        <div class="halo-behind" aria-hidden="true"></div>
+        <img class="platypus" src="{% static 'platypus_dance.gif' %}" alt="Dancing platypus">
+        <img class="win-label" src="{% static 'win.png' %}" alt="Victory banner">
+      </div>
+    </div>
+  </div>
+
+  <!-- LEFT: fancy progress UI (donut + segments) -->
+  <aside class="progress-dock" id="progressDock">
+    <div class="ring" id="progressRing" role="progressbar" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" aria-label="Lesson progress">
+      <div class="ring-core">
+        <div class="ring-count"><span id="doneCount">0</span>/<span id="totalCount">0</span></div>
+        <div class="ring-caption">learned</div>
+      </div>
+    </div>
+    <div class="segbar" id="segbar" aria-hidden="true"></div>
+    <div class="progress-toast" id="progressToast" aria-live="polite"></div>
+  </aside>
+
+  <!-- RIGHT: single-card dock -->
+  <div class="card-dock">
+    <!-- fixed sleeping platypus -->
+    <div class="sleepy-wrap" aria-hidden="true">
+      <img class="sleepy-platypus" src="{% static 'platypus_sleep.gif' %}" alt="">
+    </div>
+
+    <div class="cards" id="cards">
+      {% for c in db_cards %}
+      <article
+        class="card{% if c.is_starter %} card--starter{% endif %}{% if c.is_starter or forloop.first %} active{% endif %}"
+        data-card="{{ c.card_order }}"
+        data-read-sec="{{ c.read_seconds|default:4 }}"
+        tabindex="0"
+        aria-expanded="false"
+        aria-controls="details-{{ c.card_order }}">
+        <div class="hud" aria-hidden="true">
+          <div class="read-timer"><span class="read-dot"></span><span class="read-text">Keep reading… {{ c.read_seconds|default:4 }}s</span></div>
+          <div class="check-badge">✓</div>
+        </div>
+        <h3>{{ c.title }}</h3>
+        <div class="qa-wrap">
+          {{ c.lead_html|safe }}
+          <div class="details" id="details-{{ c.card_order }}">{{ c.detail_html|safe }}</div>
+        </div>
+        <span class="hint" aria-hidden="true">{{ c.hint_text }}</span>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- controls -->
+  <button id="nextBtn" class="next-btn" type="button" aria-label="Next card">›</button>
+  <button id="finishBtn" class="finish-btn" type="button" aria-label="Finish">Finish</button>
+</section>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+  /* Dynamic group static file prefix (used to construct the path for fishN.mp4) */
+  const STATIC_BASE = "{% get_static_prefix %}";
+
+  window.pageInit = function(){
+    /* measure header so our ocean sits perfectly under it */
+    const hdr = document.getElementById('siteHeader');
+    const applyHdrH = () => document.documentElement.style.setProperty('--hdrH', (hdr?.offsetHeight || 80) + 'px');
+    applyHdrH(); window.addEventListener('resize', applyHdrH);
+
+    /* elements */
+    const aquarium   = document.getElementById('aquarium');
+    const fishVideo  = document.getElementById('fishVideo');
+    const celebration= document.getElementById('celebration');
+    const cardsWrap  = document.getElementById('cards');
+    const nextBtn    = document.getElementById('nextBtn');
+    const finishBtn  = document.getElementById('finishBtn');
+
+    const ring   = document.getElementById('progressRing');
+    const segbar = document.getElementById('segbar');
+    const toast  = document.getElementById('progressToast');
+    const doneEl = document.getElementById('doneCount');
+    const totalEl= document.getElementById('totalCount');
+
+    /* vessels */
+    const submarine = document.getElementById('submarineGif');
+    const boat = document.getElementById('boatGif');
+
+    /* cards */
+    const cards = Array.from(cardsWrap.querySelectorAll('.card'));
+    let activeIndex = cards.findIndex(c => c.classList.contains('active'));
+    if (activeIndex < 0) activeIndex = 0;
+
+    /* per-card state */
+    const state = new Map(); // id -> {timerId, startTime, done}
+    let fishUnlocked = false;
+
+    /* === Background fish video: Switch according to card sequence (including file absence fallback) === */
+    const MAX_FISH = 19;                 // Expected up to fish19.mp4
+    const knownMissing = new Set();      // Known missing IDs
+    const knownHave    = new Set([1]);   // Successfully loaded IDs
+    let fishSwitchToken = 0;
+
+    function fishUrl(n){ return STATIC_BASE + 'fish' + n + '.mp4'; }
+
+    function hideFish(){
+      aquarium.classList.remove('bg-on');
+      try{ fishVideo.pause(); }catch(e){}
+    }
+
+    function setFishForCard(i){
+      if (!fishUnlocked || !fishVideo) return;
+      const nRaw = parseInt(cards[i]?.dataset?.card, 10);
+      let n = isNaN(nRaw) ? (i+1) : nRaw;         // Use card_order as the primary key; otherwise, use the index.
+      n = Math.max(1, Math.min(MAX_FISH, n));
+
+      // Skip the number with the known missing file and proceed to locate the next existing one.
+      while(n > 1 && knownMissing.has(n)) n--;
+
+      const url = fishUrl(n);
+      if (fishVideo.getAttribute('src') === url){
+        fishVideo.play?.().catch(()=>{});
+        return;
+      }
+
+      const myToken = ++fishSwitchToken;
+
+      const onLoaded = () => {
+        if (myToken !== fishSwitchToken) return cleanup();
+        knownHave.add(n);
+        fishVideo.play?.().catch(()=>{});
+        cleanup();
+      };
+      const onError = () => {
+        if (myToken !== fishSwitchToken) return cleanup();
+        knownMissing.add(n);
+        cleanup();
+        if (n > 1) setFishForCard(i); // Due to updates in knownMissing, it will automatically search for the next available entry.
+      };
+      function cleanup(){
+        fishVideo.removeEventListener('loadeddata', onLoaded);
+        fishVideo.removeEventListener('error', onError);
+      }
+
+      fishVideo.addEventListener('loadeddata', onLoaded);
+      fishVideo.addEventListener('error', onError);
+      fishVideo.setAttribute('src', url);
+      fishVideo.load(); // Trigger reload
+    }
+
+    /* --- gating for vessel animations --- */
+    let gameStarted = false;
+    let postCelebrationWindow = false;
+
+    const WATER_RISE_MS = 1400;
+    const WATER_FALL_MS = 1400;
+
+    /* Vessel/Submarine Recirculation Parameters (aligned with CSS 9s) */
+    const VESSEL_RUN_MS = 9000;
+    const LOOP_TOTAL_MS = 60000;
+    const LOOP_GAP_MS   = 1000;
+
+    function canPlayVessel(){
+      return (!gameStarted) || postCelebrationWindow;
+    }
+
+    /* -------- Circular navigation: Right to Left repeated for a while-------- */
+    let loopToken = 0;
+    function cancelVesselLoops(){
+      loopToken++;
+      submarine.classList.remove('run');
+      boat.classList.remove('run');
+    }
+
+    function startVesselLoop(el, preDelayMs){
+      if (!canPlayVessel()) return;
+      cancelVesselLoops();
+      const myToken = ++loopToken;
+      let elapsed = 0;
+
+      const runOnce = ()=>{
+        if (myToken !== loopToken || !canPlayVessel()) return;
+        el.classList.remove('run');
+        void el.offsetWidth;
+        el.classList.add('run');
+
+        setTimeout(()=>{
+          if (myToken !== loopToken) { el.classList.remove('run'); return; }
+          elapsed += VESSEL_RUN_MS + LOOP_GAP_MS;
+          if (elapsed + VESSEL_RUN_MS <= LOOP_TOTAL_MS){
+            runOnce();
+          }else{
+            el.classList.remove('run');
+          }
+        }, VESSEL_RUN_MS + LOOP_GAP_MS);
+      };
+
+      setTimeout(()=>{ if (myToken === loopToken) runOnce(); }, preDelayMs);
+    }
+
+    /* Observe data-theme (light/dark mode switch) */
+    const docEl = document.documentElement;
+    const obs = new MutationObserver(muts=>{
+      muts.forEach(m=>{
+        if(m.type==='attributes' && m.attributeName==='data-theme'){
+          const theme = docEl.getAttribute('data-theme') || '';
+          if (theme === 'dark'){
+            startVesselLoop(submarine, WATER_RISE_MS);
+          }else{
+            startVesselLoop(boat, WATER_FALL_MS);
+          }
+        }
+      });
+    });
+    obs.observe(docEl, {attributes:true});
+
+    /* tiny state helpers */
+    const ensure = (id)=>{
+      if(!state.has(id)) state.set(id, {timerId:null, startTime:null, done:false});
+      return state.get(id);
+    };
+
+    /* PROGRESS HUD */
+    const total = cards.length;
+    totalEl.textContent = String(total);
+    ring.setAttribute('aria-valuemax', String(total));
+
+    function buildSegbar(n){
+      segbar.innerHTML = '';
+      segbar.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+      for(let i=0;i<n;i++){
+        const s = document.createElement('span');
+        s.className = 'seg';
+        segbar.appendChild(s);
+      }
+    }
+    buildSegbar(total);
+
+    function popToast(msg, ms=3200){
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(()=> toast.classList.remove('show'), ms);
+    }
+
+    /* celebration timing */
+    const CELEB_IN_MS   = 600;
+    const CELEB_HOLD_MS = 4800;
+    const CELEB_OUT_MS  = 600;
+    const CELEB_START_FADE_OUT_AT = CELEB_IN_MS + CELEB_HOLD_MS;
+
+    function onCelebrationComplete(){
+      postCelebrationWindow = true;
+    }
+
+    function celebrateFinish(){
+      hideFish();
+      celebration.classList.add('show');
+      celebration.setAttribute('aria-hidden','false');
+      void celebration.offsetWidth;
+      celebration.classList.add('anim-in');
+      setTimeout(()=>{
+        celebration.classList.remove('anim-in');
+        celebration.classList.add('anim-out');
+        setTimeout(()=>{
+          celebration.classList.remove('anim-out','show');
+          celebration.setAttribute('aria-hidden','true');
+          onCelebrationComplete();
+        }, CELEB_OUT_MS);
+      }, CELEB_START_FADE_OUT_AT);
+    }
+
+    /* update donut + segments + milestones */
+    let lastDone = 0;
+    const segOn = ()=> Array.from(state.values()).filter(x=>x.done).length;
+    function updateProgress(){
+      const doneCount = segOn();
+      const p = total ? doneCount / total : 0;
+      ring.style.setProperty('--p', p);
+      ring.setAttribute('aria-valuenow', String(doneCount));
+      doneEl.textContent = String(doneCount);
+
+      const segs = segbar.querySelectorAll('.seg');
+      segs.forEach((seg, idx)=> seg.classList.toggle('on', idx < doneCount));
+
+      const stActive = ensure(String(cards[activeIndex].dataset.card));
+      nextBtn.classList.toggle('show', !!stActive.done && activeIndex < cards.length-1);
+
+      if(doneCount !== lastDone){
+        const halfway = Math.ceil(total/2);
+        if(doneCount === halfway) popToast('Halfway! Keep cruising 💧', 3600);
+        if(doneCount === total){
+          popToast('All done! Tap Finish 💧', 6600);
+          finishBtn.classList.add('show');
+        }
+      }
+      lastDone = doneCount;
+    }
+
+    /* height locking */
+    function lockAllCardHeights() {
+      cards.forEach((card) => {
+        const details = card.querySelector('.details');
+        if (!details) return;
+
+        const wasOpen = details.classList.contains('open');
+        const wasRevealed = card.classList.contains('revealed');
+
+        details.classList.remove('open');
+        card.classList.remove('revealed');
+        card.style.height = 'auto';
+        const hClosed = card.scrollHeight;
+
+        details.classList.add('open');
+        card.classList.add('revealed');
+        const hOpen = card.scrollHeight;
+
+        details.classList.toggle('open', wasOpen);
+        card.classList.toggle('revealed', wasRevealed);
+
+        const fixed = Math.max(hClosed, hOpen, 240);
+        card.style.setProperty('--fixedH', fixed + 'px');
+        card.classList.add('fixed');
+      });
+    }
+
+    /* only one card on stage */
+    function showOnly(index){
+      cards.forEach((c,i)=> c.classList.toggle('active', i===index));
+      const id = String(cards[index].dataset.card);
+      const st = ensure(id);
+      nextBtn.classList.toggle('show', !!st.done && index < cards.length-1);
+
+      // If the new card is not yet complete: revert to the "no video" default; 
+      // only completed cards display the corresponding fish video.
+      if (fishUnlocked){
+        if (st.done){
+          aquarium.classList.add('bg-on');
+          setFishForCard(index);
+          fishVideo?.play?.().catch(()=>{});
+        }else{
+          hideFish();
+        }
+      }
+    }
+
+    /* helpers */
+    function setReading(cardEl, on){ cardEl.classList.toggle('reading', !!on); }
+    function setDone(cardEl){ cardEl.classList.add('done'); setReading(cardEl,false); }
+
+    function stopTimer(id){
+      const st = ensure(id);
+      if(st.timerId!=null){ clearInterval(st.timerId); st.timerId=null; }
+      st.startTime=null;
+    }
+
+    function getReadMs(cardEl){
+      const sec = Number(cardEl.dataset.readSec);
+      return (!isNaN(sec) && sec > 0) ? sec * 1000 : 4000;
+    }
+
+    function startTimer(cardEl, id){
+      const st = ensure(id);
+      stopTimer(id);
+      st.startTime = Date.now();
+      setReading(cardEl, true);
+
+      const READ_MS = getReadMs(cardEl);
+      const readText = cardEl.querySelector('.read-text');
+
+      const update = ()=>{
+        if(!readText) return;
+        const remain = Math.max(0, READ_MS - (Date.now() - st.startTime));
+        readText.textContent = `Keep reading… ${Math.ceil(remain/1000)}s`;
+      };
+      update();
+
+      st.timerId = setInterval(()=>{
+        const elapsed = Date.now() - st.startTime;
+        update();
+        if(elapsed >= READ_MS){
+          stopTimer(id);
+          if(!st.done){
+            st.done = true;
+            setDone(cardEl);
+            updateProgress();
+
+            const idx = cards.indexOf(cardEl);
+            if (idx === activeIndex && activeIndex < cards.length-1){
+              nextBtn.classList.add('show');
+            }
+
+            // The video will only be displayed once any card 
+            // has been completed for the first time.
+            if(!fishUnlocked) fishUnlocked = true;
+
+            aquarium.classList.add('bg-on');   // Card completed --> Display corresponding video
+            setFishForCard(idx);
+            fishVideo?.play?.().catch(()=>{});
+          }
+        }
+      }, 100);
+    }
+
+    /* reveal once then lock */
+    function revealOnce(card){
+      if(card.classList.contains('locked')) return;
+      const id = card.dataset.card;
+      const details = document.getElementById('details-'+id);
+      if(!details) return;
+
+      card.classList.add('revealed');
+      details.classList.add('open');
+      card.setAttribute('aria-expanded', 'true');
+
+      card.classList.add('locked');
+      card.setAttribute('tabindex','-1');
+
+      const st = ensure(id);
+      if(!st.done) startTimer(card, id); else setDone(card);
+
+      /* Pause the ship/submarine cycle after the game begins. */
+      gameStarted = true;
+      postCelebrationWindow = false;
+      cancelVesselLoops();
+    }
+
+    /* click to reveal (only the active one) */
+    cardsWrap.addEventListener('click', e=>{
+      const card = e.target.closest('.card.active');
+      if(!card || card.classList.contains('locked')) return;
+      revealOnce(card);
+    });
+
+    /* keyboard friendly */
+    cardsWrap.addEventListener('keydown', e=>{
+      const t = e.target;
+      if(!t.classList?.contains('card') || !t.classList.contains('active')) return;
+      if(t.classList.contains('locked')) return;
+      if(e.key==='Enter' || e.key===' '){
+        e.preventDefault();
+        revealOnce(t);
+      }
+    });
+
+    /* big next button */
+    nextBtn.addEventListener('click', ()=>{
+      if (activeIndex >= cards.length-1) return;
+      hideFish();                 // Restore to the No video default setting
+      activeIndex += 1;
+      showOnly(activeIndex);      // If the new card remains incomplete, 
+      // it will display no video until it has been read through.
+    });
+
+    /* finish button: only responds after all done */
+    finishBtn.addEventListener('click', ()=>{
+      const doneCount = Array.from(state.values()).filter(x=>x.done).length;
+      if(doneCount === total){ celebrateFinish(); }
+    });
+
+    /* boot sequence */
+    showOnly(activeIndex);
+    lockAllCardHeights();
+    updateProgress();
+
+    /* keep heights honest on resize */
+    window.addEventListener('resize', ()=>{
+      cards.forEach(c => { c.classList.remove('fixed'); c.style.removeProperty('--fixedH'); });
+      lockAllCardHeights();
+    });
+
+    /* power-saving for the bg video */
+    document.addEventListener('visibilitychange', ()=>{
+      if(!fishVideo) return;
+      if(document.hidden) fishVideo.pause?.(); else if(aquarium.classList.contains('bg-on')) fishVideo.play?.();
+    });
+
+    /* tap overlay to skip the rest of the animation */
+    celebration.addEventListener('click', ()=>{
+      if(!celebration.classList.contains('show')) return;
+      celebration.classList.remove('anim-in');
+      celebration.classList.add('anim-out');
+      setTimeout(()=>{
+        celebration.classList.remove('anim-out','show');
+        celebration.setAttribute('aria-hidden','true');
+        onCelebrationComplete();
+      }, 600);
+    });
+  };
+</script>
+{% endblock %}

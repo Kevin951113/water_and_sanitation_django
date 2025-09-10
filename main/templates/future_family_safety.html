@@ -481,20 +481,24 @@ html[data-theme="light"] .range-card {
     <div class="card-bd">
       <div class="row g-3 align-items-end">
         <div class="col-lg-6">
-          <label for="site_id" class="form-label fw-bold">Site ID - Suburb</label>
+          <label for="site_id" class="form-label fw-bold">Suburb</label>
           {% if site_options %}
-            <select id="site_id" name="site_id" class="form-control-like">
-              <option value="" disabled {% if not site_id %}selected{% endif %}>Select a site…</option>
+            <input id="site_id" name="site_id" class="form-control-like"
+                  list="site_list"
+                  value="{{ site_id|default:'' }}"
+                  placeholder="Select or search a site…">
+
+            <datalist id="site_list">
               {% for site in site_options %}
-                <option value="{{ site.id }}" {% if site.id == site_id %}selected{% endif %}>
-                  {{ site.id }} – {{ site.suburb }}
-                </option>
+                <option value="{{ site.suburb }}"></option>
               {% endfor %}
-            </select>
+            </datalist>
           {% else %}
-            <input id="site_id" name="site_id" class="form-control-like" type="text" value="{{ site_id|default:'' }}" placeholder="e.g. 97226">
+            <input id="site_id" name="site_id" class="form-control-like" type="text"
+                  value="{{ site_id|default:'' }}" placeholder="e.g. 97226">
             <div class="muted" style="font-size:12px; margin-top:6px;">Tip: pass a list as <code>site_options</code> from the view to show a dropdown.</div>
           {% endif %}
+
         </div>
         <div class="col-lg-3">
           <label for="horizon_days" class="form-label fw-bold">Days ahead</label>
@@ -1043,62 +1047,109 @@ html[data-theme="light"] .range-card {
 
   /* ---------- Form bind + validation (SweetAlert2) ---------- */
   (function bindForm(){
-    const form = document.getElementById('forecast-form');
-    if(!form) return;
+  const form = document.getElementById('forecast-form');
+  if(!form) return;
 
-    function getSiteValue(){
-      const sel = document.getElementById('site_id');
-      if(!sel) return '';
-      if(sel.tagName.toLowerCase()==='select'){
-        return sel.value || '';
+  function getSiteValue(){
+    const sel = document.getElementById('site_id');
+    if(!sel) return '';
+    if(sel.tagName.toLowerCase()==='select'){
+      return sel.value || '';
+    }
+    return (sel.value||'').trim();
+  }
+
+  function highlightAndScroll(){
+    form.classList.add('attn');
+    setTimeout(()=>form.classList.remove('attn'), 1800);
+    const OFFSET = 120;
+    const top = form.getBoundingClientRect().top + window.pageYOffset - OFFSET;
+    window.scrollTo({ top, behavior:'smooth' });
+    form.querySelector('#site_id')?.focus({preventScroll:true});
+  }
+
+  form.addEventListener('submit', function(e){
+    const siteVal = getSiteValue();
+
+    // 1.check if empty
+    if(!siteVal){
+      e.preventDefault();
+      if(window.Swal){
+        Swal.fire({
+          title: 'Select a Suburb',
+          text: 'Please choose a Suburb before requesting a forecast.',
+          icon: 'warning',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#1E6FFF'
+        }).then(highlightAndScroll);
+      } else {
+        alert('Please choose a Suburb before requesting a forecast.');
+        highlightAndScroll();
       }
-      return (sel.value||'').trim();
-    }
-    function highlightAndScroll(){
-      form.classList.add('attn');
-      setTimeout(()=>form.classList.remove('attn'), 1800);
-      const OFFSET = 120;
-      const top = form.getBoundingClientRect().top + window.pageYOffset - OFFSET;
-      window.scrollTo({ top, behavior:'smooth' });
-      form.querySelector('#site_id')?.focus({preventScroll:true});
+      return;
     }
 
-    form.addEventListener('submit', function(e){
-      const siteVal = getSiteValue();
-      if(!siteVal){
-        e.preventDefault();
-        if(window.Swal){
-          Swal.fire({
-            title: 'Select a Site ID - Suburb',
-            text: 'Please choose a Site ID - Suburb before requesting a forecast.',
-            icon: 'warning',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#1E6FFF'
-          }).then(highlightAndScroll);
-        }else{
-          alert('Please choose a Site ID - Suburb before requesting a forecast.');
-          highlightAndScroll();
-        }
-        return;
+    // 2. check if only letters/numbers/spaces/dashes/parentheses are allowed
+const validPattern = /^[A-Za-z0-9\s\-\(\)]+$/;
+if(!validPattern.test(siteVal)){
+  e.preventDefault();
+  if(window.Swal){
+    Swal.fire({
+      title: 'Invalid input',
+      text: 'Only letters, numbers, spaces, dashes (-), and parentheses () are allowed.',
+      icon: 'error',
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#1E6FFF'
+    }).then(highlightAndScroll);
+  } else {
+    alert('Only letters, numbers, spaces, dashes (-), and parentheses () are allowed.');
+    highlightAndScroll();
+  }
+  return;
+}
+
+    // 3. check if value is in the options list (to prevent arbitrary input)
+    const options = Array.from(document.querySelectorAll('#site_list option')).map(o => o.value);
+    if(!options.includes(siteVal)){
+      e.preventDefault();
+      if(window.Swal){
+        Swal.fire({
+          title: 'Invalid suburb',
+          text: 'Please select a suburb from the list.',
+          icon: 'error',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#1E6FFF'
+        }).then(highlightAndScroll);
+      } else {
+        alert('Please select a suburb from the list.');
+        highlightAndScroll();
       }
-
-      /* valid -> keep original behavior */
-      const base = (form.getAttribute('action') || location.pathname).split('#')[0];
-      form.setAttribute('action', base + '#safety');
-      const btn = form.querySelector('button[type="submit"]');
-      if(btn){ btn.disabled = true; btn.setAttribute('aria-disabled','true'); btn.innerText = 'Loading…'; }
-      showLoadingOverlay();
-    });
-
-    /* Clear attention ring once user changes the field */
-    const site = document.getElementById('site_id');
-    if(site){
-      site.addEventListener('change', ()=>form.classList.remove('attn'));
-      site.addEventListener('input',  ()=>form.classList.remove('attn'));
+      return;
     }
 
-    window.addEventListener('pageshow', hideLoadingOverlay);
-  })();
+    // 4. pass all checks, show loading overlay
+    const base = (form.getAttribute('action') || location.pathname).split('#')[0];
+    form.setAttribute('action', base + '#safety');
+    const btn = form.querySelector('button[type="submit"]');
+    if(btn){
+      btn.disabled = true;
+      btn.setAttribute('aria-disabled','true');
+      btn.innerText = 'Loading…';
+    }
+    showLoadingOverlay();
+  });
+
+  /* Clear attention ring once user changes the field */
+  const site = document.getElementById('site_id');
+  if(site){
+    site.addEventListener('change', ()=>form.classList.remove('attn'));
+    site.addEventListener('input',  ()=>form.classList.remove('attn'));
+  }
+
+  window.addEventListener('pageshow', hideLoadingOverlay);
+})();
+
+
 
   /* ---------- GSAP droplets ---------- */
   (function initGSAPDrops(){

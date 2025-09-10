@@ -177,7 +177,7 @@
 
     @media (max-width: 992px){
       .grid#videoGrid{ grid-template-columns: repeat(2, minmax(0,1fr)); }
-      #videoGrid .panel{ aspect-ratio: 16/10; min-height: 200px; }
+      #videoGrid .panel{ aspect-ratio: 16/2; min-height: 200px; }
       .panel .title-row{ font-size: clamp(14px, 2.4vw, 20px); }
       .water-chip{ width: 34px; height: 34px; }
       .water-chip svg{ width:20px; height:20px; }
@@ -557,9 +557,9 @@
   setHeroByTheme(document.documentElement.getAttribute('data-theme') === 'light');
   window.addEventListener('themechange', (e) => setHeroByTheme(e.detail.isLight));
 
-  /* ===== Hero glass: show on enter, hide ~5–6s after leave ===== */
+  /* ===== Hero glass: show on enter, hide ~8s after leave ===== */
   const heroCopyInner = document.getElementById('heroCopyInner');
-  const HIDE_DELAY_MS = 5600; // ~5–6 seconds
+  const HIDE_DELAY_MS = 8600; // ~8 seconds
   let heroHideTimer = null;
 
   function showHeroCopy(){
@@ -651,7 +651,7 @@
         if (hasModifier(e)) return;               // let new-tab/window behaviors pass through
         if (!isInternal(a.href)) return;          // only mask same-origin
         e.preventDefault();
-        if (typeof showLoadingMask === 'function') showLoadingMask();
+        if (typeof water_show_loading_mask === 'function') water_show_loading_mask();
         setTimeout(()=>{ window.location.href = a.href; }, 900);
       });
 
@@ -661,7 +661,7 @@
         if (k === 'Enter' || k === ' ' || k === 'Spacebar'){
           if (!isInternal(a.href)) return;
           e.preventDefault();
-          if (typeof showLoadingMask === 'function') showLoadingMask();
+          if (typeof water_show_loading_mask === 'function') water_show_loading_mask();
           setTimeout(()=>{ window.location.href = a.href; }, 900);
         }
       });
