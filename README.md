@@ -1,6 +1,6 @@
 # Water and Sanitation App
 
-# Development Approach – How our Django Site Works (Team Guide v2.0)
+# Development Approach – How our Django Site Works (v2.0)
 
 
 <p align="left">
@@ -32,6 +32,8 @@
 - Results linked to **interactive map** with suburb highlighting (After we sort out the dataset)
 - Better datasets and refined forecasting methods
 
+**Demo picture**
+
 <p align="left">
   <img src="https://drive.google.com/uc?export=view&id=1sOD0L-yKZpVoNiLnfPuEJ6tDgOJOQYRF"  width="800"/>
 </p>
@@ -56,6 +58,9 @@
 - **Grade-4 friendly** cards (large icons, simple text, animations)  
 - **Fast load** (≤ 1.5 s)  
 - **Sea Animal Card Collection** rewards
+
+
+**Demo picture**
 
 <p align="left">
   <img src="https://drive.google.com/uc?export=view&id=1qXxjJXVchuXXagiaETnuqYM5esEt0lvm"  width="500"/>
