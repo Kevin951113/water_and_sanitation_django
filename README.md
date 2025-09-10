@@ -14,7 +14,7 @@
 ### Prediction Page Improvement (Epic 3.5)
 - **Search bar + dropdown** for suburb predictions  
 - **Auto-suggestions** while typing  
-- Results linked to **interactive map** with suburb highlighting  
+- Results linked to **interactive map** with suburb highlighting (After we sort out the dataset)
 - Better datasets and refined forecasting methods
 
 <p align="left">
@@ -37,7 +37,7 @@
 
 
 ### Kids Interactive Page – Water & Animals (Epic 5.0)
-- **Region click** → show water quality (green/yellow/red) and affected animals (platypus, fish, frogs)  
+- **Card click** → show water knowledge and affected animals animation (platypus, fish?)  
 - **Grade-4 friendly** cards (large icons, simple text, animations)  
 - **Fast load** (≤ 1.5 s)  
 - **Sea Animal Card Collection** rewards
