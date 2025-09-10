@@ -9,6 +9,21 @@
 
 ---
 
+# Pages & Services – Table
+
+| Where | What it is (simple) | Main job | What a normal user sees | Iteration |
+|-------|----------------------|----------|--------------------------|-----------|
+| `main/services/home_service.py` | Data prep for Home | Provide hero text + links | — (backend only) | Iteration 1 |
+| `main/templates/water_home.html` | Home page | Entry to maps, charts, kids | Clean landing page | Iteration 1 |
+| `main/templates/base.html` | Shared layout | Header/nav/footer, theme, global JS/CSS | Consistent layout | Iteration 1 |
+| `main/services/future_family_safety_service.py` | Data for predictions | Use cleaned CSVs + pre-trained models to build 48h forecast, badges, chemistry level in water | — | Iteration 1 & 2 |
+| `main/templates/future_family_safety.html` | Future & Family Safety | Provide views with suburb search, forecast water QA scores, badges | Prediction scores, chemistry level in water and 48h forecast Visualisation  | Iteration 1 & 2 |
+| `main/services/for_kids_learn_play_service.py` | Data for kids | Animal cards, water knowledge, collection data from AWS RDS| — | Iteration 2 |
+| `main/templates/for_kids_learn_play.html` | Kids – Learn & Play | Knowledge Cards + fun facts + rewards | Big icons, sea animal pixel animation, water knowledge, animal cards collection | Iteration 2 |
+
+
+---
+
 # Iteration 2 Updates
 
 ### Prediction Page Improvement (Epic 3.5)
@@ -201,13 +216,13 @@ The objective is to share information and knowledge about water quality and how 
 - Simple, **Grade-4 friendly** cards about water and animals  
 - Large icons and animations for accessibility  
 - **Fast-loading content (≤ 1.5 s)**  
-- Reward system (badges/animations, sea animal card collection)
+- Reward system (knowledge/animations, sea animal card collection)
 
 **Benefits**
 - Engages children with **fun, gamified learning**  
 - Encourages awareness of **sustainability and conservation**  
-- Helps families use the platform together (parents see predictions; kids learn via play)  
-- Positions the platform as **fun + predictive**, not just a data portal
+- Helps families use the platform together (kids learn via play)  
+- Positions the platform as **fun**, not just a data portal
 
 ---
 
@@ -229,17 +244,10 @@ The objective is to share information and knowledge about water quality and how 
 
 **Note:** Features not included after Iteration 1 or 2 will be shown with ~~strikethrough~~ text.
 
-# Pages & Services – Simple Table
+# Backlog features – Table
 
 | Where | What it is (simple) | Main job | What a normal user sees | Iteration |
 |-------|----------------------|----------|--------------------------|-----------|
-| `main/services/home_service.py` | Data prep for Home | Provide hero text + links | — (backend only) | Iteration 1 |
-| `main/templates/water_home.html` | Home page | Entry to maps, charts, kids | Clean landing page | Iteration 1 |
-| `main/templates/base.html` | Shared layout | Header/nav/footer, theme, global JS/CSS | Consistent layout | Iteration 1 |
-| `main/services/future_family_safety_service.py` | Data for predictions | Use cleaned CSVs + pre-trained models to build 48h forecast, badges, advice | — | Iteration 1 & 2 |
-| `main/templates/future_family_safety.html` | Future & Family Safety | Suburb search, forecast card, badges | Prediction card with advice | Iteration 1 & 2 |
-| `main/services/for_kids_learn_play_service.py` | Data for kids | Animal cards, water knowledge, collection data | — | Iteration 2 |
-| `main/templates/for_kids_learn_play.html` | Kids – Learn & Play | Map + fun facts + rewards | Big icons, animal collection tank | Iteration 2 |
 | ~~`main/services/explore_water_quality_service.py`~~ | ~~Data for bubble map~~ | ~~Suburb list, scores, filters~~ | — | Future |
 | ~~`main/templates/explore_water_quality.html`~~ | ~~Interactive bubble map~~ | ~~Colored bubbles, click card~~ | ~~Score, trend, safety~~ | Future |
 | ~~`main/services/pollution_sources_service.py`~~ | ~~Data for charts~~ | ~~Pie + bar data~~ | — | Future |
