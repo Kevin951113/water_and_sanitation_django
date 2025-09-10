@@ -4,6 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>{% block title %}[Water and Sanitation]{% endblock %}</title>
+  <link rel="icon" type="image/png" href="{% static 'lighton_logo.png' %}">
   <meta name="viewport" content="width=device-width,initial-scale=1" />
 
   <!-- We boot the theme super early, so we avoid the flash... and we read localStorage... then we set data-theme. -->
@@ -39,6 +40,9 @@
 
   <!-- We moved inline styles to a proper static file, so caching works and diffs are cleaner. -->
   <link rel="stylesheet" href="{% static 'css/base.css' %}">
+
+  <link href="https://fonts.googleapis.com/css2?family=Joti+One&display=swap" rel="stylesheet">
+
 </head>
 <body>
   <!-- We keep the header sticky, and we keep it light, so navigation feels stable. -->
@@ -73,7 +77,7 @@
            aria-label="Primary">
         <a href="{% url 'home' %}" class="{% if current == 'home' %}active{% endif %}">
           <span class="slot-window"><span class="slot-track">
-            <span class="slot-item">[Home]</span><span class="slot-item" aria-hidden="true">[Home]</span>
+            <span class="slot-item">Home</span><span class="slot-item" aria-hidden="true">Home</span>
           </span></span>
         </a>
 
@@ -84,28 +88,30 @@
              aria-haspopup="true"
              aria-expanded="{% if current == 'explore_water_quality' or current == 'pollution_sources' or current == 'future_family_safety' %}true{% else %}false{% endif %}">
             <span class="slot-window"><span class="slot-track">
-              <span class="slot-item">[Water Insights ▼]</span>
-              <span class="slot-item" aria-hidden="true">[Water Insights ▼]</span>
+              <span class="slot-item">Water Insights ▼</span>
+              <span class="slot-item" aria-hidden="true">Water Insights ▼</span>
             </span></span>
           </a>
           <div class="submenu" role="menu">
             <!-- we keep older pages commented, so we can bring them back later without hunting history -->
             <!-- <a role="menuitem" href="{% url 'explore_water_quality' %}" class="{% if current == 'explore_water_quality' %}active{% endif %}">[Explore Water Quality]</a>
             <a role="menuitem" href="{% url 'pollution_sources' %}" class="{% if current == 'pollution_sources' %}active{% endif %}">[Pollution Sources]</a>-->
-            <a role="menuitem" href="{% url 'future_family_safety' %}" class="{% if current == 'future_family_safety' %}active{% endif %}">[Community Reporting & Family Safety]</a>
+            <a role="menuitem" href="{% url 'future_family_safety' %}" class="{% if current == 'future_family_safety' %}active{% endif %}">Community Reporting & Family Safety</a>
           </div>
         </div>
 
         <!-- we’ll add more pages when needed… and we keep them consistent, so users don’t get lost -->
-       <!--  <a href="{% url 'for_kids_learn_play' %}" class="{% if current == 'for_kids_learn_play' %}active{% endif %}">
+        <a href="{% url 'for_kids_learn_play' %}" 
+          class="kids-link {% if current == 'for_kids_learn_play' %}active{% endif %}">
           <span class="slot-window"><span class="slot-track">
-            <span class="slot-item">[For Kids – Learn & Play]</span><span class="slot-item" aria-hidden="true">[For Kids – Learn & Play]</span>
+            <span class="slot-item"><svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#75FB4C"><path d="M432-240h24l168-240h-96v-144h-24L336-384h96v144Zm48 144q-130 0-221-91t-91-221q0-97 74.5-205T480-864q166 150 239 257t73 199q0 130-91 221T480-96Zm0-72q100 0 170-70t70-170q0-68-54-149T480-769Q348-638 294-557t-54 149q0 100 70 170t170 70Zm0-312Z"/></svg>For Kids – Learn & Play</span>
+            <span class="slot-item" aria-hidden="true">For Kids – Learn & Play</span>
           </span></span>
         </a>
 
-        <a href="{% url 'about_water_sanitation' %}" class="{% if current == 'about_water_sanitation' %}active{% endif %}">
+        <!--  <a href="{% url 'about_water_sanitation' %}" class="{% if current == 'about_water_sanitation' %}active{% endif %}">
           <span class="slot-window"><span class="slot-track">
-            <span class="slot-item">[About Our Water]</span><span class="slot-item" aria-hidden="true">[About Our Water]</span>
+            <span class="slot-item">About Our Water</span><span class="slot-item" aria-hidden="true">About Our Water</span>
           </span></span>
         </a>-->
       </nav>

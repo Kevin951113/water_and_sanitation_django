@@ -175,6 +175,49 @@
       mix-blend-normal;
     }
 
+    @media (max-width: 992px){
+      .grid#videoGrid{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+      #videoGrid .panel{ aspect-ratio: 16/2; min-height: 200px; }
+      .panel .title-row{ font-size: clamp(14px, 2.4vw, 20px); }
+      .water-chip{ width: 34px; height: 34px; }
+      .water-chip svg{ width:20px; height:20px; }
+      .panel .centerline{ padding: 8px 14px; }
+    }
+    @media (max-width: 680px){
+      .grid#videoGrid{ grid-template-columns: 1fr; }
+      #videoGrid .panel{ aspect-ratio: 16/10; min-height: 180px; }
+      .panel .title-row{ font-size: clamp(14px, 4.4vw, 18px); }
+      .water-chip{ width: 30px; height: 30px; }
+      .water-chip svg{ width:18px; height:18px; }
+      .panel .centerline{ padding: 6px 12px; border-radius: 14px; }
+    }
+
+
+    .why-section{
+  display:grid;
+  grid-template-columns: 1.2fr 0.8fr; 
+  gap: 24px;
+  align-items: center;
+  padding: clamp(16px, 3vw, 28px);
+}
+.why-title{
+  font-size: clamp(22px, 3vw, 36px);
+  font-weight: 900;
+  margin-bottom: clamp(10px, 2vw, 16px);
+}
+.why-list-item{
+  font-size: clamp(14px, 1.6vw, 18px);
+  line-height: 1.5;
+}
+
+/* ≤ 992px */
+@media (max-width: 992px){
+  .why-section{ grid-template-columns: 1fr; }
+  .why-section .lottie-bg{ display:none; }
+  .why-title{ text-align:center; }
+  .why-note{ text-align:center; }
+}
+
     .panel .overlay{
       position:absolute; inset:0; z-index:3;
       display:grid; place-items:center;
@@ -347,7 +390,7 @@
               <path d="M12 2.7l5 6.1c.94 1.14 1.5 2.58 1.5 4.09A6.5 6.5 0 1 1 5.5 12.9c0-1.51.56-2.95 1.5-4.09l5-6.11z"/>
             </svg>
           </span>
-          Real-time water safety checks—track turbidity & pH to keep drinking water safe.
+          Family Safety Indicator — single score for quick water safety decisions.
         </li>
         <li class="why-list-item">
           <span class="why-icon-bullet" aria-hidden="true">
@@ -355,7 +398,7 @@
               <path d="M12 2.7l5 6.1c.94 1.14 1.5 2.58 1.5 4.09A6.5 6.5 0 1 1 5.5 12.9c0-1.51.56-2.95 1.5-4.09l5-6.11z"/>
             </svg>
           </span>
-          Map nearby toilets & handwashing points for safe, dignified sanitation.
+          Check key water chemistry with clear thresholds for what’s safe or unsafe.
         </li>
         <li class="why-list-item">
           <span class="why-icon-bullet" aria-hidden="true">
@@ -363,7 +406,7 @@
               <path d="M12 2.7l5 6.1c.94 1.14 1.5 2.58 1.5 4.09A6.5 6.5 0 1 1 5.5 12.9c0-1.51.56-2.95 1.5-4.09l5-6.11z"/>
             </svg>
           </span>
-          Simple household filtration & chlorination guides—clean water in minutes.
+          Forecast — see how conditions may change if families keep using or avoid water.
         </li>
         <li class="why-list-item">
           <span class="why-icon-bullet" aria-hidden="true">
@@ -371,7 +414,7 @@
               <path d="M12 2.7l5 6.1c.94 1.14 1.5 2.58 1.5 4.09A6.5 6.5 0 1 1 5.5 12.9c0-1.51.56-2.95 1.5-4.09l5-6.11z"/>
             </svg>
           </span>
-          Leak detection & water-saving tips to cut waste and bills.
+          Simple health guidance — from avoiding high-risk areas to keeping children safe at play.
         </li>
         <li class="why-list-item">
           <span class="why-icon-bullet" aria-hidden="true">
@@ -379,7 +422,7 @@
               <path d="M12 2.7l5 6.1c.94 1.14 1.5 2.58 1.5 4.09A6.5 6.5 0 1 1 5.5 12.9c0-1.51.56-2.95 1.5-4.09l5-6.11z"/>
             </svg>
           </span>
-          Community issue reporting—get alerts during outages & contamination events.
+          Community issue reporting—get alerts during outages & contamination.
         </li>
       </ul>
       <div class="why-note">Clean water saves lives. Safe sanitation protects communities.</div>
@@ -514,9 +557,9 @@
   setHeroByTheme(document.documentElement.getAttribute('data-theme') === 'light');
   window.addEventListener('themechange', (e) => setHeroByTheme(e.detail.isLight));
 
-  /* ===== Hero glass: show on enter, hide ~5–6s after leave ===== */
+  /* ===== Hero glass: show on enter, hide ~8s after leave ===== */
   const heroCopyInner = document.getElementById('heroCopyInner');
-  const HIDE_DELAY_MS = 5600; // ~5–6 seconds
+  const HIDE_DELAY_MS = 8600; // ~8 seconds
   let heroHideTimer = null;
 
   function showHeroCopy(){
@@ -608,7 +651,7 @@
         if (hasModifier(e)) return;               // let new-tab/window behaviors pass through
         if (!isInternal(a.href)) return;          // only mask same-origin
         e.preventDefault();
-        if (typeof showLoadingMask === 'function') showLoadingMask();
+        if (typeof water_show_loading_mask === 'function') water_show_loading_mask();
         setTimeout(()=>{ window.location.href = a.href; }, 900);
       });
 
@@ -618,7 +661,7 @@
         if (k === 'Enter' || k === ' ' || k === 'Spacebar'){
           if (!isInternal(a.href)) return;
           e.preventDefault();
-          if (typeof showLoadingMask === 'function') showLoadingMask();
+          if (typeof water_show_loading_mask === 'function') water_show_loading_mask();
           setTimeout(()=>{ window.location.href = a.href; }, 900);
         }
       });

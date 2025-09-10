@@ -41,6 +41,10 @@ html[data-theme="light"] .menu .submenu a:focus {
   --ico-moon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 1 0 9.8 9.8z'/%3E%3C/svg%3E");
   /* NEW: header height for background layers to sit just below the sticky header */
   --hdrH: 80px;
+
+    /* Kids color (dark default) */
+  --kids-green: #2ecc71;
+  --kids-underline-h: 3px;
 }
 html[data-theme="light"]{
   --bg:#fff; --text:#0e1420; --muted:#4a5a6c;
@@ -52,6 +56,9 @@ html[data-theme="light"]{
   --glow-inner: 0 0 3px  color-mix(in srgb, var(--header-glow) 70%, transparent);
   --ico-sun: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l-1.4-1.4M20.4 20.4 19 19M5 19l-1.4 1.4M20.4 3.6 19 5'/%3E%3C/svg%3E");
   --ico-moon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 1 0 9.8 9.8z'/%3E%3C/svg%3E");
+    /* Kids color in light mode */
+  --kids-green: #27ae60;
+
 }
 
 *{box-sizing:border-box}
@@ -83,7 +90,7 @@ header h1{
 nav.menu{flex:1; justify-content:center; gap:28px; flex-wrap:wrap;}
 nav.menu a, nav.menu .menu-link{
   position:relative; display:inline-block; color:var(--text); text-decoration:none;
-  font-weight:800; letter-spacing:.08em; font-size:14px; text-transform:uppercase;
+  font-weight:800; letter-spacing:.08em; font-size:17px; text-transform:uppercase;
   padding:8px 10px; border-radius:10px;
   -webkit-text-stroke:.35px var(--stroke);
   text-shadow: 0 1px 0 rgba(0,0,0,.22);
@@ -91,33 +98,65 @@ nav.menu a, nav.menu .menu-link{
 .slot-window{ display:block; height:1.2em; overflow:hidden; line-height:1.2em; }
 .slot-track{ display:block; }
 .slot-item{ display:block; line-height:1.2em; }
-@keyframes slotSpin{
-  0%{transform:translateY(0)}45%{transform:translateY(-105%)}60%{transform:translateY(5%)}100%{transform:translateY(0)}
+@keyframes slotWiggle {
+  0%   { transform: translateY(0); }
+  20%  { transform: translateY(-2px); }
+  40%  { transform: translateY(2px); }
+  60%  { transform: translateY(-1px); }
+  80%  { transform: translateY(1px); }
+  100% { transform: translateY(0); }
 }
-nav.menu a:hover .slot-track{ animation: slotSpin 1.1s cubic-bezier(.22,.72,.17,1) both; }
+
+nav.menu a:hover .slot-track{ animation: slotWiggle 0.5s ease-in-out; }
 nav.menu a:focus-visible{outline:2px solid var(--text); outline-offset:4px; border-radius:6px}
 
 /* hover/focus/active */
-nav.menu a:hover, nav.menu a:focus-visible, nav.menu a.active,
-nav.menu .menu-link:hover, nav.menu .menu-link:focus-visible, nav.menu .menu-link.active{
-  color: var(--header-glow);
-  text-shadow: var(--glow-outer), var(--glow-inner), 0 1px 1px rgba(0,0,0,.18);
-  background: color-mix(in srgb, var(--header-glow) 12%, transparent);
+/* INK-ONLY: All standard navigation links (excluding kids-link) 
+INK-ONLY: All standard navigation links (excluding kids-link)*/
+nav.menu a:hover,
+nav.menu a:focus-visible,
+nav.menu a.active,
+nav.menu .menu-link:hover,
+nav.menu .menu-link:focus-visible,
+nav.menu .menu-link.active{
+  color: var(--header-glow);     /* Theme variables will change with the light/dark theme. */
+  background: transparent !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
 }
-nav.menu a::after, nav.menu .menu-link::after{
-  content:""; position:absolute; left:12px; right:12px; bottom:4px; height:6px; border-radius:999px;
-  background: radial-gradient(60% 120% at 50% 50%, color-mix(in srgb, var(--header-glow) 65%, transparent), transparent 70%);
-  opacity:0; transform:translateY(4px); transition:opacity .18s, transform .18s; pointer-events:none; filter:blur(.8px);
+
+/* Unified: The baseline appears only on hover/focus/active states, with colour matching the text colour. */
+nav.menu a::after,
+nav.menu .menu-link::after{
+  content:"";
+  position:absolute;
+  left:12px; right:12px; bottom:0;
+  height: var(--nav-underline-h, 3px);
+  border-radius: 999px;
+  background: currentColor;      /* match the colour of the text */
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform .22s ease, opacity .18s ease;
+  filter: none;                  /* Remove blur/halo */
 }
-nav.menu a:hover::after, nav.menu a.active::after,
-nav.menu .menu-link:hover::after, nav.menu .menu-link.active::after{ opacity:1; transform:translateY(0); }
+nav.menu a:hover::after,
+nav.menu a.active::after,
+nav.menu .menu-link:hover::after,
+nav.menu .menu-link.active::after,
+nav.menu a:focus-visible::after,
+nav.menu .menu-link:focus-visible::after{
+  opacity: 1;
+  transform: scaleX(1);
+}
+
 
 html[data-theme="light"] nav.menu a:hover,
 html[data-theme="light"] nav.menu a:focus-visible,
 html[data-theme="light"] nav.menu a.active{
-  text-shadow:0 1px 1px rgba(0,0,0,.28), 0 0 10px color-mix(in srgb, var(--header-glow) 40%, transparent);
-  background: color-mix(in srgb, var(--header-glow) 12%, white 88%);
-  border-radius: 8px; -webkit-text-stroke:.25px rgba(0,0,0,.35);
+  color: var(--header-glow);
+  background: transparent !important;
+  text-shadow: none !important;
 }
 
 header button{
@@ -168,7 +207,7 @@ header button:focus-visible{outline:2px solid var(--text); outline-offset:2px}
 
 /* Hamburger */
 .hamburger-btn{
-  border:1px solid var(--hairline); color:var(--text); background:transparent;
+  border:1px solid var(--hairline); color:var(--text); background:transparent; font-size: 1.8rem;
   padding:.45rem .7rem; border-radius:10px; line-height:1; font-weight:900;
   min-width:40px; min-height:40px; box-shadow:none; transition:color .15s ease;
   -webkit-tap-highlight-color: transparent;
@@ -182,6 +221,24 @@ header button:focus-visible{outline:2px solid var(--text); outline-offset:2px}
   box-shadow: none;
   transform: none;
   outline: none;
+}
+
+/* < 768px  */
+@media (max-width: 992px) {
+  .hamburger-btn {
+    min-width: 42px;
+    min-height: 42px;
+    font-size: 1.6rem;
+  }
+}
+
+/* < 576px*/
+@media (max-width: 576px) {
+  .hamburger-btn {
+    min-width: 48px;
+    min-height: 48px;
+    font-size: 2rem;
+  }
 }
 
 /* ===== Mobile: menu panel + FIX no-shift during .collapsing ===== */
@@ -213,6 +270,10 @@ header button:focus-visible{outline:2px solid var(--text); outline-offset:2px}
     background: transparent;
     text-shadow:none;
     border-radius:12px;
+
+
+      /* Keep kids link green on mobile list */
+    header .menu .kids-link .slot-item{ color: var(--kids-green) !important; }
   }
 
   /* dropdown submenu becomes inline */
@@ -242,6 +303,23 @@ header button:focus-visible{outline:2px solid var(--text); outline-offset:2px}
   html[data-theme="light"] #lightBtn::before{ background-image: var(--ico-sun); }
   html[data-theme="dark"]  #lightBtn::before{ background-image: var(--ico-moon); }
 }
+
+
+@media (max-width: 991.98px) {
+  html[data-theme="dark"] #primaryNav.collapse,
+  html[data-theme="dark"] #primaryNav.collapsing,
+  html[data-theme="dark"] #primaryNav.collapse.show {
+    background: rgb(0, 0, 0);
+  }
+
+  html[data-theme="light"] #primaryNav.collapse,
+  html[data-theme="light"] #primaryNav.collapsing,
+  html[data-theme="light"] #primaryNav.collapse.show {
+    background: rgb(255, 255, 255);
+  }
+}
+
+
 
 /* ===== Hero / Panels ===== */
 .hero{ max-width:1300px; margin:22px auto 0; padding:0; position:relative; z-index:1; }
@@ -451,3 +529,77 @@ footer{
     max-height: 45px;
   }
 }
+
+/* ===== Kids Nav (Playful style) ===== */
+nav.menu .kids-link {
+  position: relative;
+  padding: 6px 16px;
+  border-radius: 12px;
+}
+
+/* Default text for kids (theme-aware) */
+nav.menu .kids-link .slot-item{
+  color: var(--kids-green);
+  font-family: 'Joti One', cursive;
+  font-weight: 400;
+  font-size: 18px;
+  letter-spacing: 0;
+  text-shadow: none;
+  transition: color .2s ease;
+}
+
+/* --- ONLY color change + underline on hover/active (no frames) --- */
+nav.menu .kids-link,
+nav.menu .kids-link:hover,
+nav.menu .kids-link:focus-visible,
+nav.menu .kids-link.active{
+  background: transparent !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+/* disable slot wiggle for kids on hover to keep it clean */
+nav.menu .kids-link:hover .slot-track{ animation: none !important; }
+
+/* text color on hover/active */
+nav.menu .kids-link:hover .slot-item,
+nav.menu .kids-link.active .slot-item{
+  color: color-mix(in srgb, var(--kids-green) 88%, white 12%);
+}
+
+/* custom underline for kids (overrides global ::after) */
+nav.menu .kids-link::after{
+  content:"";
+  position:absolute;
+  left:12px; right:12px; bottom:0;
+  height: var(--kids-underline-h);
+  border-radius: 999px;
+
+  /* */
+  background: linear-gradient(90deg,
+    #ff6b6b, #feca57, #1dd1a1, #54a0ff, #5f27cd, #ff6b6b);
+  background-size: 300% 100%;
+  animation: rainbow-move 3s linear infinite;
+
+  opacity:0;
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+  transition: transform .22s ease, opacity .18s ease;
+  filter:none;
+}
+nav.menu .kids-link:hover::after,
+nav.menu .kids-link.active::after{
+  opacity:1;
+  transform: scaleX(1);
+}
+
+/*  */
+@keyframes rainbow-move {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+}
+
+
+

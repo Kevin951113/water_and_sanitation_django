@@ -3,12 +3,12 @@ from django.http import JsonResponse
 import json
 from django.views.decorators.http import require_GET
 from .services import for_kids_learn_play_service, future_family_safety_service, home_service, about_water_sanitation_service, pollution_sources_service, pollution_sources_service
-from .services.for_kids_learn_play_service import fetch_kids_cards
+from .services.for_kids_learn_play_service import fetch_kids_cards, build_collect_cards_json
 
 
 from django.http import JsonResponse, HttpRequest
 from django.shortcuts import render
-from .services.future_family_safety_service import predict_site, list_sites
+from .services.future_family_safety_service import predict_site, list_sites, health_payload
 
 # Create your views here.
 def home(request):
@@ -80,6 +80,14 @@ def api_family_safety_forecast(request: HttpRequest):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
+# --------------------------------------------------------------------
+# NEW: Health check endpoint
+# --------------------------------------------------------------------
+def healthz(request: HttpRequest):
+    """Lightweight health check for Nginx/Docker/ELB probes."""
+    return JsonResponse(health_payload())
+
+
 #--------------------------------------------------------------------
 
 def pollution_sources(request):
@@ -91,4 +99,5 @@ def for_kids_learn_play(request):
 """
 
 def for_kids_learn_play(request):
-    return render(request, "for_kids_learn_play.html", {"db_cards": fetch_kids_cards()})
+    return render(request, "for_kids_learn_play.html", {"db_cards": fetch_kids_cards(),
+                                                        "collect_cards_json": build_collect_cards_json(),})
