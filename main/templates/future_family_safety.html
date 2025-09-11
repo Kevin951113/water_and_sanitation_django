@@ -288,13 +288,16 @@
       z-index: 10;  
       pointer-events: none;
 
-
       filter: drop-shadow(0 -3px 4px rgba(0,0,0,0.3))
               drop-shadow(0 0 8px rgba(30,111,255,0.4));
       transform: translateY(30%); 
     }
 
-
+    /* --------- MOBILE ONLY: hide platypus + range table --------- */
+    @media (max-width: 1000px){
+      .platypus-sleep{ display:none !important; }
+      details.range-card{ display:none !important; }
+    }
 
     .range-card {
   margin: 18px 0 22px;
@@ -460,8 +463,6 @@ html[data-theme="light"] .range-card {
     inset 0 0 10px rgba(30,111,255,0.12),
     0 0 18px rgba(30,111,255,0.28);
 }
-
-
 </style>
 {% endblock %}
 
@@ -480,20 +481,24 @@ html[data-theme="light"] .range-card {
     <div class="card-bd">
       <div class="row g-3 align-items-end">
         <div class="col-lg-6">
-          <label for="site_id" class="form-label fw-bold">Site ID</label>
+          <label for="site_id" class="form-label fw-bold">Suburb</label>
           {% if site_options %}
-            <select id="site_id" name="site_id" class="form-control-like">
-              <option value="" disabled {% if not site_id %}selected{% endif %}>Select a site…</option>
+            <input id="site_id" name="site_id" class="form-control-like"
+                  list="site_list"
+                  value="{{ site_id|default:'' }}"
+                  placeholder="Select or search a site…">
+
+            <datalist id="site_list">
               {% for site in site_options %}
-                <option value="{{ site.id }}" {% if site.id == site_id %}selected{% endif %}>
-                  {{ site.id }} – {{ site.suburb }}
-                </option>
+                <option value="{{ site.suburb }}"></option>
               {% endfor %}
-            </select>
+            </datalist>
           {% else %}
-            <input id="site_id" name="site_id" class="form-control-like" type="text" value="{{ site_id|default:'' }}" placeholder="e.g. 97226">
+            <input id="site_id" name="site_id" class="form-control-like" type="text"
+                  value="{{ site_id|default:'' }}" placeholder="e.g. 97226">
             <div class="muted" style="font-size:12px; margin-top:6px;">Tip: pass a list as <code>site_options</code> from the view to show a dropdown.</div>
           {% endif %}
+
         </div>
         <div class="col-lg-3">
           <label for="horizon_days" class="form-label fw-bold">Days ahead</label>
@@ -613,8 +618,8 @@ html[data-theme="light"] .range-card {
     <img src="{% static 'family_camping.png' %}" alt="Family camping illustration" class="family-img">
   </div>
 
-  <!-- Platypus sleeping at bottom right -->
-  <img src="{% static 'platypus_family_sleep.png' %}" alt="Platypus sleeping" class="platypus-sleep">
+  <!-- Platypus sleeping at bottom right (hidden on mobile) -->
+  <img src="{% static 'platypus_family_sleep.png' %}" alt="Platypus sleeping" class="platypus-sleep d-none d-md-block">
 
   <h3 style="margin-top:12px; font-weight:900; font-size:20px; color:var(--ws-blue-2);">
     Family & Water Safety
@@ -731,43 +736,44 @@ html[data-theme="light"] .range-card {
       {% endif %}
     </div>
 
-    <details class="range-card" open>
-  <summary style="font-weight:800; font-size:15px; cursor:pointer;">
-    Show safe ranges for EC / DO / Redox
-  </summary>
-  <div class="body" style="margin-top:12px;">
-    <table class="range-table">
-      <thead>
-        <tr>
-          <th>Metric</th>
-          <th>Safe</th>
-          <th>Borderline</th>
-          <th>Unsafe</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><strong>EC (µS/cm)</strong></td>
-          <td class="range-safe">&lt; 1,500</td>
-          <td class="range-borderline">1,500–5,000</td>
-          <td class="range-unsafe">&gt; 5,000</td>
-        </tr>
-        <tr>
-          <td><strong>DO (mg/L)</strong></td>
-          <td class="range-safe">&gt; 5</td>
-          <td class="range-borderline">3–5</td>
-          <td class="range-unsafe">&lt; 3</td>
-        </tr>
-        <tr>
-          <td><strong>Redox (mV)</strong></td>
-          <td class="range-safe">+200–600</td>
-          <td class="range-borderline">0–200</td>
-          <td class="range-unsafe">&lt; 0</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</details>
+    <!-- Safe ranges table (hidden on mobile) -->
+    <details class="range-card d-none d-md-block" open>
+      <summary style="font-weight:800; font-size:15px; cursor:pointer;">
+        Show safe ranges for EC / DO / Redox
+      </summary>
+      <div class="body" style="margin-top:12px;">
+        <table class="range-table">
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Safe</th>
+              <th>Borderline</th>
+              <th>Unsafe</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>EC (µS/cm)</strong></td>
+              <td class="range-safe">&lt; 1,500</td>
+              <td class="range-borderline">1,500–5,000</td>
+              <td class="range-unsafe">&gt; 5,000</td>
+            </tr>
+            <tr>
+              <td><strong>DO (mg/L)</strong></td>
+              <td class="range-safe">&gt; 5</td>
+              <td class="range-borderline">3–5</td>
+              <td class="range-unsafe">&lt; 3</td>
+            </tr>
+            <tr>
+              <td><strong>Redox (mV)</strong></td>
+              <td class="range-safe">+200–600</td>
+              <td class="range-borderline">0–200</td>
+              <td class="range-unsafe">&lt; 0</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
 
   </section>
   
@@ -1041,62 +1047,109 @@ html[data-theme="light"] .range-card {
 
   /* ---------- Form bind + validation (SweetAlert2) ---------- */
   (function bindForm(){
-    const form = document.getElementById('forecast-form');
-    if(!form) return;
+  const form = document.getElementById('forecast-form');
+  if(!form) return;
 
-    function getSiteValue(){
-      const sel = document.getElementById('site_id');
-      if(!sel) return '';
-      if(sel.tagName.toLowerCase()==='select'){
-        return sel.value || '';
+  function getSiteValue(){
+    const sel = document.getElementById('site_id');
+    if(!sel) return '';
+    if(sel.tagName.toLowerCase()==='select'){
+      return sel.value || '';
+    }
+    return (sel.value||'').trim();
+  }
+
+  function highlightAndScroll(){
+    form.classList.add('attn');
+    setTimeout(()=>form.classList.remove('attn'), 1800);
+    const OFFSET = 120;
+    const top = form.getBoundingClientRect().top + window.pageYOffset - OFFSET;
+    window.scrollTo({ top, behavior:'smooth' });
+    form.querySelector('#site_id')?.focus({preventScroll:true});
+  }
+
+  form.addEventListener('submit', function(e){
+    const siteVal = getSiteValue();
+
+    // 1.check if empty
+    if(!siteVal){
+      e.preventDefault();
+      if(window.Swal){
+        Swal.fire({
+          title: 'Select a Suburb',
+          text: 'Please choose a Suburb before requesting a forecast.',
+          icon: 'warning',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#1E6FFF'
+        }).then(highlightAndScroll);
+      } else {
+        alert('Please choose a Suburb before requesting a forecast.');
+        highlightAndScroll();
       }
-      return (sel.value||'').trim();
-    }
-    function highlightAndScroll(){
-      form.classList.add('attn');
-      setTimeout(()=>form.classList.remove('attn'), 1800);
-      const OFFSET = 120;
-      const top = form.getBoundingClientRect().top + window.pageYOffset - OFFSET;
-      window.scrollTo({ top, behavior:'smooth' });
-      form.querySelector('#site_id')?.focus({preventScroll:true});
+      return;
     }
 
-    form.addEventListener('submit', function(e){
-      const siteVal = getSiteValue();
-      if(!siteVal){
-        e.preventDefault();
-        if(window.Swal){
-          Swal.fire({
-            title: 'Select a Site ID',
-            text: 'Please choose a Site ID before requesting a forecast.',
-            icon: 'warning',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#1E6FFF'
-          }).then(highlightAndScroll);
-        }else{
-          alert('Please choose a Site ID before requesting a forecast.');
-          highlightAndScroll();
-        }
-        return;
+    // 2. check if only letters/numbers/spaces/dashes/parentheses are allowed
+const validPattern = /^[A-Za-z0-9\s\-\(\)]+$/;
+if(!validPattern.test(siteVal)){
+  e.preventDefault();
+  if(window.Swal){
+    Swal.fire({
+      title: 'Invalid input',
+      text: 'Only letters, numbers, spaces, dashes (-), and parentheses () are allowed.',
+      icon: 'error',
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#1E6FFF'
+    }).then(highlightAndScroll);
+  } else {
+    alert('Only letters, numbers, spaces, dashes (-), and parentheses () are allowed.');
+    highlightAndScroll();
+  }
+  return;
+}
+
+    // 3. check if value is in the options list (to prevent arbitrary input)
+    const options = Array.from(document.querySelectorAll('#site_list option')).map(o => o.value);
+    if(!options.includes(siteVal)){
+      e.preventDefault();
+      if(window.Swal){
+        Swal.fire({
+          title: 'Invalid suburb',
+          text: 'Please select a suburb from the list.',
+          icon: 'error',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#1E6FFF'
+        }).then(highlightAndScroll);
+      } else {
+        alert('Please select a suburb from the list.');
+        highlightAndScroll();
       }
-
-      /* valid -> keep original behavior */
-      const base = (form.getAttribute('action') || location.pathname).split('#')[0];
-      form.setAttribute('action', base + '#safety');
-      const btn = form.querySelector('button[type="submit"]');
-      if(btn){ btn.disabled = true; btn.setAttribute('aria-disabled','true'); btn.innerText = 'Loading…'; }
-      showLoadingOverlay();
-    });
-
-    /* Clear attention ring once user changes the field */
-    const site = document.getElementById('site_id');
-    if(site){
-      site.addEventListener('change', ()=>form.classList.remove('attn'));
-      site.addEventListener('input',  ()=>form.classList.remove('attn'));
+      return;
     }
 
-    window.addEventListener('pageshow', hideLoadingOverlay);
-  })();
+    // 4. pass all checks, show loading overlay
+    const base = (form.getAttribute('action') || location.pathname).split('#')[0];
+    form.setAttribute('action', base + '#safety');
+    const btn = form.querySelector('button[type="submit"]');
+    if(btn){
+      btn.disabled = true;
+      btn.setAttribute('aria-disabled','true');
+      btn.innerText = 'Loading…';
+    }
+    showLoadingOverlay();
+  });
+
+  /* Clear attention ring once user changes the field */
+  const site = document.getElementById('site_id');
+  if(site){
+    site.addEventListener('change', ()=>form.classList.remove('attn'));
+    site.addEventListener('input',  ()=>form.classList.remove('attn'));
+  }
+
+  window.addEventListener('pageshow', hideLoadingOverlay);
+})();
+
+
 
   /* ---------- GSAP droplets ---------- */
   (function initGSAPDrops(){
