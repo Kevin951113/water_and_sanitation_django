@@ -4,14 +4,18 @@
 .menu .submenu {
   display: none; position: absolute; top: 100%; left: 0; min-width: 260px;
   background: rgba(5, 8, 15, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255,255,255,0.12);
   box-shadow: 0 12px 28px rgba(0,0,0,0.35);
   padding: 6px 0; z-index: 1000; backdrop-filter: saturate(120%) blur(6px);
 }
 .menu .submenu a { display: block; padding: 10px 14px; text-decoration: none; white-space: nowrap; }
 .menu .submenu a:hover, .menu .submenu a:focus { background: rgba(255,255,255,0.08); }
 
-.menu .dropdown:hover .submenu, .menu .dropdown:focus-within .submenu { display: block; }
+.menu .dropdown:hover .submenu,
+.menu .dropdown:focus-within .submenu { display: block; }
+/* Safety: ensure kids dropdown also opens */
+nav.menu .kids-nav:hover .submenu,
+nav.menu .kids-nav:focus-within .submenu { display: block; }
 
 /* Light theme dropdown panel */
 html[data-theme="light"] .menu .submenu{
@@ -42,7 +46,7 @@ html[data-theme="light"] .menu .submenu a:focus {
   /* NEW: header height for background layers to sit just below the sticky header */
   --hdrH: 80px;
 
-    /* Kids color (dark default) */
+  /* Kids color (dark default) */
   --kids-green: #2ecc71;
   --kids-underline-h: 3px;
 }
@@ -56,14 +60,15 @@ html[data-theme="light"]{
   --glow-inner: 0 0 3px  color-mix(in srgb, var(--header-glow) 70%, transparent);
   --ico-sun: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l-1.4-1.4M20.4 20.4 19 19M5 19l-1.4 1.4M20.4 3.6 19 5'/%3E%3C/svg%3E");
   --ico-moon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 1 0 9.8 9.8z'/%3E%3C/svg%3E");
-    /* Kids color in light mode */
+  /* Kids color in light mode */
   --kids-green: #27ae60;
-
 }
 
 *{box-sizing:border-box}
-html,body{ margin:0; height:100%; background:var(--bg); color:var(--text);
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji"; }
+html,body{
+  margin:0; height:100%; background:var(--bg); color:var(--text);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji";
+}
 
 /* ===== Header ===== */
 header{
@@ -98,47 +103,37 @@ nav.menu a, nav.menu .menu-link{
 .slot-window{ display:block; height:1.2em; overflow:hidden; line-height:1.2em; }
 .slot-track{ display:block; }
 .slot-item{ display:block; line-height:1.2em; }
-@keyframes slotWiggle {
-  0%   { transform: translateY(0); }
-  20%  { transform: translateY(-2px); }
-  40%  { transform: translateY(2px); }
-  60%  { transform: translateY(-1px); }
-  80%  { transform: translateY(1px); }
-  100% { transform: translateY(0); }
+@keyframes slotWiggle{
+  0%{transform:translateY(0)} 20%{transform:translateY(-2px)}
+  40%{transform:translateY(2px)} 60%{transform:translateY(-1px)}
+  80%{transform:translateY(1px)} 100%{transform:translateY(0)}
 }
-
 nav.menu a:hover .slot-track{ animation: slotWiggle 0.5s ease-in-out; }
 nav.menu a:focus-visible{outline:2px solid var(--text); outline-offset:4px; border-radius:6px}
 
-/* hover/focus/active */
-/* INK-ONLY: All standard navigation links (excluding kids-link) 
-INK-ONLY: All standard navigation links (excluding kids-link)*/
+/* hover/focus/active (baseline) */
 nav.menu a:hover,
 nav.menu a:focus-visible,
 nav.menu a.active,
 nav.menu .menu-link:hover,
 nav.menu .menu-link:focus-visible,
 nav.menu .menu-link.active{
-  color: var(--header-glow);     /* Theme variables will change with the light/dark theme. */
+  color: var(--header-glow);
   background: transparent !important;
   text-shadow: none !important;
   box-shadow: none !important;
 }
 
-/* Unified: The baseline appears only on hover/focus/active states, with colour matching the text colour. */
+/* Underline */
 nav.menu a::after,
 nav.menu .menu-link::after{
   content:"";
-  position:absolute;
-  left:12px; right:12px; bottom:0;
+  position:absolute; left:12px; right:12px; bottom:0;
   height: var(--nav-underline-h, 3px);
   border-radius: 999px;
-  background: currentColor;      /* match the colour of the text */
-  opacity: 0;
-  transform: scaleX(0);
-  transform-origin: 0 50%;
-  transition: transform .22s ease, opacity .18s ease;
-  filter: none;                  /* Remove blur/halo */
+  background: currentColor;
+  opacity: 0; transform: scaleX(0); transform-origin: 0 50%;
+  transition: transform .22s ease, opacity .18s ease; filter: none;
 }
 nav.menu a:hover::after,
 nav.menu a.active::after,
@@ -146,10 +141,8 @@ nav.menu .menu-link:hover::after,
 nav.menu .menu-link.active::after,
 nav.menu a:focus-visible::after,
 nav.menu .menu-link:focus-visible::after{
-  opacity: 1;
-  transform: scaleX(1);
+  opacity:1; transform:scaleX(1);
 }
-
 
 html[data-theme="light"] nav.menu a:hover,
 html[data-theme="light"] nav.menu a:focus-visible,
@@ -178,7 +171,7 @@ header button:focus-visible{outline:2px solid var(--text); outline-offset:2px}
 #lightBtn::before{ left:.1em; background-image: var(--ico-sun); }
 #lightBtn::after{  right:.1em; background-image: var(--ico-moon); }
 
-/* Make ONLY the light button responsive on larger screens too */
+/* Light button responsive */
 #lightBtn{
   min-height: clamp(38px, 4.2vw, 46px);
   padding: clamp(.56em, .8vw, .72em) clamp(1em, 1.6vw, 1.8em);
@@ -224,21 +217,13 @@ header button:focus-visible{outline:2px solid var(--text); outline-offset:2px}
 }
 
 /* < 768px  */
-@media (max-width: 992px) {
-  .hamburger-btn {
-    min-width: 42px;
-    min-height: 42px;
-    font-size: 1.6rem;
-  }
+@media (max-width: 992px){
+  .hamburger-btn{ min-width:42px; min-height:42px; font-size:1.6rem; }
 }
 
 /* < 576px*/
-@media (max-width: 576px) {
-  .hamburger-btn {
-    min-width: 48px;
-    min-height: 48px;
-    font-size: 2rem;
-  }
+@media (max-width: 576px){
+  .hamburger-btn{ min-width:48px; min-height:48px; font-size:2rem; }
 }
 
 /* ===== Mobile: menu panel + FIX no-shift during .collapsing ===== */
@@ -253,10 +238,8 @@ header button:focus-visible{outline:2px solid var(--text); outline-offset:2px}
     background: var(--header-bg);
     border-top:1px solid var(--hairline);
     padding:10px 18px 12px;
-    z-index: 9;
-    box-shadow: 0 10px 30px rgba(0,0,0,.35);
-    backdrop-filter: blur(10px);
-    width:100%;
+    z-index: 9; box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    backdrop-filter: blur(10px); width:100%;
     border-radius: 0 0 18px 18px;
   }
 
@@ -267,14 +250,10 @@ header button:focus-visible{outline:2px solid var(--text); outline-offset:2px}
   header .menu .menu-link{
     display:block; padding:10px 12px; margin:6px 0;
     color: var(--header-glow);
-    background: transparent;
-    text-shadow:none;
-    border-radius:12px;
-
-
-      /* Keep kids link green on mobile list */
-    header .menu .kids-link .slot-item{ color: var(--kids-green) !important; }
+    background: transparent; text-shadow:none; border-radius:12px;
   }
+  /* Keep kids link green on mobile list (separate rule; was nested incorrectly before) */
+  header .menu .kids-link .slot-item{ color: var(--kids-green) !important; }
 
   /* dropdown submenu becomes inline */
   .menu .submenu{
@@ -286,40 +265,27 @@ header button:focus-visible{outline:2px solid var(--text); outline-offset:2px}
 
   /* ===== Light button: icon-only on small screens ===== */
   #lightBtn{
-    width: clamp(40px, 9.5vw, 46px);
-    height: clamp(40px, 9.5vw, 46px);
-    padding: 0;
-    border-radius: 999px;
-    font-size: 0;         /* hide text visually */
-    min-width: auto;
-    gap: 0;
+    width: clamp(40px, 9.5vw, 46px); height: clamp(40px, 9.5vw, 46px);
+    padding: 0; border-radius: 999px; font-size: 0; min-width: auto; gap: 0;
   }
   #lightBtn::after{ display:none; } /* only one icon */
   #lightBtn::before{
     left:50%; right:auto; transform:translate(-50%, -50%);
-    width: clamp(18px, 4.3vw, 22px);
-    height: clamp(18px, 4.3vw, 22px);
+    width: clamp(18px, 4.3vw, 22px); height: clamp(18px, 4.3vw, 22px);
   }
   html[data-theme="light"] #lightBtn::before{ background-image: var(--ico-sun); }
   html[data-theme="dark"]  #lightBtn::before{ background-image: var(--ico-moon); }
 }
 
-
-@media (max-width: 991.98px) {
+@media (max-width: 991.98px){
   html[data-theme="dark"] #primaryNav.collapse,
   html[data-theme="dark"] #primaryNav.collapsing,
-  html[data-theme="dark"] #primaryNav.collapse.show {
-    background: rgb(0, 0, 0);
-  }
+  html[data-theme="dark"] #primaryNav.collapse.show { background: #000; }
 
   html[data-theme="light"] #primaryNav.collapse,
   html[data-theme="light"] #primaryNav.collapsing,
-  html[data-theme="light"] #primaryNav.collapse.show {
-    background: rgb(255, 255, 255);
-  }
+  html[data-theme="light"] #primaryNav.collapse.show { background: #fff; }
 }
-
-
 
 /* ===== Hero / Panels ===== */
 .hero{ max-width:1300px; margin:22px auto 0; padding:0; position:relative; z-index:1; }
@@ -448,51 +414,38 @@ html[data-theme="light"] .why-title{
 #water-stage{ position:fixed; inset:0; z-index:0; pointer-events:none; }
 #water-canvas{ width:100%; height:100%; display:block; }
 
-/* ===== NEW: Vessels layer (submarine / boat) =====
-   Sits just below the sticky header, above the water/ripples but below main content.
-   We use only CSS keyframes; JS toggles the "run" class to restart the sail animation. */
+/* ===== Vessels ===== */
 .vessels-layer{
-  position: fixed;
-  inset: var(--hdrH) 0 0 0;   /* keep clear of sticky header */
-  z-index: 0;                 /* background-ish: main content has z-index:1 */
-  pointer-events: none;
-  overflow: visible;
+  position: fixed; inset: var(--hdrH) 0 0 0; z-index: 0; pointer-events: none; overflow: visible;
 }
 .vessel{
-  position:absolute;
-  top: 58%;                   /* a comfy height that feels like sitting on water */
-  transform: translateX(110vw) scale(1.06);  /* start off-screen on the right */
-  opacity: 0;
+  position:absolute; top:58%;
+  transform: translateX(110vw) scale(1.06); opacity: 0;
   image-rendering: -webkit-optimize-contrast;
   filter: drop-shadow(0 8px 18px rgba(0,0,0,.35));
   will-change: transform, opacity;
 }
 .vessel.sub  { width: min(34vw, 460px); }
 .vessel.boat { width: min(30vw, 420px); }
-
-/* When "run" is added via JS, the GIF sails from right to left. */
-.vessel.run{
-  opacity: 1;
-  animation: sail-left 15s linear forwards;
-}
+.vessel.run{ opacity:1; animation: sail-left 15s linear forwards; }
 @keyframes sail-left{
   0%   { transform: translateX(110vw)  scale(1.06); }
   100% { transform: translateX(-130vw) scale(1.06); }
 }
 
 /* Button style */
-.dashboard-btn {
+.dashboard-btn{
   background: linear-gradient(90deg,#08497e 0%, #0e6fc0 50%, #5dade2 100%);
-  color: #fff; border: none; border-radius: 1.6em; padding: .72em 1.8em;
-  font-weight: 800; font-size: 1rem; margin-top: .2em; cursor: pointer;
-  box-shadow: 0 3px 13px rgba(14,111,192,.3);
+  color:#fff; border:none; border-radius: 1.6em; padding:.72em 1.8em;
+  font-weight:800; font-size:1rem; margin-top:.2em; cursor:pointer;
+  box-shadow:0 3px 13px rgba(14,111,192,.3);
   transition: background .18s, color .18s, box-shadow .18s, transform .18s;
-  display: inline-flex; align-items: center; gap: .5em; position: relative; z-index: 2; -webkit-tap-highlight-color: transparent;
+  display:inline-flex; align-items:center; gap:.5em; position:relative; z-index:2; -webkit-tap-highlight-color:transparent;
 }
-.dashboard-btn:hover{ background: linear-gradient(90deg, #5dade2 0%, #0e6fc0 100%); color: #eaf6ff; box-shadow: 0 8px 28px rgba(14,111,192,.5); transform: translateY(-1px) scale(1.02); }
+.dashboard-btn:hover{ background: linear-gradient(90deg,#5dade2 0%, #0e6fc0 100%); color:#eaf6ff; box-shadow:0 8px 28px rgba(14,111,192,.5); transform: translateY(-1px) scale(1.02); }
 .dashboard-btn:focus{ outline:none; }
-.dashboard-btn:focus-visible{ background: linear-gradient(90deg, #5dade2 0%, #0e6fc0 100%); color: #eaf6ff; box-shadow: 0 0 0 3px rgba(90,173,226,.45), 0 8px 28px rgba(14,111,192,.5); transform: translateY(-1px) scale(1.02); }
-.dashboard-btn:active{ transform: translateY(0) scale(.98); box-shadow: 0 2px 10px rgba(14,111,192,.35); }
+.dashboard-btn:focus-visible{ background: linear-gradient(90deg,#5dade2 0%, #0e6fc0 100%); color:#eaf6ff; box-shadow:0 0 0 3px rgba(90,173,226,.45), 0 8px 28px rgba(14,111,192,.5); transform: translateY(-1px) scale(1.02); }
+.dashboard-btn:active{ transform: translateY(0) scale(.98); box-shadow:0 2px 10px rgba(14,111,192,.35); }
 
 footer{
   padding:16px; border-top:1px solid var(--card-stroke); text-align:center; color:var(--muted);
@@ -512,94 +465,100 @@ footer{
 }
 #loadingMask.active .loading-card{ transform:scale(1); }
 .loading-gif{ width:min(420px, 72vw); height:auto; display:block; }
-.loading-text {
-  font-size: clamp(28px,4.6vw,44px); font-weight: 900; letter-spacing: .8px; line-height: 1.08;
+.loading-text{
+  font-size: clamp(28px,4.6vw,44px); font-weight:900; letter-spacing:.8px; line-height:1.08;
   background: linear-gradient(90deg,#d7e7ff 0%, #91a6ff 50%, #3d5afe 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
   -webkit-text-stroke: 2px rgba(0, 50, 200, 0.7);
   text-shadow: 0 0 12px #3d5afeaa, 0 0 20px #536dfeaa, 0 0 28px #91a6ffaa, 0 0 4px #fff8, 0 2px 8px #e0e9ffcc;
 }
 
-#platypureLogo {
-  max-height: 75px;
-}
-
-@media (max-width: 768px) {
-  #platypureLogo {
-    max-height: 45px;
-  }
-}
+#platypureLogo { max-height: 75px; }
+@media (max-width: 768px){ #platypureLogo { max-height: 45px; } }
 
 /* ===== Kids Nav (Playful style) ===== */
-nav.menu .kids-link {
-  position: relative;
-  padding: 6px 16px;
-  border-radius: 12px;
+nav.menu .kids-link{
+  position: relative; padding: 6px 16px; border-radius: 12px;
 }
-
-/* Default text for kids (theme-aware) */
 nav.menu .kids-link .slot-item{
   color: var(--kids-green);
   font-family: 'Joti One', cursive;
-  font-weight: 400;
-  font-size: 18px;
-  letter-spacing: 0;
-  text-shadow: none;
-  transition: color .2s ease;
+  font-weight: 400; font-size: 18px; letter-spacing: 0;
+  text-shadow: none; transition: color .2s ease;
 }
-
-/* --- ONLY color change + underline on hover/active (no frames) --- */
 nav.menu .kids-link,
 nav.menu .kids-link:hover,
 nav.menu .kids-link:focus-visible,
 nav.menu .kids-link.active{
-  background: transparent !important;
-  box-shadow: none !important;
-  text-shadow: none !important;
+  background: transparent !important; box-shadow: none !important; text-shadow: none !important;
 }
-
-/* disable slot wiggle for kids on hover to keep it clean */
 nav.menu .kids-link:hover .slot-track{ animation: none !important; }
-
-/* text color on hover/active */
 nav.menu .kids-link:hover .slot-item,
 nav.menu .kids-link.active .slot-item{
   color: color-mix(in srgb, var(--kids-green) 88%, white 12%);
 }
-
-/* custom underline for kids (overrides global ::after) */
+/* custom underline for kids */
 nav.menu .kids-link::after{
-  content:"";
-  position:absolute;
-  left:12px; right:12px; bottom:0;
+  content:""; position:absolute; left:12px; right:12px; bottom:0;
+  height: var(--kids-underline-h, 3px); border-radius: 999px;
+  background: linear-gradient(90deg,#ff6b6b,#feca57,#1dd1a1,#54a0ff,#5f27cd,#ff6b6b);
+  background-size: 300% 100%; animation: rainbow-move 3s linear infinite;
+  opacity:0; transform-origin: 0 50%; transform: scaleX(0);
+  transition: transform .22s ease, opacity .18s ease; filter:none;
+}
+nav.menu .kids-link:hover::after,
+nav.menu .kids-link.active::after{ opacity:1; transform: scaleX(1); }
+
+@keyframes rainbow-move{
+  0%{ background-position:0% 50%; }
+  50%{ background-position:100% 50%; }
+  100%{ background-position:0% 50%; }
+}
+
+
+
+
+/* --- Kids submenu items --- */
+nav.menu .kids-nav .submenu a {
+  font-family: 'Joti One', cursive;
+  font-weight: 400;
+  font-size: 17px;
+  color: var(--kids-green);
+  text-transform: none;
+  letter-spacing: 0;
+  text-shadow: none;
+  position: relative;
+  padding: 10px 16px;
+  display: block;
+}
+
+/* Hover/active color shift */
+nav.menu .kids-nav .submenu a:hover,
+nav.menu .kids-nav .submenu a:focus,
+nav.menu .kids-nav .submenu a.active {
+  color: color-mix(in srgb, var(--kids-green) 88%, white 12%);
+}
+
+/* Rainbow underline for submenu too */
+nav.menu .kids-nav .submenu a::after {
+  content: "";
+  position: absolute;
+  left: 12px; right: 12px; bottom: 4px;
   height: var(--kids-underline-h);
   border-radius: 999px;
-
-  /* */
   background: linear-gradient(90deg,
     #ff6b6b, #feca57, #1dd1a1, #54a0ff, #5f27cd, #ff6b6b);
   background-size: 300% 100%;
   animation: rainbow-move 3s linear infinite;
-
-  opacity:0;
-  transform-origin: 0 50%;
+  opacity: 0;
   transform: scaleX(0);
+  transform-origin: 0 50%;
   transition: transform .22s ease, opacity .18s ease;
-  filter:none;
 }
-nav.menu .kids-link:hover::after,
-nav.menu .kids-link.active::after{
-  opacity:1;
+
+/* Trigger underline */
+nav.menu .kids-nav .submenu a:hover::after,
+nav.menu .kids-nav .submenu a.active::after {
+  opacity: 1;
   transform: scaleX(1);
 }
-
-/*  */
-@keyframes rainbow-move {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-}
-
-
-

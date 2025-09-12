@@ -2,8 +2,8 @@ from django.shortcuts import render
 from django.http import JsonResponse
 import json
 from django.views.decorators.http import require_GET
-from .services import for_kids_learn_play_service, future_family_safety_service, home_service, about_water_sanitation_service, pollution_sources_service, pollution_sources_service
-from .services.for_kids_learn_play_service import fetch_kids_cards, build_collect_cards_json
+from .services import diving_game_service, animal_map_service , animal_cards_service, future_family_safety_service, home_service, about_water_sanitation_service, pollution_sources_service, pollution_sources_service
+from .services.animal_cards_service import fetch_kids_cards, build_collect_cards_json
 
 
 from django.http import JsonResponse, HttpRequest
@@ -94,10 +94,19 @@ def pollution_sources(request):
     return render(request, "pollution_sources.html")
 
 """
-def for_kids_learn_play(request):
+def animal_cards(request):
     return render(request, "for_kids_learn_play.html")
 """
 
-def for_kids_learn_play(request):
-    return render(request, "for_kids_learn_play.html", {"db_cards": fetch_kids_cards(),
+def animal_cards(request):
+    return render(request, "animal_cards.html", {"db_cards": fetch_kids_cards(),
                                                         "collect_cards_json": build_collect_cards_json(),})
+
+
+def animal_map(request):
+    return render(request, "animal_map.html")
+
+
+
+def diving_game(request):
+    return render(request, "diving_game.html")
