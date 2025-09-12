@@ -191,7 +191,7 @@ _LOCAL_COLLECT_TUPLES = [
     (2, "Great White Shark", "Great White Shark card", "cards/great_white.gif",
     "Apex ocean hunter—keen senses keep food webs balanced; needs clean, open coasts.", "S", 3, 3),
 
-    (3, "Sharks", "Sharks card", "cards/sharks.webp",
+    (3, "Sharks", "Sharks card", "cards/sharks.gif",
     "From hammerheads to great whites—sharks come in many forms, all needing healthy oceans.", "SS", 3, 3),
 
 ]
