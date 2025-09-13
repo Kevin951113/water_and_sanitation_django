@@ -21,32 +21,32 @@ _LOCAL_KIDS_TUPLES = [
     (1, 'What is water pollution?',
      '<p>When dirty stuff gets into rivers, lakes, or the ocean, animals, plants, and people are affected.</p>',
      '<p>Common sources: factory wastewater, household detergents, plastic trash, oil, and farm chemicals.</p>',
-     'Tap me to unlock the fish!', 4, 1),
+     'Tap me to unlock the fish!', 1, 1),
 
     (2, 'Why do rainy days matter?',
       '<p>Rain washes street grime into the water — like oil and litter.</p>',
       '<p>During heavy storms, runoff carries microplastics, fertilizers, and animal waste into creeks.</p>',
-      'Tap me to unlock the fish!', 4, 0),
+      'Tap me to unlock the fish!', 1, 0),
 
     (3, 'How does plastic harm fish?',
      '<p>Fish may mistake tiny plastic bits for food.</p>',
      '<p>Microplastics can remain in their bodies and move up the food chain.</p>',
-     'Tap me to unlock the fish!', 4, 0),
+     'Tap me to unlock the fish!', 1, 0),
 
     (4, 'What can we do at home?',
      '<p>Don’t pour used oil down the sink — store it for recycling.</p>',
      '<p>Choose eco-friendly cleaners and use less to keep drains safer.</p>',
-     'Tap me to unlock the fish!', 4, 0),
+     'Tap me to unlock the fish!', 1, 0),
 
     (5, 'What about parks and schools?',
      '<p>Put rubbish in the bin and pick up stray plastic bags and caps.</p>',
      '<p>Storm drains often flow straight to rivers or the sea.</p>',
-     'Tap me to unlock the fish!', 4, 0),
+     'Tap me to unlock the fish!', 1, 0),
 
     (6, 'Why do animals need clean water?',
      '<p>Fish, shrimp, and frogs live in water — dirty water harms them first.</p>',
      '<p>Healthy streams and seas mean healthier environments for everyone.</p>',
-     'Tap me to unlock the fish!', 4, 0),
+     'Tap me to unlock the fish!', 1, 0),
 
     (7, 'What is algal bloom?',
      '<p>Too many nutrients make algae “explode” in number.</p>',
@@ -164,7 +164,7 @@ def fetch_kids_cards():
 
     if use_local:
         data = sorted((_as_dict(t) for t in _LOCAL_KIDS_TUPLES),
-                      key=lambda d: d["card_order"])[:4]
+                      key=lambda d: d["card_order"])[:6]
         print(f"[kids_cards] source=LOCAL tuples, returning={len(data)} items (limit 4)")
         return data
 
@@ -193,6 +193,16 @@ _LOCAL_COLLECT_TUPLES = [
 
     (3, "Sharks", "Sharks card", "cards/sharks.gif",
     "From hammerheads to great whites—sharks come in many forms, all needing healthy oceans.", "SS", 3, 3),
+
+    (4, "Whale Shark", "Whale Shark card", "cards/whale_shark.gif",
+    "Gentle giant of the sea—feeds on plankton, thrives in clean, warm oceans.", "A", 3, 3),
+
+    (5, "Hammerhead Shark", "Hammerhead Shark card", "cards/hammerhead_shark.gif",
+    "With its hammer-shaped head, it scans wide seas—needs healthy reefs to hunt and thrive.", "A", 3, 2),
+
+    (6, "Orca", "Orca card", "cards/orca.gif",
+    "The black-and-white apex hunter—social and smart, thrives in clean, rich seas.", "B", 3, 3),
+
 
 ]
 

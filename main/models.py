@@ -13,3 +13,8 @@ class KidsCard(models.Model):
         ordering = ["card_order"]
         db_table = "kids_card" 
         managed = False 
+
+
+#kid-map
+
+
