@@ -201,7 +201,7 @@ _LOCAL_COLLECT_TUPLES = [
     "With its hammer-shaped head, it scans wide seas—needs healthy reefs to hunt and thrive.", "A", 3, 2),
 
     (6, "Orca", "Orca card", "cards/orca.gif",
-    "The black-and-white apex hunter—social and smart, thrives in clean, rich seas.", "B", 3, 3),
+    "The black-and-white apex hunter—social and smart, thrives in clean, rich seas.", "SS", 3, 1),
 
 
 ]
