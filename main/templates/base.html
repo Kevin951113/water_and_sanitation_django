@@ -100,14 +100,33 @@
           </div>
         </div>
 
-        <!-- we’ll add more pages when needed… and we keep them consistent, so users don’t get lost -->
-        <a href="{% url 'for_kids_learn_play' %}" 
-          class="kids-link {% if current == 'for_kids_learn_play' %}active{% endif %}">
-          <span class="slot-window"><span class="slot-track">
-            <span class="slot-item"><svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#75FB4C"><path d="M432-240h24l168-240h-96v-144h-24L336-384h96v144Zm48 144q-130 0-221-91t-91-221q0-97 74.5-205T480-864q166 150 239 257t73 199q0 130-91 221T480-96Zm0-72q100 0 170-70t70-170q0-68-54-149T480-769Q348-638 294-557t-54 149q0 100 70 170t170 70Zm0-312Z"/></svg>For Kids – Learn & Play</span>
-            <span class="slot-item" aria-hidden="true">For Kids – Learn & Play</span>
-          </span></span>
-        </a>
+        <!-- Kids dropdown -->
+        <div class="dropdown menu-item kids-nav">
+          <a href="#"
+            class="kids-link menu-link has-submenu {% if current == 'animal_cards' or current == 'animal_map' or current == 'diving_game' %}active{% endif %}"
+            aria-haspopup="true"
+            aria-controls="kids-submenu"
+            aria-expanded="{% if current == 'animal_cards' or current == 'animal_map' or current == 'diving_game' %}true{% else %}false{% endif %}">
+            <span class="slot-window"><span class="slot-track">
+              <span class="slot-item">
+                <!-- icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="#75FB4C" aria-hidden="true">
+                  <path d="M432-240h24l168-240h-96v-144h-24L336-384h96v144Zm48 144q-130 0-221-91t-91-221q0-97 74.5-205T480-864q166 150 239 257t73 199q0 130-91 221T480-96Zm0-72q100 0 170-70t70-170q0-68-54-149T480-769Q348-638 294-557t-54 149q0 100 70 170t170 70Zm0-312Z"/>
+                </svg>
+                For Kids – Learn & Play ▼
+              </span>
+              <span class="slot-item" aria-hidden="true">For Kids – Learn & Play ▼</span>
+            </span></span>
+          </a>
+
+          <div id="kids-submenu" class="submenu" role="menu">
+            <a role="menuitem" href="{% url 'animal_cards' %}" class="{% if current == 'animal_cards' %}active{% endif %}">Animal Cards</a>
+            <a role="menuitem" href="{% url 'animal_map' %}" class="{% if current == 'animal_map' %}active{% endif %}">Animal Map</a>
+            <a role="menuitem" href="{% url 'diving_game' %}" class="{% if current == 'diving_game' %}active{% endif %}">Diving Game</a>
+          </div>
+        </div>
+
+
 
         <!--  <a href="{% url 'about_water_sanitation' %}" class="{% if current == 'about_water_sanitation' %}active{% endif %}">
           <span class="slot-window"><span class="slot-track">
