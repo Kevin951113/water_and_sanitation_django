@@ -18,3 +18,15 @@ class KidsCard(models.Model):
 #kid-map
 
 
+
+
+class AnimalSighting(models.Model):
+    sighting_id = models.AutoField(primary_key=True)
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+    common_name = models.CharField(max_length=255)
+
+    class Meta:
+        ordering = ["sighting_id"]
+        db_table = "sightings" 
+        managed = False
