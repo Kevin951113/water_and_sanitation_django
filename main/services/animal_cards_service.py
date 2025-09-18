@@ -17,7 +17,61 @@ LOCAL_CARDS_OVERRIDE = True
 # =======================
 
 # ---- Local fallback data (tuples -> dicts) ----
-_LOCAL_KIDS_TUPLES = [
+
+_LOCAL_KIDS_TUPLES =[
+    (1, 'Water inside an elephant',
+     '<p>About 70% of an elephant is water.</p>',
+     '<p>This water helps with blood flow, cooling, and moving nutrients.</p>',
+     'Tap me to unlock the card!', 1, 0),
+
+    (2, 'How watery is a tomato?',
+      '<p>About 95% of a tomato is water.</p>',
+      '<p>That’s why tomatoes are so juicy.</p>',
+      'Tap me to unlock the card!', 1, 0),
+
+    (3, 'Water in our bodies',
+     '<p>About 66% of the human body is water.</p>',
+     '<p>It’s in our brain, blood, and organs.</p>',
+     'Tap me to unlock the card!', 1, 0),
+
+    (4, 'Longest water pipeline in Australia',
+     '<p>The longest water supply pipeline is in Western Australia.</p>',
+     '<p>It carries water long distances to drier areas.</p>',
+     'Tap me to unlock the card!', 1, 0),
+
+    (5, 'Where at home uses the most water?',
+     '<p>The bathroom uses the most water at home.</p>',
+     '<p>Short showers and turning off taps can save a lot.</p>',
+     'Tap me to unlock the fish!', 1, 0),
+
+    (6, 'Who lacks safe drinking water?',
+     '<p>About 1 in 4 people lack safe drinking water.</p>',
+     '<p>Clean water projects help families stay healthy.</p>',
+     'Tap me to unlock the card!', 1, 0),
+
+    (7, 'Sea turtles and plastic',
+     '<p>About 52% of sea turtles have eaten plastic.</p>',
+     '<p>Plastic makes them sick and comes from pollution.</p>',
+     'Tap me to unlock the card!', 1, 0),
+
+    (8, 'Whale sharks and plastic',
+     '<p>A whale shark may swallow about 137 pieces of plastic every hour.</p>',
+     '<p>They can’t tell plastic from food while filtering water.</p>',
+     'Tap me to unlock the card!', 1, 0),
+
+    (9, 'Sharks and mercury',
+     '<p>About 25% of sharks have unsafe mercury levels.</p>',
+     '<p>Pollution builds up in the fish they eat.</p>',
+     'Tap me to unlock the card!', 1, 0)
+]
+
+
+
+
+"""
+Original full set of local tuples (19 items) backed up here for reference.testing
+
+_LOCAL_KIDS_TUPLES =[
     (1, 'What is water pollution?',
      '<p>When dirty stuff gets into rivers, lakes, or the ocean, animals, plants, and people are affected.</p>',
      '<p>Common sources: factory wastewater, household detergents, plastic trash, oil, and farm chemicals.</p>',
@@ -113,6 +167,7 @@ _LOCAL_KIDS_TUPLES = [
      '<p>They still need water inside their bodies — their diets do the heavy lifting!</p>',
      'Tap me to unlock the fish!', 4, 0),
 ]
+"""
 
 def _as_dict(row):
     """Convert a tuple into a dict that matches Django .values() output."""
@@ -164,15 +219,15 @@ def fetch_kids_cards():
 
     if use_local:
         data = sorted((_as_dict(t) for t in _LOCAL_KIDS_TUPLES),
-                      key=lambda d: d["card_order"])[:6]
-        print(f"[kids_cards] source=LOCAL tuples, returning={len(data)} items (limit 4)")
+                      key=lambda d: d["card_order"])[:9]
+        print(f"[kids_cards] source=LOCAL tuples, returning={len(data)} items (limit 9)")
         return data
 
     qs = list(
         KidsCard.objects.order_by("card_order").values(
             "card_order", "title", "lead_html", "detail_html",
             "hint_text", "read_seconds", "is_starter"
-        )[:4]
+        )[:9]
     )
     print(f"[kids_cards] source=DB, returning={len(qs)} items (limit 4)")
     return qs
@@ -185,17 +240,19 @@ def fetch_kids_cards():
 # Local collectible-card tuples:
 # (no, title, aria, img_relative, desc, special, levelCap, levelCur) ---> SS, S, A, B, C
 _LOCAL_COLLECT_TUPLES = [
-    (1, "Blue Whale", "Whale card", "cards/blue_whale.gif",
+
+    (1, "Elephant", "Elephant card", "cards/elephant.gif",
+    "The gentle giant of the land—family-centered, needs vast grasslands and plenty of water.", "B", 3, 3),
+
+
+    (2, "Blue Whale", "Whale card", "cards/blue_whale.gif",
      "Largest animal on Earth, a gentle giant that filters tiny krill from the ocean.", "S", 3, 1),
 
-    (2, "Great White Shark", "Great White Shark card", "cards/great_white.gif",
+    (3, "Great White Shark", "Great White Shark card", "cards/great_white.gif",
     "Apex ocean hunter—keen senses keep food webs balanced; needs clean, open coasts.", "S", 3, 3),
 
-    (3, "Sharks", "Sharks card", "cards/sharks.gif",
-    "From hammerheads to great whites—sharks come in many forms, all needing healthy oceans.", "SS", 3, 3),
-
-    (4, "Whale Shark", "Whale Shark card", "cards/whale_shark.gif",
-    "Gentle giant of the sea—feeds on plankton, thrives in clean, warm oceans.", "A", 3, 3),
+    (4, "Fin Whale", "Fin Whale card", "cards/fin_whale.gif",
+    "The sleek ‘greyhound of the sea’—second largest whale, feeds on krill in vast oceans.", "A", 3, 3),
 
     (5, "Hammerhead Shark", "Hammerhead Shark card", "cards/hammerhead_shark.gif",
     "With its hammer-shaped head, it scans wide seas—needs healthy reefs to hunt and thrive.", "A", 3, 2),
@@ -203,7 +260,14 @@ _LOCAL_COLLECT_TUPLES = [
     (6, "Orca", "Orca card", "cards/orca.gif",
     "The black-and-white apex hunter—social and smart, thrives in clean, rich seas.", "SS", 3, 1),
 
+    (7, "Sea Turtle", "Sea Turtle card", "cards/sea_turtle.gif",
+    "Ancient ocean traveler—returns to beaches to nest, needs clean seas and safe shores.", "S", 3, 2),
 
+    (8, "Whale Shark", "Whale Shark card", "cards/whale_shark.gif",
+    "Gentle giant of the sea—feeds on plankton, thrives in clean, warm oceans.", "A", 3, 3),
+
+    (9, "Sharks", "Sharks card", "cards/sharks.gif",
+    "From hammerheads to great whites—sharks come in many forms, all needing healthy oceans.", "SS", 3, 3),
 ]
 
 def _static_url(path: str) -> str:
