@@ -20,6 +20,27 @@ def about_water_sanitation(request):
 def explore_water_quality(request):
     return render(request, "explore_water_quality.html")
 
+#ranjana - 15/09/2025
+import folium
+
+def animal_map(request):
+    # Coordinates for Victoria
+    victoria_coords = [-37.4713, 144.7852]
+
+    # Create map
+    m = folium.Map(location=victoria_coords, zoom_start=6)
+    folium.Marker(
+        location=[-37.8136, 144.9631],
+        popup="Melbourne",
+        icon=folium.Icon(color="blue", icon="info-sign")
+    ).add_to(m)
+
+    # Get HTML representation of the map
+    map_html = m._repr_html_()
+
+    return render(request, 'animal_map.html', {'map_html': map_html})
+
+# end - ranjana
 
 #--------------------------------------------------------------------
 """
@@ -103,8 +124,8 @@ def animal_cards(request):
                                                         "collect_cards_json": build_collect_cards_json(),})
 
 
-def animal_map(request):
-    return render(request, "animal_map.html")
+# def animal_map(request):
+#     return render(request, "animal_map.html")
 
 
 

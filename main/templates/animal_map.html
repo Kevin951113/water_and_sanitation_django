@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}About | Water & Sanitation{% endblock %}
+{% block title %}Animal Map | Water & Sanitation{% endblock %}
 
 {% block head_extras %}
 {% endblock %}
@@ -16,9 +16,14 @@
       <h2>Our Mission</h2>
       <p>We aim to provide real-time water safety checks, sanitation maps, and community reporting tools.</p>
     </article>
+    <div style="margin-top: 30px;">
+    {{ map_html|safe }}
+  </div>
   </section>
 
 <!-- >>> Write your own page content here <<< -->
+
+
 
 <!-- Do NOT touch the footer below (it's shared in base.html) -->
 {% endblock %}
