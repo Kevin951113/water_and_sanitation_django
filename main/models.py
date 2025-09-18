@@ -14,6 +14,12 @@ class KidsCard(models.Model):
         db_table = "kids_card" 
         managed = False 
 
+
+#kid-map
+
+
+
+
 class AnimalSighting(models.Model):
     sighting_id = models.AutoField(primary_key=True)
     latitude = models.FloatField()

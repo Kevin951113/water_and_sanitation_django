@@ -4,9 +4,9 @@
 {% block title %}For Kids – Learn & Play | Water & Sanitation{% endblock %}
 
 {% block head_extras %}
-<link rel="preload" href="{% static 'fish1.mp4' %}" as="video">
-<link rel="preload" href="{% static 'fish2.mp4' %}" as="video">
-<link rel="preload" href="{% static 'fish3.mp4' %}" as="video">
+<link rel="preload" href="{% static 'card1.mp4' %}" as="video">
+<link rel="preload" href="{% static 'card2.mp4' %}" as="video">
+<link rel="preload" href="{% static 'card3.mp4' %}" as="video">
 <link rel="preload" href="{% static 'platypus_dance.gif' %}" as="image">
 <link rel="preload" href="{% static 'platypus_sleep.gif' %}" as="image">
 <link rel="preload" href="{% static 'win.png' %}" as="image">
@@ -23,6 +23,7 @@
     --card-text: #fff;
     --card-text-shadow: 0 2px 6px rgba(0,0,0,.65);
     --title-grad: linear-gradient(90deg,#98caff 0%, #58b2ff 50%, #1f8aff 100%);
+    --gold: #ffd34d; /* for dark-mode hint */
   }
   [data-theme="light"]{
     --card-text:#fff;
@@ -116,8 +117,25 @@
     box-shadow: 0 4px 16px rgba(24,192,109,.45), inset 0 -2px 0 rgba(0,0,0,.18); transform:scale(.82); opacity:0; transition:opacity .2s ease, transform .2s ease; }
   .cards > .card.done .check-badge{ opacity:1; transform:scale(1); }
 
-  .hint{ position:absolute; right:12px; bottom:12px; background:rgba(255,255,255,.16); border:1px dashed rgb(255,255,255);
-    font-size:12px; padding:4px 8px; border-radius:999px; color:#fff; text-shadow:0 1px 0 rgba(255,254,254,.45); pointer-events:none; }
+  .hint{
+    position:absolute; right:12px; bottom:12px; background:rgba(255,255,255,.16);
+    border:1px dashed rgb(255,255,255);
+    font-size:14px; padding:4px 8px; border-radius:999px; color:#fff;
+    text-shadow:0 1px 0 rgba(255,254,254,.45); pointer-events:none;
+  }
+  [data-theme="dark"] .hint{
+    color: var(--gold);
+    border-color: var(--gold);
+    background: rgba(255,211,77,.12);
+    text-shadow: 0 0 8px rgba(255,211,77,.55);
+  }
+
+    [data-theme="light"] .hint{
+    color: var(--gold);
+    border-color: var(--gold);
+    background: rgba(255,211,77,.12);
+    text-shadow: 0 0 8px rgba(255,211,77,.55);
+  }
 
   /* ===== Next / Finish ===== */
   .next-btn{
@@ -165,6 +183,15 @@
     top: calc(var(--hdrH) + clamp(12px, 1.5vw, 18px));
     z-index: 2; display: grid; gap: 14px; width: min(340px, 40vw); align-content: start;
   }
+
+  /* NEW: compact head row placing the ring on the left and the single collapsible button on the right */
+  .progress-head{
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+    align-items: center;
+  }
+
   .ring{
     --p: 0; --track: rgba(255,255,255,.14); --fillA: #40dd75; --fillB: #3ee6ff;
     width: 140px; height: 140px; border-radius: 50%; position: relative;
@@ -194,17 +221,72 @@
     transition: opacity .25s ease, transform .25s ease; box-shadow: 0 8px 18px rgba(180,160,60,.35); }
   .progress-toast.show{ opacity:1; transform: translateY(0); }
 
+  /* ===== NEW: single light-blue Collapse/Expand button (sits beside the ring) ===== */
+  .collapse-btn{
+    appearance:none;
+    display:inline-flex; align-items:center; justify-content:center;
+    height: 42px; padding: 0 12px;
+    border-radius: 10px;
+    border:1px solid rgba(120,170,255,.55);
+    background: linear-gradient(180deg,#e8f5ff,#cfe9ff);
+    color:#0a2a6b; font-weight: 900; letter-spacing:.02em; font-size: 14px;
+    box-shadow: 0 6px 18px rgba(30,90,200,.28), inset 0 1px 0 #fff;
+    cursor:pointer;
+  }
+  .collapse-btn:focus-visible{ outline:3px solid #fff; outline-offset:2px; box-shadow: 0 0 0 4px rgba(255,255,255,.3), 0 0 18px rgba(120,170,255,.55); }
+  .collapse-btn:active{ transform: translateY(1px); }
 
-/* Enlarge Toastr popups */
-#toast-container > .toast {
-  min-width: 250px;     /* prevent too narrow popups */
-  border-radius: 10px;  /* rounded corners */
-}
+  /* ===== NEW: one-click fold state (hide progress, replay button, and the countdown bar) ===== */
+  .ui-collapsed .progress-dock .ring,
+  .ui-collapsed .progress-dock .segbar,
+  .ui-collapsed .progress-dock .progress-toast,
+  .ui-collapsed #coachReplay,
+  .ui-collapsed .collection-countdown{
+    display: none !important; /* hide learned progress, toast, replay, and the 'next update' banner */
+  }
 
-#toast-container > .toast-success {
-  font-size: 15px;
-}
+  /* ===== NEW: Show Me How Again button==== */
+  .rainbow-btn{
+    --glow: rgba(255, 255, 255, .75);
+    display:inline-flex; align-items:center; justify-content:center; gap:.4em;
+    width: 100%;
+    padding: 12px 14px;
+    border: 0;
+    border-radius: 12px;
+    font-weight: 1000;
+    letter-spacing: .02em;
+    font-size: 15px;
+    color:#0a2a6b;
+    text-shadow: 0 1px 0 rgba(255,255,255,.6);
+    cursor:pointer;
+    box-shadow:
+      0 10px 24px rgba(255,180,60,.25),
+      0 0 0 1px rgba(255,255,255,.25) inset;
+    background: linear-gradient(90deg,#ff6b6b,#ffb347,#ffe66d,#9cff6f,#53d9ff,#a07bff,#ff6af1,#ff6b6b);
+    background-size: 300% 100%;
+    animation: rainbowShift 4s linear infinite;
+  }
+  .rainbow-btn:hover{ transform: translateY(-1px); }
+  .rainbow-btn:active{ transform: translateY(0) scale(.98); }
+  .rainbow-btn:focus-visible{
+    outline: 3px solid #fff;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(255,255,255,.3), 0 0 18px rgba(255,211,77,.55);
+  }
+  @keyframes rainbowShift{
+    0%{ background-position: 0% 0; }
+    100%{ background-position: 300% 0; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .rainbow-btn{ animation: none; }
+  }
 
+  /* Enlarge Toastr popups */
+  #toast-container > .toast {
+    min-width: 250px;
+    border-radius: 10px;
+  }
+  #toast-container > .toast-success { font-size: 15px; }
 
   /* ===== Celebration overlay ===== */
   .celebration{ position: fixed; inset: var(--hdrH) 0 0 0; display: none; align-items: center; justify-content: center; z-index: 999;
@@ -246,385 +328,550 @@
     .vessel.boat{ width: min(52vw, 400px); }
   }
 
-  /* ===== Kids Collection grid (Fallout-style mini cards) ===== */
-  .kids-collection{
-    padding: clamp(18px,3vw,26px);
-    position: relative;
-    z-index: 3;
-  }
+ /* ===== Kids Collection grid (Fallout-style mini cards) ===== */
+.kids-collection{
+  padding: clamp(18px,3vw,26px);
+  position: relative;
+  z-index: 3;
+}
 
-  /* Frosted glass panel behind the entire collection section */
-  .kids-collection .glass-backdrop{
-    position: absolute;
-    inset: 0;
-    border-radius: 16px;
-    background:
-      linear-gradient(180deg, rgba(8,18,38,.60), rgba(8,18,38,.38)),
-      rgba(10,18,34,.35);
-    border: 1px solid rgba(160,210,255,.28);
-    box-shadow:
-      inset 0 1px 0 rgba(255,255,255,.12),
-      0 10px 30px rgba(0,20,60,.35);
-    backdrop-filter: blur(12px) saturate(135%);
-    -webkit-backdrop-filter: blur(12px) saturate(135%);
-    pointer-events: none; /* do not block clicks */
-    z-index: 0;
-  }
-  /* Bring content above the glass */
-  .kids-collection > .collect-title,
-  .kids-collection > .collect-grid{
-    position: relative;
-    z-index: 1;
-  }
+/* Frosted glass panel behind the entire collection section */
+.kids-collection .glass-backdrop{
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(8,18,38,.60), rgba(8,18,38,.38)),
+    rgba(10,18,34,.35);
+  border: 1px solid rgba(160,210,255,.28);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.12),
+    0 10px 30px rgba(0,20,60,.35);
+  backdrop-filter: blur(12px) saturate(135%);
+  -webkit-backdrop-filter: blur(12px) saturate(135%);
+  pointer-events: none;
+  z-index: 0;
+}
+/* Bring content above the glass */
+.kids-collection > .collect-title,
+.kids-collection > .collect-nav,
+.kids-collection > .collect-grid,
+.kids-collection > .empty-hint{
+  position: relative;
+  z-index: 1;
+}
 
-  .kids-collection .collect-title{ margin: 0 0 12px; font-weight: 900; font-size: clamp(18px,2.2vw,22px); color:#eaf7ff; text-shadow: 0 2px 10px rgba(0,0,0,.4); }
-  .kids-collection .collect-grid{ display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; }
-  @media (max-width: 860px){ .kids-collection .collect-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
-  @media (max-width: 560px){ .kids-collection .collect-grid{ grid-template-columns: 1fr; } }
+.kids-collection .collect-title{
+  margin: -10px 0 14px;
+  font-weight: 900;
+  font-size: clamp(18px,2.2vw,22px);
+  color:#eaf7ff;
+  text-shadow: 0 2px 10px rgba(0,0,0,.4);
+}
 
-  /* ===== Collection countdown banner (fixed above the right card dock) ===== */
-  .collection-countdown{
-    position: fixed;
-    right: clamp(12px, 3vw, 28px);
-    top: calc(var(--hdrH) + 6px); /* slightly above the right card dock */
-    width: min(560px, 44vw);
-    z-index: 3;
-    pointer-events: none; /* purely informational */
-  }
-  .collection-countdown .cd-wrap{
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: center;
-    gap: 8px 10px;
-    padding: 8px 12px 10px;
-    border-radius: 12px;
-    background: linear-gradient(180deg, rgba(8,18,38,.68), rgba(8,18,38,.42));
-    border: 1px solid rgba(160,210,255,.30);
-    backdrop-filter: blur(10px) saturate(135%);
-    -webkit-backdrop-filter: blur(10px) saturate(135%);
-    box-shadow: 0 10px 24px rgba(0,20,60,.35), inset 0 1px 0 rgba(255,255,255,.12);
-    color: #eaf7ff;
-    text-shadow: 0 1px 0 rgba(0,0,0,.45);
-  }
-  .cd-label{
-    font-size: 12px;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: .14em;
-    opacity: .92;
-  }
-  .cd-eta{
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-    font-weight: 900;
-    font-size: 14px;
-    background: linear-gradient(90deg, #aee6ff, #eaf6ff);
-    -webkit-background-clip: text; background-clip:text;
-    -webkit-text-fill-color: transparent; color: transparent;
-    text-shadow: 0 0 10px rgba(80,160,255,.35);
-  }
-  .cd-date{
-    grid-column: 1 / -1;
-    font-size: 12px;
-    opacity: .85;
-  }
-  .cd-track{
-    grid-column: 1 / -1;
-    height: 6px; border-radius: 999px;
-    background: rgba(255,255,255,.14);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
-    overflow: hidden;
-  }
-  .cd-fill{
-    display: block; height: 100%; width: 0%;
-    background: linear-gradient(90deg, #40dd75, #3ee6ff);
-    box-shadow: 0 0 12px rgba(64,221,117,.45);
-    transition: width .6s ease;
-  }
+/* Pagination controls */
+.collect-nav{
+  display:flex; align-items:center; gap:10px;
+  margin: 6px 0 22px;
+}
+.collect-nav .nav-btn{
+  width:50px; height:50px;  /* bigger */
+  font-size:22px;
+  color:#ffbf00;
+  border:1px solid #ffbf00;
+  background: linear-gradient(180deg, rgba(60,40,0,.8), rgba(60,40,0,.55));
+  box-shadow: 0 0 12px rgba(255,211,77,.5), inset 0 1px 0 rgba(255,255,255,.12);
+}
+.collect-nav .page-label{
+  font-size:16px;
+  color:#ffd34d;    /* gold yellow */
+}
+.collect-nav .nav-btn:disabled{ opacity:.45; cursor:not-allowed; }
+.collect-nav .page-label{ font-size:22px; letter-spacing:.06em; opacity:.9; }
 
-  /* ===== Fallout-style mini cards (GIF-friendly + pale-blue theme) ===== */
-  .f76{
-    --color-yellow:#ddb724; --color-off-black:#352d2a; --color-white:#e3dfc6; --color-bone:#e7e4d5;
-    --color-main:#8cd1b3; --color-main-lighten:#afdbbf; --color-main-lighten2:#b2efcd; --color-main-dark:#84a782;
-    --color-backing-top:#4e79ad; --color-backing-light1:#b6cff3; --color-backing-light2:#c8dcf1; --color-backing-light3:#88b4ed; --color-backing-light4:#2f5c8c;
-    --meta-gap: 3.2rem; /* reserved space above .desc for badges */
-  }
+/* Grid of mini-cards */
+.kids-collection .collect-grid{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 16px;
+}
+/* Only show current page's 3 items */
+.collect-grid .card-scene{ display:none; }
+.collect-grid .card-scene.show{ display:block; }
 
-  .f76 .card-scene{ width:100%; aspect-ratio:36/46; perspective:900px; }
-  .f76 .card{ height:100%; width:100%; position:relative; transform-style:preserve-3d; transform:rotateY(180deg); cursor:pointer; }
-  .f76 .card.card--flipped{ animation:f76Flip .28s linear forwards; }
-  .f76 .card.card--unflip{ animation:f76Unflip .28s linear forwards; }
-  @keyframes f76Flip{ 0%{transform:rotateZ(0) rotateY(180deg);} 50%{transform:rotateZ(-10deg) rotateY(90deg);} 100%{transform:rotateZ(0) rotateY(0);} }
-  @keyframes f76Unflip{ 0%{transform:rotateZ(0) rotateY(0);} 50%{transform:rotateZ(-10deg) rotateY(90deg);} 100%{transform:rotateZ(0) rotateY(180deg);} }
+@media (max-width: 860px){
+  .kids-collection .collect-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (max-width: 560px){
+  .kids-collection .collect-grid{ grid-template-columns: 1fr; }
+}
 
-  .f76 .card-face{
-    position:absolute; inset:0; backface-visibility:hidden;
-    border-radius:9px; border:.5rem solid var(--color-bone);
-    box-shadow:0 0 3px 2px #4e4e4e; overflow:hidden;
-  }
-  .f76 .card-backing{ transform:rotateY(180deg); display:flex; flex-direction:column; }
-  .f76 .card-backing .top-banner{ height:5.6rem; background:var(--color-backing-top); }
-  .f76 .card-backing .back-main{
-    flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:10px;
-    background:linear-gradient(135deg,
-      var(--color-backing-light1) 0 25%,
-      var(--color-backing-light2) 25% 50%,
-      var(--color-backing-light3) 50% 75%,
-      var(--color-backing-light4) 75% 100%);
-  }
-  .f76 .flip-hint{ margin-top:12px; font-size:14px; color:#15365c; font-weight:800; }
+/* ===== Collection countdown banner (fixed above the right card dock) ===== */
+.collection-countdown{
+  position: fixed;
+  right: clamp(12px, 3vw, 28px);
+  top: calc(var(--hdrH) + 6px);
+  width: min(560px, 44vw);
+  z-index: 3;
+  pointer-events: none;
+}
+.collection-countdown .cd-wrap{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 8px 12px 10px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(8,18,38,.68), rgba(8,18,38,.42));
+  border: 1px solid rgba(160,210,255,.30);
+  backdrop-filter: blur(10px) saturate(135%);
+  -webkit-backdrop-filter: blur(10px) saturate(135%);
+  box-shadow: 0 10px 24px rgba(0,20,60,.35), inset 0 1px 0 rgba(255,255,255,.12);
+  color: #eaf7ff;
+  text-shadow: 0 1px 0 rgba(0,0,0,.45);
+}
+.cd-label{
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  opacity: .92;
+}
+.cd-eta{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-weight: 900;
+  font-size: 14px;
+  background: linear-gradient(90deg, #aee6ff, #eaf6ff);
+  -webkit-background-clip: text; background-clip:text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  text-shadow: 0 0 10px rgba(80,160,255,.35);
+}
+.cd-date{
+  grid-column: 1 / -1;
+  font-size: 12px;
+  opacity: .85;
+}
+.cd-track{
+  grid-column: 1 / -1;
+  height: 6px; border-radius: 999px;
+  background: rgba(255,255,255,.14);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+  overflow: hidden;
+}
+.cd-fill{
+  display: block; height: 100%; width: 0%;
+  background: linear-gradient(90deg, #40dd75, #3ee6ff);
+  box-shadow: 0 0 12px rgba(64,221,117,.45);
+  transition: width .6s ease;
+}
 
-  .f76 .vault-tec{ position:relative; width:70%; height:80px; margin:8px auto; }
-  .f76 .vault-tec .center{ width:64px; height:64px; border-radius:50%; border:8px solid var(--color-bone); margin:auto; }
-  .f76 .vault-tec .lines{ position:absolute; inset:0; display:grid; grid-template-columns:40% 1fr 40%; }
-  .f76 .vault-tec .line{ display:flex; flex-direction:column; justify-content:center; gap:10px; }
-  .f76 .vault-tec .line-inner{ height:10px; width:60%; background:var(--color-bone); position:relative; }
-  .f76 .vault-tec .line--left .line-inner::before{ content:""; position:absolute; left:-5%; width:10%; height:100%; background:var(--color-bone); border-radius:50% 0 0 50%; }
-  .f76 .vault-tec .line--right{ grid-column:3; }
-  .f76 .vault-tec .line--right .line-inner::before{ content:""; position:absolute; right:-5%; width:10%; height:100%; background:var(--color-bone); border-radius:0 50% 50% 0; }
+/* ===== Fallout-style mini cards (GIF-friendly + pale-blue theme) ===== */
+.f76{
+  --color-yellow:#ddb724; --color-off-black:#352d2a; --color-white:#e3dfc6; --color-bone:#e7e4d5;
+  --color-main:#8cd1b3; --color-main-lighten:#afdbbf; --color-main-lighten2:#b2efcd; --color-main-dark:#84a782;
+  --color-backing-top:#4e79ad; --color-backing-light1:#b6cff3; --color-backing-light2:#c8dcf1; --color-backing-light3:#88b4ed; --color-backing-light4:#2f5c8c;
 
-  /* ---------- front (revealed) layout ---------- */
-  .f76 .card-front{
-    display:grid; grid-template-rows:4.4rem 1fr auto;
-    background:var(--color-bone); /* default; theme-blue overrides below */
-  }
-  .f76 .card-front h1{
-    position:relative; margin:0;
-    font-size:1.4rem; line-height: 4.6rem;
-    color:#fff; background:var(--color-main-dark);
-    text-align:center; padding-left:3.2rem; /* room for the bump */
-    border-top-right-radius:1rem;
-  }
-  .f76 .bump{
-    position:absolute; left:-1.6rem; top:-1.6rem;
-    height:6.8rem; width:6.8rem;
-    border:4px solid var(--color-bone);
-    border-radius:.8rem; box-shadow:0 0 4px 2px #4e4e4e;
-  }
-  .f76 .bump .outer{ position:absolute; inset:0; padding:.3rem; background:var(--color-main-dark); border-radius:.3rem; display:block; }
-  .f76 .bump .inner{
-    display:block; height:100%; width:100%;
-    background:#fff; border-radius:3px; text-align:center;
-    font-weight:900; font-size:1.6rem; line-height:6.2rem; color:#4e4943;
-  }
+  --meta-gap: 3.2rem;
 
-  /* Image well: keep the GIF above decorative ring */
-  .f76 .main-pane{ position:relative; overflow:hidden; padding:0 1.2rem; }
-  .f76 .main-pane::before{
-    content:""; position:absolute; top:-42rem; left:-32rem; height:69.5rem; width:100rem; border-radius:50%;
-    background:repeating-conic-gradient(from 90deg,
-      var(--color-main-lighten2) 0 25deg, var(--color-bone) 0 35deg,
-      var(--color-main) 0 40deg, var(--color-bone) 0 47deg,
-      var(--color-main-lighten) 0 50deg, var(--color-bone) 0 55deg,
-      var(--color-main) 0 127deg, var(--color-bone) 0 132deg,
-      var(--color-main-lighten) 0 135deg, var(--color-bone) 0 140deg,
-      var(--color-main) 0 145deg, var(--color-bone) 0 155deg,
-      var(--color-main-lighten2) 0 360deg);
-    z-index:0;
-  }
-  /* Whale GIF: bigger and perfectly centered */
-  .f76 img.slugger{
-    display: block;         /* ensure margin/centering works */
-    position: relative;
-    left: 50%;
-    transform: translateX(-50%);  /* precise horizontal centering */
-    margin-top: 5rem;
-    width: clamp(260px, 110%, 560px);
-    max-width: none;
-    height: auto;
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: pixelated;
-  }
-  /* Description + badges (badges ABOVE this panel) */
-  .f76 .desc{
-    align-self:end; min-height:28%;
-    margin-top: var(--meta-gap);
-    padding: 1.2rem 1.4rem 1.8rem;
-    text-align:center; display:flex; align-items:center; justify-content:center;
-    background:linear-gradient(to bottom, #b8cbad, #ede8d4 18% 70%, #a5bc9e);
-    border:2px solid var(--color-off-black); border-radius:12px; position:relative;
-  }
-  .f76 .desc p{ margin:0; font-size:1.2rem; color:var(--color-off-black); }
+  --card-radius: 9px;
+  --card-border: .5rem;
+  --frame: var(--color-bone);
 
-  .f76 .special{
-    position:absolute;
-    bottom: calc(100% + .4rem);  /* place above .desc */
-    left: .6rem;
-    height:3.2rem; padding:.25rem .55rem;
-    background:var(--color-main); border:.2rem solid #fff; color:var(--color-off-black);
-    font-size:2.8rem; line-height:130%; border-radius:.35rem; transform:skew(-7deg,-10deg);
-    box-shadow:0 3px 10px rgba(0,0,0,.15);
-    z-index:2;
-    display: grid; place-items: center; line-height:1; isolation: isolate;
-  }
-  .f76 .level{
-    position:absolute;
-    bottom: calc(100% + .4rem);
-    right: .2rem;
-    height:2.6rem; display:inline-block; background:var(--color-main-dark); color:var(--color-off-black);
-    font-size:1.8rem; padding:2px 6px 2px 0;
-    border-top:2px solid var(--color-off-black); border-bottom:2px solid var(--color-off-black);
-    border-left:2px solid var(--color-off-black); border-right:1px solid #6c6c6c; border-radius:6px;
-    box-shadow:0 3px 10px rgba(0,0,0,.12);
-    z-index:2;
-  }
-  .f76 .level .star, .f76 .level .star::before, .f76 .level .star::after{
-    border-color:transparent var(--color-off-black) transparent transparent; border-width:1rem .5rem 1rem 0; border-style:solid;
-  }
-  .f76 .level .star{ display:inline-block; width:1.5rem; transform:rotate(270deg); margin-top:.4rem; margin-left:.8rem; position:relative; }
-  .f76 .level .star::before{ content:""; position:absolute; left:.9rem; top:-.9rem; transform:rotate(68deg); }
-  .f76 .level .star::after{ content:""; position:absolute; left:.9rem; top:-1.1rem; transform:rotate(-68deg); }
-  .f76 .level .star.current-level, .f76 .level .star.current-level::before, .f76 .level .star.current-level::after{ border-right-color:#fff; }
+  --bump-size:  6.8rem;
+  --bump-offset: 1.6rem;
 
-  .f76 .card, .f76 .card-face{ will-change:transform; }
+  --sheen-speed: 4.6s;
+}
 
-  /* ---------- Pale blue theme (apply .theme-blue on .card-front) ---------- */
-  .f76 .card-front.theme-blue{ background:#e8f3ff; }
-  .f76 .card-front.theme-blue h1{ background:#78aeea; color:#eaf6ff; }
-  .f76 .card-front.theme-blue .bump{ border-color:#cfe2ff; }
-  .f76 .card-front.theme-blue .bump .outer{ background:#78aeea; }
-  .f76 .card-front.theme-blue .bump .inner{ background:#eaf6ff; color:#2a3a4a; }
-  .f76 .card-front.theme-blue .main-pane::before{ display:none; } /* cleaner */
-  .f76 .card-front.theme-blue .desc{
-    background:linear-gradient(to bottom, #d7eaff, #eef6ff 18% 70%, #cfe3ff);
-    border-color:#2a3a4a;
-  }
-  .f76 .card-front.theme-blue .special{ background:#a9c9ff; color:#243447; border-color:#fff; box-shadow:0 3px 10px rgba(111,166,230,.35); }
-  .f76 .card-front.theme-blue .level{ background:#6fa6e6; color:#243447; box-shadow:0 3px 10px rgba(111,166,230,.25); }
-  .f76 .card-front.theme-blue.card-face{ border-color:#d6e7ff; }
+.f76 .card-scene{ width:100%; aspect-ratio:36/46; perspective:900px; }
+.f76 .card{
+  height:100%; width:100%; position:relative;
+  transform-style:preserve-3d; transform:rotateY(180deg);
+  cursor:pointer;
+}
+.f76 .card.card--flipped{ animation:f76Flip .28s linear forwards; }
+.f76 .card.card--unflip{ animation:f76Unflip .28s linear forwards; }
+@keyframes f76Flip{
+  0%{transform:rotateZ(0) rotateY(180deg);}
+  50%{transform:rotateZ(-10deg) rotateY(90deg);}
+  100%{transform:rotateZ(0) rotateY(0);}
+}
+@keyframes f76Unflip{
+  0%{transform:rotateZ(0) rotateY(0);}
+  50%{transform:rotateZ(-10deg) rotateY(90deg);}
+  100%{transform:rotateZ(0) rotateY(180deg);}
+}
 
-  /* ---------- Small-screen tweaks ---------- */
-  @media (max-width:960px){
-    .f76{ --meta-gap: 2.6rem; }
-    .f76 .card-front h1{ font-size:2.1rem; padding-left:3rem; }
-    .f76 .bump{ height:6rem; width:6rem; border-width:3px; left:-1.2rem; top:-1.2rem; }
-    .f76 .bump .inner{ font-size:3.2rem; line-height:5.4rem; }
-    .f76 img.slugger{ max-width:95%; margin:1.4rem auto 0; }
-    .f76 .desc{ padding:1rem 1.2rem 1.6rem; }
-    .f76 .desc p{ font-size:1.5rem; }
-    .f76 .special{ bottom: calc(100% + .35rem); height:2.8rem; font-size:2.4rem; }
-    .f76 .level{   bottom: calc(100% + .35rem); height:2.4rem; font-size:1.6rem; }
-  }
+/* === Unified card face rules === */
+.f76 .card-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: var(--card-radius);
+  border: var(--card-border) solid var(--frame);
+  box-shadow: 0 0 3px 2px #4e4e4e;
+  overflow: hidden;
+  height: 100%;
+}
 
-  /* --- Metallic gloss overlay for the whole front (no HTML changes) --- */
-  .f76 .card-front.theme-blue{
-    position: relative;
-    isolation: isolate;
-    box-shadow:
-      inset 0 1px 0 rgba(255,255,255,.38),
-      inset 0 -1px 0 rgba(8,24,44,.12),
-      inset 1px 0 0 rgba(255,255,255,.22),
-      inset -1px 0 0 rgba(8,24,44,.10);
-  }
-  .f76 .card-front.theme-blue::before{
-    content:"";
-    position:absolute; inset:0; border-radius: inherit; pointer-events: none;
-    background:
-      linear-gradient(180deg,
-        rgba(255,255,255,.35) 0%,
-        rgba(255,255,255,.12) 14%,
-        rgba(255,255,255,.05) 48%,
-        rgba(255,255,255,.16) 64%,
-        rgba(255,255,255,0) 100%),
-      repeating-linear-gradient(-12deg,
-        rgba(255,255,255,.10) 0 1px,
-        rgba(255,255,255,0) 1px 6px);
-    mix-blend-mode: screen;
-    opacity: .8;
-  }
-  .f76 .card-front.theme-blue::after{
-    content:"";
-    position:absolute; inset:-6%; border-radius: inherit; pointer-events: none;
-    background: linear-gradient(100deg, rgba(255,255,255,0) 30%, rgba(255,255,255,.85) 50%, rgba(255,255,255,0) 70%);
-    mix-blend-mode: screen;
-    transform: translateX(-120%) rotate(0.001deg);
-    animation: f76Sheen 4.6s linear infinite;
-    opacity:.65; filter: blur(.4px);
-  }
-  @keyframes f76Sheen{ 0%{ transform: translateX(-120%) } 100%{ transform: translateX(120%) } }
-  @media (prefers-reduced-motion: reduce){
-    .f76 .card-front.theme-blue::after{ animation: none; opacity:.4; }
-  }
+/* === Card back (fix white bottom) === */
+.f76 .card-backing {
+  transform: rotateY(180deg);
+  display: flex;
+  flex-direction: column;
+  position: absolute; inset: 0;
+  background: #90c6ff;
+  border-radius: var(--card-radius);
+}
 
-  /* ===== Star visuals (gold glow for current level) ===== */
-  .f76{ --gold: #ffd34d; --gold-strong: #ffbf26; --gold-soft: rgba(255,220,110,.95); --gold-halo: rgb(255, 255, 60); }
-  .f76 .level .star, .f76 .level .star::before, .f76 .level .star::after{ border-right-color: #708199; }
-  .f76 .level .star.current-level, .f76 .level .star.current-level::before, .f76 .level .star.current-level::after{ border-right-color: var(--gold) !important; }
-  .f76 .level .star.current-level{
-    filter:
-      drop-shadow(0 0 2px  var(--gold-soft))
-      drop-shadow(0 0 6px  var(--gold-halo))
-      drop-shadow(0 0 14px rgba(255,150,0,.45));
-    animation: goldTwinkle 1.6s ease-in-out infinite alternate;
-  }
-  @keyframes goldTwinkle{
-    0%{ filter: drop-shadow(0 0 2px var(--gold-soft)) drop-shadow(0 0 6px var(--gold-halo)) drop-shadow(0 0 14px rgba(255,150,0,.45)); }
-    100%{ filter: drop-shadow(0 0 3px var(--gold-soft)) drop-shadow(0 0 10px var(--gold-halo)) drop-shadow(0 0 22px rgba(255,150,0,.55)); }
-  }
-  @media (prefers-reduced-motion: reduce){
-    .f76 .level .star.current-level{ animation: none; }
-  }
+/* top banner and back-main no longer control card height */
+.f76 .card-backing .top-banner { height: 5.6rem; background: var(--color-backing-top); }
 
-  /* ===== Badge text only: thicker, stroke, clip gradients into text ===== */
-  .f76 .card-front .special .special__txt{
-    font-weight: 1000;
-    transform: translateY(-0.12rem);
-    color: transparent; -webkit-text-fill-color: transparent;
-    background-clip: text; -webkit-background-clip: text;
-    -webkit-text-stroke: 1px rgba(0,0,0,.18);
-    text-shadow: 0 1px 0 rgba(255,255,255,.45);
-  }
+.f76 .card-backing .back-main {
+  flex: 1;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+  padding: 10px;
+  background: linear-gradient(
+    135deg,
+    var(--color-backing-light1) 0 25%,
+    var(--color-backing-light2) 25% 50%,
+    var(--color-backing-light3) 50% 75%,
+    var(--color-backing-light4) 75% 100%
+  );
+}
 
-  /* ===== Grade colorways (applied to .special__txt only) ===== */
-  /* SS: rainbow + strong glow */
-  .f76 .card-front .special[data-grade="SS"]{ overflow: visible; }
-  .f76 .card-front .special[data-grade="SS"] .special__txt{
-    background-image: linear-gradient(270deg,#fff200,#f96c01,#f90101,#01f1f9,#2301f9,#c7a4ff,#00ff1a,#fff200);
-    background-size: 600% 100%;
-    animation: diamondShine 2s linear infinite;
-    text-shadow: 0 0 12px rgba(255,255,255,.9), 0 0 26px rgba(160,210,255,.7), 0 0 40px rgba(120,200,255,.5);
-  }
-  .f76 .card-front .special[data-grade="SS"]::after{
-    content: ""; position: absolute; inset: -3px; border-radius: .4rem; pointer-events: none;
-    background: radial-gradient(closest-side, rgba(255,255,255,.65), transparent 70%), conic-gradient(from 0deg, rgba(255,255,255,.4), rgba(150,210,255,.28), rgba(255,255,255,.4));
-    mix-blend-mode: screen; filter: blur(5px); opacity: .9; animation: ssPulse 1.6s ease-in-out infinite alternate; z-index: -1;
-  }
-  @keyframes diamondShine{ from{ background-position: 0% 50%; } to{ background-position: 100% 50%; } }
-  @keyframes ssPulse{ from{ opacity:.7; transform:scale(1);} to{ opacity:1; transform:scale(1.05);} }
+.f76 .card-backing.theme-blue { background: #90c6ff; }
+.f76 .flip-hint{ margin-top:12px; font-size:14px; color:#15365c; font-weight:800; }
 
-  /* S: gold */
-  .f76 .card-front .special[data-grade="S"] .special__txt{
-    background-image: linear-gradient(135deg,#fff2b6,#ffd24d 40%,#b8870d 60%,#ffe07a);
-  }
-  /* A: deep red metallic */
-  .f76 .card-front .special[data-grade="A"] .special__txt{
-    background-image: linear-gradient(135deg,#f2a5a5,#e05555 45%,#7c1212 70%,#f8b0b0);
-  }
-  /* B: deep blue */
-  .f76 .card-front .special[data-grade="B"] .special__txt{
-    background-image: linear-gradient(135deg,#9fb7ff,#4a79d6 55%,#173262 85%,#c5d3ff);
-  }
-  /* C: deep green */
-  .f76 .card-front .special[data-grade="C"] .special__txt{
-    background-image: linear-gradient(135deg,#9be2b8,#2d8f5c 55%,#0f4a2b 85%,#c3f1d7);
-  }
+.f76 .vault-tec{ position:relative; width:70%; height:80px; margin:8px auto; }
+.f76 .vault-tec .center{ width:64px; height:64px; border-radius:50%; border:8px solid var(--color-bone); margin:auto; }
+.f76 .vault-tec .lines{ position:absolute; inset:0; display:grid; grid-template-columns:40% 1fr 40%; }
+.f76 .vault-tec .line{ display:flex; flex-direction:column; justify-content:center; gap:10px; }
+.f76 .vault-tec .line-inner{ height:10px; width:60%; background:var(--color-bone); position:relative; }
+.f76 .vault-tec .line--left .line-inner::before{ content:""; position:absolute; left:-5%; width:10%; height:100%; background:var(--color-bone); border-radius:50% 0 0 50%; }
+.f76 .vault-tec .line--right{ grid-column:3; }
+.f76 .vault-tec .line--right .line-inner::before{ content:""; position:absolute; right:-5%; width:10%; height:100%; background:var(--color-bone); border-radius:0 50% 50% 0; }
 
-  /* Fallback for browsers without background-clip:text */
-  @supports not ((-webkit-background-clip:text) or (background-clip:text)){
-    .f76 .card-front .special .special__txt{ -webkit-text-stroke: 0; text-shadow:none; }
-    .f76 .card-front .special[data-grade="SS"] .special__txt{ color:#6fb3ff; -webkit-text-fill-color:#6fb3ff; }
-    .f76 .card-front .special[data-grade="S"]  .special__txt{ color:#d4a017; -webkit-text-fill-color:#d4a017; }
-    .f76 .card-front .special[data-grade="A"]  .special__txt{ color:#7c1212; -webkit-text-fill-color:#7c1212; }
-    .f76 .card-front .special[data-grade="B"]  .special__txt{ color:#173262; -webkit-text-fill-color:#173262; }
-    .f76 .card-front .special[data-grade="C"]  .special__txt{ color:#0f4a2b; -webkit-text-fill-color:#0f4a2b; }
-  }
+/* ---------- front (revealed) layout ---------- */
+.f76 .card-front{
+  display:flex; flex-direction:column;
+  background:var(--color-bone);
+  position: relative;
+  isolation: isolate;
+}
+.f76 .card-front h1{
+  position:relative; margin:0;
+  font-size:1.4rem; line-height: 4.6rem;
+  color:#fff; background:var(--color-main-dark);
+  text-align:center; padding-left:3.2rem;
+  border-top-right-radius:1rem;
+}
+
+/* === Numeric bump === */
+.f76 .bump{
+  position:absolute; left:-1.6rem; top:-1.6rem;
+  height:var(--bump-size); width:var(--bump-size);
+  border: var(--card-border) solid var(--frame);
+  border-radius:.8rem;
+  box-shadow: none;
+  z-index: 3;
+}
+.f76 .bump .outer{ position:absolute; inset:0; padding:.3rem; background:var(--color-main-dark); border-radius:.3rem; display:block; }
+.f76 .bump .inner{
+  display:block; height:100%; width:100%;
+  background:#fff; border-radius:3px; text-align:center;
+  font-weight:900; font-size:1.6rem; line-height:5.2rem; color:#4e4943;
+}
+.f76 .bump::after{ content:""; position:absolute; inset:0; border-radius: inherit; pointer-events:none; box-shadow: none; z-index: -1; }
+
+/* Image well */
+.f76 .main-pane{ position:relative; overflow:hidden; padding:0 1.2rem; display:flex; flex: 1 1 auto; }
+.f76 .main-pane::before{
+  content:""; position:absolute; top:-42rem; left:-32rem; height:69.5rem; width:100rem; border-radius:50%;
+  background:repeating-conic-gradient(from 90deg,
+    var(--color-main-lighten2) 0 25deg, var(--color-bone) 0 35deg,
+    var(--color-main) 0 40deg, var(--color-bone) 0 47deg,
+    var(--color-main-lighten) 0 50deg, var(--color-bone) 0 55deg,
+    var(--color-main) 0 127deg, var(--color-bone) 0 132deg,
+    var(--color-main-lighten) 0 135deg, var(--color-bone) 0 140deg,
+    var(--color-main) 0 145deg, var(--color-bone) 0 155deg,
+    var(--color-main-lighten2) 0 360deg);
+  z-index:0;
+}
+.f76 img.slugger{
+  display: block; position: relative; left: 50%; transform: translateX(-50%);
+  margin-top: 5rem; width: clamp(260px, 110%, 560px); max-width: none; height: auto;
+  image-rendering: -webkit-optimize-contrast; image-rendering: pixelated;
+}
+
+/* Description + badges */
+.f76 .desc{
+  align-self:end; min-height:28%;
+  margin-top: var(--meta-gap);
+  padding: 1.2rem 1.4rem 1.8rem;
+  text-align:center; display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(to bottom, #b8cbad, #ede8d4 18% 70%, #a5bc9e);
+  border:2px solid var(--color-off-black); border-radius:12px; position:relative;
+}
+.f76 .desc p{ margin:0; font-size:1.2rem; color:var(--color-off-black); }
+
+.f76 .special{
+  position:absolute; bottom: calc(100% + .4rem); left: .6rem;
+  height:3.2rem; padding:.25rem .55rem;
+  background:var(--color-main); border:.2rem solid #fff; color:var(--color-off-black);
+  font-size:2.8rem; line-height:130%; border-radius:.35rem; transform:skew(-7deg,-10deg);
+  box-shadow:0 3px 10px rgba(0,0,0,.15);
+  z-index:2; display: grid; place-items: center; line-height:1; isolation: isolate;
+}
+.f76 .level{
+  position:absolute; bottom: calc(100% + .4rem); right: .2rem;
+  height:2.6rem; display:inline-block; background:var(--color-main-dark); color:var(--color-off-black);
+  font-size:1.8rem; padding:2px 6px 2px 0;
+  border-top:2px solid var(--color-off-black); border-bottom:2px solid var(--color-off-black);
+  border-left:2px solid var(--color-off-black); border-right:1px solid #6c6c6c; border-radius:6px;
+  box-shadow:0 3px 10px rgba(0,0,0,.12);
+  z-index:2;
+}
+.f76 .level .star, .f76 .level .star::before, .f76 .level .star::after{
+  border-color:transparent var(--color-off-black) transparent transparent; border-width:1rem .5rem 1rem 0; border-style:solid;
+}
+.f76 .level .star{ display:inline-block; width:1.5rem; transform:rotate(270deg); margin-top:.4rem; margin-left:.8rem; position:relative; }
+.f76 .level .star::before{ content:""; position:absolute; left:.9rem; top:-.9rem; transform:rotate(68deg); }
+.f76 .level .star::after{ content:""; position:absolute; left:.9rem; top:-1.1rem; transform:rotate(-68deg); }
+
+/* Allow overflow for bump */
+.f76 .card, .f76 .card-face{ overflow: visible; }
+
+/* ---------- Pale blue theme ---------- */
+.f76 .card-front.theme-blue{ background:#e8f3ff; }
+.f76 .card-front.theme-blue h1{ background:#78aeea; color:#eaf6ff; }
+.f76 .card-front.theme-blue .bump{ border-color:#cfe2ff; }
+.f76 .card-front.theme-blue .bump .outer{ background:#78aeea; }
+.f76 .card-front.theme-blue .bump .inner{ background:#eaf6ff; color:#2a3a4a; }
+.f76 .card-front.theme-blue .main-pane::before{ display:none; }
+.f76 .card-front.theme-blue .desc{ background:linear-gradient(to bottom, #d7eaff, #c2defd 18% 70%, #cfe3ff); border-color:#2a3a4a; }
+.f76 .card-front.theme-blue .special{ background:#a9c9ff; color:#243447; border-color:#fff; box-shadow:0 3px 10px rgba(111,166,230,.35); }
+.f76 .card-front.theme-blue .level{ background:#6fa6e6; color:#243447; box-shadow:0 3px 10px rgba(111,166,230,.25); }
+.f76 .card-front.theme-blue.card-face{ border-color: var(--frame); }
+
+@media (max-width:960px){
+  .f76{ --meta-gap: 2.6rem; }
+  .f76 .card-front h1{ font-size:2.1rem; padding-left:3rem; }
+  .f76 .bump{ height:6rem; width:6rem; border-width:3px; left:-1.2rem; top:-1.2rem; }
+  .f76 .bump .inner{ font-size:3.2rem; line-height:5.4rem; }
+  .f76 img.slugger{ max-width:95%; margin:1.4rem auto 0; }
+  .f76 .desc{ padding:1rem 1.2rem 1.6rem; }
+  .f76 .desc p{ font-size:1.5rem; }
+  .f76 .special{ bottom: calc(100% + .35rem); height:2.8rem; font-size:2.4rem; }
+  .f76 .level{   bottom: calc(100% + .35rem); height:2.4rem; font-size:1.6rem; }
+}
+
+/* --- Metallic gloss overlay --- */
+.f76 .card-front.theme-blue{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.38),
+    inset 0 -1px 0 rgba(8,24,44,.12),
+    inset 1px 0 0 rgba(255,255,255,.22),
+    inset -1px 0 0 rgba(8,24,44,.10);
+}
+.f76 .card-front.theme-blue::before{
+  content:"";
+  position:absolute; inset:0; border-radius: inherit; pointer-events: none;
+  background:
+    linear-gradient(180deg,
+      rgba(255,255,255,.35) 0%,
+      rgba(255,255,255,.12) 14%,
+      rgba(255,255,255,.05) 48%,
+      rgba(255,255,255,.16) 64%,
+      rgba(255,255,255,0) 100%),
+    repeating-linear-gradient(-12deg,
+      rgba(255,255,255,.10) 0 1px,
+      rgba(255,255,255,0) 1px 6px);
+  mix-blend-mode: screen;
+  opacity: .8;
+  z-index: 2;
+}
+.f76 .card-front.theme-blue::after{
+  content:"";
+  position:absolute; inset:0; border-radius: inherit; pointer-events: none;
+  background-image: linear-gradient(
+    100deg,
+    rgba(255,255,255,0) 30%,
+    rgba(255,255,255,.85) 50%,
+    rgba(255,255,255,0) 70%
+  );
+  background-repeat: no-repeat;
+  background-size: 220% 100%;
+  background-position: -120% 0%;
+  mix-blend-mode: screen;
+  animation: f76SheenBG var(--sheen-speed) linear infinite;
+  opacity:.65;
+  z-index: 2;
+}
+@keyframes f76SheenBG{ 0%{ background-position: -120% 0%; } 100%{ background-position: 120% 0%; } }
+@media (prefers-reduced-motion: reduce){
+  .f76 .card-front.theme-blue::after{ animation: none; opacity:.4; }
+}
+
+/* ===== Star visuals (gold glow for current level) ===== */
+.f76{ --gold: #ffd34d; --gold-strong: #ffbf26; --gold-soft: rgba(255,220,110,.95); --gold-halo: rgba(255, 255, 60, 0.279); }
+.f76 .level .star, .f76 .level .star::before, .f76 .level .star::after{ border-right-color: #708199; }
+.f76 .level .star.current-level, .f76 .level .star.current-level::before, .f76 .level .star.current-level::after{ border-right-color: var(--gold) !important; }
+.f76 .level .star.current-level{
+  filter:
+    drop-shadow(0 0 2px  var(--gold-soft))
+    drop-shadow(0 0 6px  var(--gold-halo))
+    drop-shadow(0 0 14px rgba(255,150,0,.45));
+  animation: goldTwinkle 1.6s ease-in-out infinite alternate;
+}
+@keyframes goldTwinkle{
+  0%{ filter: drop-shadow(0 0 2px var(--gold-soft)) drop-shadow(0 0 6px var(--gold-halo)) drop-shadow(0 0 14px rgba(255,150,0,.45)); }
+  100%{ filter: drop-shadow(0 0 3px var(--gold-soft)) drop-shadow(0 0 10px var(--gold-halo)) drop-shadow(0 0 22px rgba(255,150,0,.55)); }
+}
+@media (prefers-reduced-motion: reduce){
+  .f76 .level .star.current-level{ animation: none; }
+}
+
+/* ===== Badge text only ===== */
+.f76 .card-front .special .special__txt{
+  font-weight: 1000;
+  transform: translateY(-0.12rem);
+  color: transparent; -webkit-text-fill-color: transparent;
+  background-clip: text; -webkit-background-clip: text;
+  -webkit-text-stroke: 1px rgba(0,0,0,.18);
+  text-shadow: 0 1px 0 rgba(255,255,255,.45);
+}
+
+/* ===== Grade colorways ===== */
+.f76 .card-front .special[data-grade="SS"]{ overflow: visible; }
+.f76 .card-front .special[data-grade="SS"] .special__txt{
+  background-image: linear-gradient(270deg,#fff200,#f96c01,#f90101,#01f1f9,#2301f9,#c7a4ff,#00ff1a,#fff200);
+  background-size: 600% 100%;
+  animation: diamondShine 2s linear infinite;
+  text-shadow: 0 0 12px rgba(255,255,255,.9), 0 0 26px rgba(160,210,255,.7), 0 0 40px rgba(120,200,255,.5);
+}
+.f76 .card-front .special[data-grade="SS"]::after{
+  content: ""; position: absolute; inset: -3px; border-radius: .4rem; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(255,255,255,.65), transparent 70%), conic-gradient(from 0deg, rgba(255,255,255,.4), rgba(150,210,255,.28), rgba(255,255,255,.4));
+  mix-blend-mode: screen; filter: blur(5px); opacity: .9; animation: ssPulse 1.6s ease-in-out infinite alternate; z-index: -1;
+}
+@keyframes diamondShine{ from{ background-position: 0% 50%; } to{ background-position: 100% 50%; } }
+@keyframes ssPulse{ from{ opacity:.7; transform:scale(1);} to{ opacity:1; transform:scale(1.05);} }
+.f76 .card-front .special[data-grade="S"] .special__txt{ background-image: linear-gradient(135deg,#fff2b6,#ffd24d 40%,#b8870d 60%,#ffe07a); }
+.f76 .card-front .special[data-grade="A"] .special__txt{ background-image: linear-gradient(135deg,#f2a5a5,#e05555 45%,#7c1212 70%,#f8b0b0); }
+.f76 .card-front .special[data-grade="B"] .special__txt{ background-image: linear-gradient(135deg,#9fb7ff,#4a79d6 55%,#173262 85%,#c5d3ff); }
+.f76 .card-front .special[data-grade="C"] .special__txt{ background-image: linear-gradient(135deg,#9be2b8,#2d8f5c 55%,#0f4a2b 85%,#c3f1d7); }
+@supports not ((-webkit-background-clip:text) or (background-clip:text)){
+  .f76 .card-front .special .special__txt{ -webkit-text-stroke: 0; text-shadow:none; }
+  .f76 .card-front .special[data-grade="SS"] .special__txt{ color:#6fb3ff; -webkit-text-fill-color:#6fb3ff; }
+  .f76 .card-front .special[data-grade="S"]  .special__txt{ color:#d4a017; -webkit-text-fill-color:#d4a017; }
+  .f76 .card-front .special[data-grade="A"]  .special__txt{ color:#7c1212; -webkit-text-fill-color:#7c1212; }
+  .f76 .card-front .special[data-grade="B"]  .special__txt{ color:#173262; -webkit-text-fill-color:#173262; }
+  .f76 .card-front .special[data-grade="C"]  .special__txt{ color:#0f4a2b; -webkit-text-fill-color:#0f4a2b; }
+}
+
+/* Back-face bump & fixes */
+.f76 .card-backing{ position: absolute; inset: 0; border-radius: var(--card-radius); }
+.f76 .card-backing::before{
+  content:"";
+  position:absolute; top:  calc(-1 * var(--card-border)); right:calc(-1 * var(--card-border));
+  width: var(--bump-size); height: var(--bump-size); background: var(--color-backing-top); border-radius: .6rem;
+  box-shadow: 0 0 0 var(--card-border) var(--frame), 0 3px 8px rgba(0,0,0,.35);
+  z-index: 6; pointer-events: none;
+}
+.f76 .card-backing .top-banner{ position: relative; }
+.f76 .card-backing .top-banner::after{
+  content:""; position:absolute; top: .95rem; right: calc(var(--bump-size) - .2rem);
+  width: 1.8rem; height: .42rem; background: var(--frame); border-radius: .21rem; z-index: 7; pointer-events:none;
+}
+
+/* Force frames to light blue */
+.f76 { --frame: #cfe2ff; }
+.f76 .card-face, .f76 .card-front.theme-blue.card-face { border-color: var(--frame) !important; }
+.f76 .bump, .f76 .card-front.theme-blue .bump { border-color: var(--frame) !important; }
+.f76 .card-backing::before { box-shadow: 0 0 0 var(--card-border) var(--frame), 0 3px 8px rgba(0,0,0,.35); }
+
+ /* Remove bump shadows */
+.f76 .bump { box-shadow: none !important; }
+.f76 .bump::after { box-shadow: none !important; }
+
+ /* Vault-Tec micro-fix */
+.f76 .vault-tec .line-inner { width: 100% !important; }
+.f76 .vault-tec .line--left .line-inner::before,
+.f76 .vault-tec .line--right .line-inner::before { display: none !important; }
+.f76 .vault-tec .center { border: 8px solid var(--color-bone); margin: 0 auto; position: relative; z-index: 2; }
+
+.empty-hint {
+  text-align: center;
+  font-size: 45px;
+  color: #ffd34d; /* golden */
+  text-shadow: 0 0 8px rgba(255,211,77,.5);
+  margin: 20px 0;
+  font-weight: 500;
+}
+
+/* ===== First-visit coach / spotlight (English UI) ===== */
+.coach {
+  position: fixed;
+  inset: var(--hdrH) 0 0 0;
+  z-index: 10000;
+  display: none;
+}
+.coach.show { display: block; }
+
+.coach-dim {
+  position: absolute; inset: 0;
+  --x: 50%; --y: 50%; --r: 160px;
+  background:
+    radial-gradient(circle at var(--x) var(--y),
+      transparent var(--r),
+      rgba(0,0,0,.72) calc(var(--r) + 1px));
+  transition: background .25s ease;
+  pointer-events: auto;
+}
+
+.coach-tip {
+  position: absolute;
+  max-width: 340px;
+  padding: 14px 16px 12px;
+  background: linear-gradient(180deg, rgba(8,18,38,.88), rgba(8,18,38,.72));
+  border: 1px solid rgba(160,210,255,.35);
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.12);
+  color: #eaf6ff;
+  text-shadow: 0 1px 0 rgba(0,0,0,.45);
+  transform: translate(-50%, 0);
+}
+
+.coach-body { font-size: 14px; line-height: 1.6; }
+.coach-nav {
+  display: flex; align-items: center; gap: 8px; margin-top: 10px;
+}
+.coach-btn {
+  appearance: none; border: 1px solid rgba(160,210,255,.4);
+  background: linear-gradient(180deg,#e8f5ff,#cfe9ff);
+  color:#0a2a6b; padding: 6px 10px; border-radius: 10px; font-weight: 800;
+  cursor: pointer; box-shadow: 0 4px 12px rgba(30,90,200,.28);
+}
+.coach-btn:disabled { opacity:.5; cursor:not-allowed; }
+.coach-btn.coach-next {
+  background: linear-gradient(180deg,#fff3b0,#ffd069);
+  color:#6b4a00; border-color: rgba(160,120,20,.55);
+}
+.coach-btn.coach-skip { background: transparent; color:#eaf6ff; border-color: rgba(160,210,255,.35); }
+.coach .spacer { flex: 1; }
+
+@media (max-width: 560px){
+  .coach-tip{ left: 50% !important; right: auto !important; transform: translate(-50%,0); }
+}
 </style>
 {% endblock %}
 
 {% block content %}
 <section class="kids-stage">
   <div class="aquarium" id="aquarium" aria-hidden="true">
-    <!-- Looping background video; “Next” is gated by the read timer only -->
-    <video id="fishVideo" src="{% static 'fish1.mp4' %}" preload="metadata" autoplay muted playsinline loop></video>
+    <video id="fishVideo" src="{% static 'card1.mp4' %}" preload="metadata" autoplay muted playsinline loop></video>
   </div>
   <div class="ripples" aria-hidden="true"></div>
 
@@ -643,7 +890,7 @@
     </div>
   </div>
 
-  <!-- ===== Bi-weekly Monday countdown banner (above the right card dock) ===== -->
+  <!-- ===== Bi-weekly Monday countdown banner ===== -->
   <div id="collectionCountdown" class="collection-countdown" role="status" aria-live="polite">
     <div class="cd-wrap">
       <span class="cd-label">Next Animal Collection update</span>
@@ -654,14 +901,31 @@
   </div>
 
   <aside class="progress-dock" id="progressDock">
-    <div class="ring" id="progressRing" role="progressbar" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" aria-label="Lesson progress">
-      <div class="ring-core">
-        <div class="ring-count"><span id="doneCount">0</span>/<span id="totalCount">0</span></div>
-        <div class="ring-caption">learned</div>
+    <!-- NEW: head row = ring (left) + single light-blue collapse/expand button (right) -->
+    <div class="progress-head">
+      <div class="ring" id="progressRing" role="progressbar" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" aria-label="Lesson progress">
+        <div class="ring-core">
+          <div class="ring-count"><span id="doneCount">0</span>/<span id="totalCount">0</span></div>
+          <div class="ring-caption">learned</div>
+        </div>
       </div>
+
+      <!-- This is the ONLY control for folding UI sections; it collapses: progress + replay + countdown -->
+      <button id="collapseToggle"
+              class="collapse-btn"
+              type="button"
+              aria-pressed="false"
+              aria-controls="progressDock collectionCountdown"
+              aria-expanded="true">
+        ▾ Collapse
+      </button>
     </div>
+
     <div class="segbar" id="segbar" aria-hidden="true"></div>
     <div class="progress-toast" id="progressToast" aria-live="polite"></div>
+
+    <!-- Show Me How Again (will be hidden when collapsed) -->
+    <button id="coachReplay" class="rainbow-btn" type="button" aria-label="Replay spotlight tutorial">🌈 Show Me How Again</button>
   </aside>
 
   <div class="card-dock">
@@ -699,12 +963,37 @@
 
 <!-- Kids Collection Cards -->
 <section class="kids-collection f76" aria-label="Your Ocean Cards">
-  <!-- Transparent glass pane behind the grid so users don't mistake it as "broken" -->
   <div class="glass-backdrop" aria-hidden="true"></div>
 
-  <h2 class="collect-title">Collect Your Ocean Cards</h2>
+  <h2 class="collect-title">Collect Your Cards</h2>
+
+  <!-- 3 pages -->
+  <div class="collect-nav" aria-label="Collection pages">
+    <button id="collectPrev" class="nav-btn" type="button" aria-label="Previous 3 cards">‹</button>
+    <span id="collectPageInfo" class="page-label">1 / 1</span>
+    <button id="collectNext" class="nav-btn" type="button" aria-label="Next 3 cards">›</button>
+  </div>
+
   <div class="collect-grid" id="collectGrid"></div>
+  <!-- Empty state hint -->
+  <div id="emptyHint" class="empty-hint" role="status" aria-live="polite" style="display:none;">
+    No cards yet — Tap to learn a knowledge card!
+  </div>
 </section>
+
+<!-- First-visit tutorial overlay (English UI) -->
+<div id="coach" class="coach" aria-hidden="true">
+  <div class="coach-dim"></div>
+  <div class="coach-tip" id="coachTip" role="dialog" aria-live="polite" aria-modal="true">
+    <div class="coach-body" id="coachText">…</div>
+    <div class="coach-nav">
+      <button type="button" class="coach-btn coach-skip" id="coachSkip">Skip</button>
+      <div class="spacer"></div>
+      <button type="button" class="coach-btn coach-back" id="coachBack">Back</button>
+      <button type="button" class="coach-btn coach-next" id="coachNext">Next</button>
+    </div>
+  </div>
+</div>
 
 <!-- Server-provided JSON for collection cards -->
 <script id="collectCardsData" type="application/json">{{ collect_cards_json|default:"[]"|safe }}</script>
@@ -717,7 +1006,7 @@
 <script>
   const STATIC_BASE = "{% get_static_prefix %}";
 
-  /* Toastr "success" with a built-in fallback pill */
+  /* Toastr "success" with a graceful fallback pill */
   function greenToast(msg, title='Unlocked!'){
     if (window.toastr && typeof toastr.success === 'function'){
       toastr.options = Object.assign({
@@ -751,7 +1040,6 @@
     const cardsWrap  = document.getElementById('cards');
     const nextBtn    = document.getElementById('nextBtn');
     const finishBtn  = document.getElementById('finishBtn');
-    const collectGrid= document.getElementById('collectGrid');
 
     const ring   = document.getElementById('progressRing');
     const segbar = document.getElementById('segbar');
@@ -759,10 +1047,41 @@
     const doneEl = document.getElementById('doneCount');
     const totalEl= document.getElementById('totalCount');
 
+    const replayBtn = document.getElementById('coachReplay');
+
     const submarine = document.getElementById('submarineGif');
     const boat = document.getElementById('boatGif');
 
-    /* Pull collectible card data (array of objects) from the backend JSON script tag */
+    /* NEW: One-click Collapse/Expand control & persisted state */
+    const collapseToggle = document.getElementById('collapseToggle');
+    const rootEl = document.documentElement;
+    const COLLAPSE_KEY = 'kidsUiCollapsedV1';
+
+    function setCollapsed(on){
+      rootEl.classList.toggle('ui-collapsed', !!on);
+      collapseToggle.setAttribute('aria-pressed', String(!!on));
+      collapseToggle.setAttribute('aria-expanded', String(!on));
+      collapseToggle.textContent = on ? '▸ Expand' : '▾ Collapse';
+      try{ localStorage.setItem(COLLAPSE_KEY, on ? '1' : '0'); }catch(_){}
+    }
+    // Restore last state
+    try{
+      const saved = localStorage.getItem(COLLAPSE_KEY) === '1';
+      setCollapsed(saved);
+    }catch(_){}
+
+    collapseToggle.addEventListener('click', ()=> setCollapsed(!rootEl.classList.contains('ui-collapsed')));
+
+    /* Collection pager refs */
+    const collectGrid = document.getElementById('collectGrid');
+    const collectPrev = document.getElementById('collectPrev');
+    const collectNext = document.getElementById('collectNext');
+    const collectPageInfo = document.getElementById('collectPageInfo');
+    const emptyHint = document.getElementById('emptyHint');
+    const COLLECT_PAGE_SIZE = 3;
+    let collectPage = 0;
+
+    /* Pull collectible card data */
     let COLLECT_CARDS = [];
     try{
       const tag = document.getElementById('collectCardsData');
@@ -785,7 +1104,7 @@
     const MAX_FISH = 19;
     const knownMissing = new Set();
     let fishSwitchToken = 0;
-    const fishUrl = (n) => STATIC_BASE + 'fish' + n + '.mp4';
+    const fishUrl = (n) => STATIC_BASE + 'card' + n + '.mp4';
     function hideFish(){ document.getElementById('aquarium').classList.remove('bg-on'); try{ fishVideo.pause(); }catch(e){} }
     function setFishForCard(i){
       const nRaw = parseInt(cards[i]?.dataset?.card, 10);
@@ -971,7 +1290,7 @@
       if(e.key==='Enter' || e.key===' '){ e.preventDefault(); revealOnce(t); }
     });
 
-    /* ========= Collectible card builder (with grade text color) ========= */
+    /* ========= Collectible card builder ========= */
     function normGrade(x){
       const t = String(x || 'S').trim().toUpperCase();
       if (t === 'S+' || t === 'SSS') return 'SS';
@@ -981,6 +1300,30 @@
       return String(s).replace(/[&<>"']/g, m => (
         {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]
       ));
+    }
+
+    /* ===== Collection pagination helpers (3 per page) ===== */
+    function totalCollectItems(){ return collectGrid.querySelectorAll('.card-scene').length; }
+    function totalCollectPages(){ return Math.max(1, Math.ceil(totalCollectItems() / COLLECT_PAGE_SIZE)); }
+    function showCollectPage(p){
+      const pages = totalCollectPages();
+      p = Math.max(0, Math.min(p, pages - 1));
+      collectPage = p;
+      const items = collectGrid.querySelectorAll('.card-scene');
+      items.forEach((el, idx)=> el.classList.toggle('show', Math.floor(idx / COLLECT_PAGE_SIZE) === p));
+      collectPageInfo.textContent = `${p+1} / ${pages}`;
+      collectPrev.disabled = (p === 0);
+      collectNext.disabled = (p >= pages - 1);
+      updateEmptyHint();
+    }
+    collectPrev.addEventListener('click', ()=> showCollectPage(collectPage - 1));
+    collectNext.addEventListener('click', ()=> showCollectPage(collectPage + 1));
+
+    /* Empty-state toggler */
+    function updateEmptyHint(){
+      if (!emptyHint) return;
+      const hasItems = totalCollectItems() > 0;
+      emptyHint.style.display = hasItems ? 'none' : 'block';
     }
 
     function appendCollectForCardId(cardId){
@@ -999,9 +1342,8 @@
       const cap      = parseInt(pool.levelCap ?? pool.level_cap ?? 3, 10) || 3;
       const cur      = parseInt(pool.levelCur ?? pool.level_cur ?? 1, 10) || 1;
       const rawSpec  = pool.special ?? 'S';
-      const grade    = normGrade(rawSpec);     // → SS / S / A / B / C
+      const grade    = normGrade(rawSpec);
 
-      // Do NOT lazy/async GIFs (they sometimes stall animation).
       const isGif = /\.gif(\?.*)?$/i.test(img);
       const safeTitle = esc(title);
       const imgTag = isGif
@@ -1035,7 +1377,6 @@
               </div>
               <div class="desc">
                 <p>${esc(desc)}</p>
-                <!-- Text-only grade styling: keep layout, inject inner span for gradient text -->
                 <div class="special" data-category="science" data-grade="${grade}">
                   <span class="special__txt">${esc(grade)}</span>
                 </div>
@@ -1053,6 +1394,11 @@
       initF76Card(scene.querySelector('.card'));
       st.unlocked = true;
       greenToast('A new Ocean Card appeared!', 'Unlocked!');
+
+      const newIndex = totalCollectItems() - 1;
+      const newPage = Math.floor(newIndex / COLLECT_PAGE_SIZE);
+      showCollectPage(newPage);
+      updateEmptyHint();
     }
 
     // Next (read-timer only)
@@ -1083,6 +1429,9 @@
     showOnly(activeIndex);
     lockAllCardHeights();
     updateProgress();
+
+    showCollectPage(0);
+    updateEmptyHint();
 
     window.addEventListener('resize', ()=>{
       cards.forEach(c => { c.classList.remove('fixed'); c.style.removeProperty('--fixedH'); });
@@ -1121,81 +1470,238 @@
           setTimeout(()=> card.classList.remove('card--flipped','card--unflip'), 320);
         }else{
           card.classList.add('card--flipped');
-
-          // If the front image is a GIF, restart its animation when the card flips open.
           const img = card.querySelector('.slugger');
           if (img && /\.gif(\?.*)?$/i.test(img.src)) {
-            const s = img.src;
-            img.src = '';
-            void img.offsetWidth;   // force reflow
-            img.src = s;            // reload → restart animation
+            const s = img.src; img.src = ''; void img.offsetWidth; img.src = s;
           }
         }
       });
     }
 
     /* ===================== Bi-weekly Monday countdown logic ===================== */
-    // Window is [this Monday 00:00, Monday after next 00:00)
     const cdEta = document.getElementById('cdEta');
     const cdDate= document.getElementById('cdDate');
     const cdFill= document.getElementById('cdFill');
 
-    function startOfDay(d){
-      const x = new Date(d);
-      x.setHours(0,0,0,0);
-      return x;
-    }
-    function mondayOfWeek(d){
-      // JS getDay(): Sun=0..Sat=6; we want Monday=1 -> offset = (day+6)%7
-      const x = startOfDay(d);
-      const offset = (x.getDay() + 6) % 7; // 0 if Monday, 6 if Sunday
-      x.setDate(x.getDate() - offset);
-      return x;
-    }
-    function addDays(d, n){
-      const x = new Date(d);
-      x.setDate(x.getDate() + n);
-      return x;
-    }
-    function fmtTargetDate(d){
-      try{
-        return d.toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric', year: 'numeric' });
-      }catch(e){
-        return d.toDateString();
-      }
-    }
+    function startOfDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
+    function mondayOfWeek(d){ const x = startOfDay(d); const offset = (x.getDay() + 6) % 7; x.setDate(x.getDate() - offset); return x; }
+    function addDays(d, n){ const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+    function fmtTargetDate(d){ try{ return d.toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric', year: 'numeric' }); }catch(e){ return d.toDateString(); } }
     function pad(n){ return String(n).padStart(2,'0'); }
 
     function updateCountdown(){
-      const now    = new Date();
-      let start    = mondayOfWeek(now);     // this Monday 00:00
-      let end      = addDays(start, 14);    // Monday after next 00:00
-
-      // If we somehow crossed the window, roll forward by whole 14-day blocks
-      while(now >= end){
-        start = addDays(start, 14);
-        end   = addDays(end, 14);
-      }
-
-      const total   = end - start;          // total ms in this 2-week window
-      const remain  = Math.max(0, end - now);
-      const passed  = Math.max(0, now - start);
-      const pct     = Math.min(1, passed / total);
-
-      // Text ETA: D HH:MM:SS
+      const now = new Date();
+      let start = mondayOfWeek(now);
+      let end   = addDays(start, 14);
+      while(now >= end){ start = addDays(start, 14); end = addDays(end, 14); }
+      const total = end - start, remain = Math.max(0, end - now), passed = Math.max(0, now - start), pct = Math.min(1, passed / total);
       const sec = Math.floor(remain / 1000);
-      const d   = Math.floor(sec / 86400);
-      const h   = Math.floor((sec % 86400) / 3600);
-      const m   = Math.floor((sec % 3600) / 60);
-      const s   = sec % 60;
+      const d = Math.floor(sec / 86400), h = Math.floor((sec % 86400) / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
       if(cdEta)  cdEta.textContent  = `${d}d ${pad(h)}:${pad(m)}:${pad(s)}`;
       if(cdDate) cdDate.textContent = `Target: ${fmtTargetDate(end)} (00:00)`;
       if(cdFill) cdFill.style.width = `${(pct*100).toFixed(2)}%`;
     }
-
     updateCountdown();
     setInterval(updateCountdown, 1000);
-    /* ========================================================================= */
+    /* ===================== End countdown logic ===================== */
+
+    /* ===================== First-visit tutorial (spotlight coach) ===================== */
+    (function initTutorial(){
+      const TUT_KEY = 'kidsTutSeenV1';
+
+      const coach = document.getElementById('coach');
+      const coachDim = coach?.querySelector('.coach-dim');
+      const coachTip = document.getElementById('coachTip');
+      const coachText = document.getElementById('coachText');
+      const btnNext = document.getElementById('coachNext');
+      const btnBack = document.getElementById('coachBack');
+      const btnSkip = document.getElementById('coachSkip');
+      if(!coach || !coachDim || !coachTip || !coachText) return;
+
+      const prefersReduce = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+      const hdrH = (document.getElementById('siteHeader')?.offsetHeight || 80);
+
+      const steps = [
+        { q: '.cards .card.active',
+          text: 'Tap this card to reveal the details. When the reading timer completes, it gets a check!',
+          prefer: 'bottom' },
+        { q: '#nextBtn',
+          text: 'After finishing a card, press here to go to the next one.',
+          prefer: 'left' },
+        { q: '#progressRing',
+          text: 'This ring shows your learning progress. The more cards you finish, the fuller it gets.',
+          prefer: 'right' },
+        { q: '.kids-collection .collect-grid',
+          text: 'Your unlocked mini cards appear here. Click any card to flip it!',
+          prefer: 'top' }
+      ];
+
+      let activeIndex = -1;
+
+      function isVisible(el){
+        if(!el) return false;
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.height > 0 && r.bottom > hdrH && r.top < window.innerHeight;
+      }
+
+      function spotlightTo(el, prefer='bottom'){
+        if(!el) return;
+        const r = el.getBoundingClientRect();
+        const cx = r.left + r.width/2;
+        const cy = r.top + r.height/2 - hdrH;
+        const pad = 20;
+        const radius = Math.round(Math.hypot(r.width, r.height)/2) + pad;
+
+        coachDim.style.setProperty('--x', `${cx}px`);
+        coachDim.style.setProperty('--y', `${cy}px`);
+        coachDim.style.setProperty('--r', `${radius}px`);
+
+        const margin = 14;
+        let tipX = cx, tipY;
+        const vw = window.innerWidth, vh = window.innerHeight - hdrH;
+
+        const below = r.bottom - hdrH + margin;
+        const above = r.top - hdrH - coachTip.offsetHeight - margin;
+        const left  = r.left - coachTip.offsetWidth - margin;
+        const right = r.right + margin;
+
+        function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+
+        switch(prefer){
+          case 'top':
+            tipY = (above > 0 ? above : below);
+            break;
+          case 'left':
+            tipY = clamp(cy - coachTip.offsetHeight/2, 8, vh - coachTip.offsetHeight - 8);
+            tipX = (left > 8 ? r.left - margin : r.right + margin + coachTip.offsetWidth/2);
+            coachTip.style.transform = 'translate(-100%,0)';
+            break;
+          case 'right':
+            tipY = clamp(cy - coachTip.offsetHeight/2, 8, vh - coachTip.offsetHeight - 8);
+            tipX = (right + coachTip.offsetWidth < vw - 8 ? r.right + margin + coachTip.offsetWidth/2 : r.left - margin);
+            coachTip.style.transform = (right + coachTip.offsetWidth < vw - 8) ? 'translate(-0%,0)' : 'translate(-100%,0)';
+            break;
+          default:
+            tipY = (below + coachTip.offsetHeight < vh ? below : above);
+        }
+
+        if(prefer !== 'left' && prefer !== 'right'){
+          tipX = clamp(cx, coachTip.offsetWidth/2 + 8, vw - coachTip.offsetWidth/2 - 8);
+          coachTip.style.transform = 'translate(-50%,0)';
+        }
+
+        coachTip.style.left = `${tipX}px`;
+        coachTip.style.top  = `${tipY}px`;
+      }
+
+      function scrollIntoViewIfNeeded(el){
+        if(!el) return Promise.resolve();
+        const r = el.getBoundingClientRect();
+        const need = (r.top < hdrH + 20 || r.bottom > window.innerHeight - 20);
+        if(need){
+          el.scrollIntoView({behavior: prefersReduce ? 'auto' : 'smooth', block: 'center'});
+          return new Promise(res => setTimeout(res, prefersReduce ? 0 : 380));
+        }
+        return Promise.resolve();
+      }
+
+      function setStep(i){
+        let idx = i;
+        while(idx >=0 && idx < steps.length){
+          const el = document.querySelector(steps[idx].q);
+          if(el && isVisible(el)) break;
+          idx += (i > activeIndex ? 1 : -1);
+        }
+        if(idx < 0 || idx >= steps.length){ closeTutorial(true); return; }
+
+        activeIndex = idx;
+        const step = steps[activeIndex];
+        const el = document.querySelector(step.q);
+        if(!el) { closeTutorial(true); return; }
+
+        document.getElementById('coachText').textContent = step.text;
+
+        scrollIntoViewIfNeeded(el).then(()=>{
+          void document.getElementById('coachTip').offsetWidth;
+          spotlightTo(el, step.prefer || 'bottom');
+        });
+
+        document.getElementById('coachBack').disabled = (activeIndex === 0);
+        document.getElementById('coachNext').textContent = (activeIndex === steps.length - 1) ? 'Got it' : 'Next';
+      }
+
+      function openTutorial(){
+        const coach = document.getElementById('coach');
+        if(coach.classList.contains('show')) return;
+        coach.classList.add('show');
+        coach.setAttribute('aria-hidden','false');
+        document.body.style.overflow = 'hidden';
+
+        document.getElementById('coachSkip').onclick = ()=> closeTutorial(true);
+        document.getElementById('coachBack').onclick = ()=> setStep(activeIndex - 1);
+        document.getElementById('coachNext').onclick = ()=> {
+          if(activeIndex === steps.length - 1) closeTutorial(true);
+          else setStep(activeIndex + 1);
+        };
+        coach.addEventListener('click', (e)=> {
+          if(e.target === coach || e.target === coach.querySelector('.coach-dim')) document.getElementById('coachNext').click();
+        });
+        window.addEventListener('keydown', onKey);
+        window.addEventListener('resize', onResize);
+
+        setTimeout(()=> setStep(0), 60);
+      }
+
+      function onKey(e){
+        if(e.key === 'Escape'){ closeTutorial(false); }
+        else if(e.key === 'ArrowRight' || e.key === 'Enter'){ document.getElementById('coachNext').click(); }
+        else if(e.key === 'ArrowLeft'){ document.getElementById('coachBack').click(); }
+      }
+      function onResize(){
+        if(activeIndex < 0) return;
+        const step = steps[activeIndex];
+        const el = document.querySelector(step.q);
+        if(el) spotlightTo(el, step.prefer || 'bottom');
+      }
+
+      function closeTutorial(saveSeen){
+        const coach = document.getElementById('coach');
+        coach.classList.remove('show');
+        coach.setAttribute('aria-hidden','true');
+        document.body.style.overflow = '';
+        window.removeEventListener('keydown', onKey);
+        window.removeEventListener('resize', onResize);
+        if(saveSeen){
+          try{ localStorage.setItem(TUT_KEY, '1'); }catch(_){}
+        }
+      }
+
+      // expose public triggers
+      window.startTutorialOnce = function(){
+        let seen = false;
+        try{ seen = localStorage.getItem(TUT_KEY) === '1'; }catch(_){}
+        if(!seen) openTutorial();
+      };
+      window.replayTutorial = function(){
+        try{ localStorage.removeItem(TUT_KEY); }catch(_){}
+        openTutorial();
+      };
+    })();
+    /* ===================== End first-visit tutorial ===================== */
+
+    // Hook the rainbow replay button
+    if(replayBtn){
+      replayBtn.addEventListener('click', ()=>{
+        if(window.replayTutorial){ window.replayTutorial(); }
+        else{
+          try{ localStorage.removeItem('kidsTutSeenV1'); }catch(_){}
+          if(window.startTutorialOnce) window.startTutorialOnce();
+        }
+      });
+    }
+
+    // Kick off the tutorial once (will no-op if already seen)
+    startTutorialOnce();
   };
 </script>
 {% endblock %}
