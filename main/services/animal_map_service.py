@@ -1,7 +1,6 @@
-import os
-import json
-import math
-import requests
-from datetime import datetime
-import pytz
-import random
+# animal_map_service.py
+
+from ..models import AnimalSighting
+
+def get_all_sightings():
+    return AnimalSighting.objects.all()      

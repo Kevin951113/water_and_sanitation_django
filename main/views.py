@@ -20,27 +20,76 @@ def about_water_sanitation(request):
 def explore_water_quality(request):
     return render(request, "explore_water_quality.html")
 
-#ranjana - 15/09/2025
+# #ranjana - 15/09/2025
+# import folium
+
+# def animal_map(request):
+#     # Coordinates for Victoria
+#     victoria_coords = [-37.4713, 144.7852]
+
+#     # Create map
+#     m = folium.Map(location=victoria_coords, zoom_start=6)
+#     folium.Marker(
+#         location=[-37.8136, 144.9631],
+#         popup="Melbourne",
+#         icon=folium.Icon(color="blue", icon="info-sign")
+#     ).add_to(m)
+
+#     # Get HTML representation of the map
+#     map_html = m._repr_html_()
+
+#     return render(request, 'animal_map.html', {'map_html': map_html})
+
+# # end - ranjana
+
+## ranjana - 18/09/2025
+# views.py (update animal_map)
+
+from .services import animal_map_service
+from django.conf import settings
 import folium
+import os
 
 def animal_map(request):
-    # Coordinates for Victoria
     victoria_coords = [-37.4713, 144.7852]
 
-    # Create map
-    m = folium.Map(location=victoria_coords, zoom_start=6)
-    folium.Marker(
-        location=[-37.8136, 144.9631],
-        popup="Melbourne",
-        icon=folium.Icon(color="blue", icon="info-sign")
-    ).add_to(m)
+    # Define Victoria bounds (approximate box)
+    victoria_bounds = [[-39.2, 140.9], [-33.9, 150.0]]  # SW and NE corners
 
-    # Get HTML representation of the map
+    # Create the map focused on Victoria
+    m = folium.Map(location=victoria_coords, zoom_start=6, max_bounds=True)
+    m.fit_bounds(victoria_bounds)
+
+    # Load sightings
+    sightings = animal_map_service.get_all_sightings()
+
+    for sighting in sightings:
+        lat, lon = sighting.latitude, sighting.longitude
+        name = sighting.common_name
+        # Safe filename (e.g. handle spaces in "Giant Cuttlefish.png")
+        img_filename = f"{name}.png"
+        icon_path = f"{settings.STATIC_URL}sea-animal/{img_filename}"
+
+        icon = folium.CustomIcon(
+            icon_image=icon_path,
+            icon_size=(50, 50),  # Adjust as needed
+            icon_anchor=(25, 25),
+        )
+
+        popup = folium.Popup(f"<b>{name}</b>", max_width=200)
+
+        folium.Marker(
+            location=[lat, lon],
+            popup=popup,
+            icon=icon,
+        ).add_to(m)
+
+    # Embed map into HTML
     map_html = m._repr_html_()
 
     return render(request, 'animal_map.html', {'map_html': map_html})
 
-# end - ranjana
+##
 
 #--------------------------------------------------------------------
 """
