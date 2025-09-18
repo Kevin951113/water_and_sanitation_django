@@ -45,34 +45,36 @@ def explore_water_quality(request):
 ## ranjana - 18/09/2025
 # views.py (update animal_map)
 
-from .services import animal_map_service
+import os
+import urllib.parse
 from django.conf import settings
 import folium
-import os
+from .services import animal_map_service
 
 def animal_map(request):
     victoria_coords = [-37.4713, 144.7852]
+    victoria_bounds = [[-39.2, 140.9], [-33.9, 150.0]]
 
-    # Define Victoria bounds (approximate box)
-    victoria_bounds = [[-39.2, 140.9], [-33.9, 150.0]]  # SW and NE corners
-
-    # Create the map focused on Victoria
     m = folium.Map(location=victoria_coords, zoom_start=6, max_bounds=True)
     m.fit_bounds(victoria_bounds)
 
-    # Load sightings
     sightings = animal_map_service.get_all_sightings()
 
     for sighting in sightings:
         lat, lon = sighting.latitude, sighting.longitude
         name = sighting.common_name
-        # Safe filename (e.g. handle spaces in "Giant Cuttlefish.png")
         img_filename = f"{name}.png"
-        icon_path = f"{settings.STATIC_URL}sea-animal/{img_filename}"
+
+        # Path to image file on disk (used by folium)
+        file_path = os.path.join(settings.STATICFILES_DIRS[0], "sea-animal", img_filename)
+
+        # If the image doesn't exist, use a default
+        #if not os.path.exists(file_path):
+            #file_path = os.path.join(settings.STATICFILES_DIRS[0], "sea-animal", "default.png")
 
         icon = folium.CustomIcon(
-            icon_image=icon_path,
-            icon_size=(50, 50),  # Adjust as needed
+            icon_image=file_path,  # Must be actual file path for folium
+            icon_size=(50, 50),
             icon_anchor=(25, 25),
         )
 
@@ -84,10 +86,9 @@ def animal_map(request):
             icon=icon,
         ).add_to(m)
 
-    # Embed map into HTML
     map_html = m._repr_html_()
-
     return render(request, 'animal_map.html', {'map_html': map_html})
+
 
 ##
 
