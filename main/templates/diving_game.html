@@ -11,12 +11,8 @@
 <!-- Do NOT touch the header above (it's shared in base.html) -->
 
 
-  <section class="wrap" style="max-width:900px">
-    <article class="panel" style="aspect-ratio:auto; padding:18px">
-      <h2>Our Mission</h2>
-      <p>We aim to provide real-time water safety checks, sanitation maps, and community reporting tools.</p>
-    </article>
-  </section>
+<div id="treasure-game-root" style="min-height:640px;"></div>
+<script type="module" src="{% static 'treasure/assets/index-Dg_mcpru.js' %}"></script>
 
 <!-- >>> Write your own page content here <<< -->
 
@@ -28,3 +24,4 @@
   window.pageInit = function(){};
 </script>
 {% endblock %}
+  
