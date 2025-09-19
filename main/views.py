@@ -213,6 +213,9 @@ def animal_map_data(request):
             lon = float(lon)
         except (TypeError, ValueError):
             continue  # skip invalid coords
+        
+        if name in first_coords_by_name:
+            continue
 
         icon_url = _resolve_icon_url(name)
 
@@ -267,7 +270,7 @@ def animal_map_data(request):
     victoria_bounds = [(-39.2, 140.9), (-33.9, 150.0)]
 
     raw = get_all_sightings_dict()  # list[dict]: sighting_id, latitude, longitude, common_name
-
+    first_coords_by_name = {}
     items = []
     for s in raw:
         lat = s.get("latitude")
@@ -278,7 +281,9 @@ def animal_map_data(request):
             lon = float(lon)
         except (TypeError, ValueError):
             continue  # skip invalid coords
-
+        
+        if name in first_coords_by_name:
+            continue
         items.append({
             "id": s.get("sighting_id"),
             "latitude": lat,
@@ -287,6 +292,7 @@ def animal_map_data(request):
             "icon_url": _resolve_icon_url(name),
             "popup_html": f"<strong>{name}</strong>",
         })
+        first_coords_by_name[name] = (lat, lon)
 
     payload = {
         "meta": {
