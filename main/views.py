@@ -1,7 +1,6 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 import json
-import folium
 from django.views.decorators.http import require_GET
 from .services import diving_game_service, animal_map_service , animal_cards_service, future_family_safety_service, home_service, about_water_sanitation_service, pollution_sources_service, pollution_sources_service
 from .services.animal_cards_service import fetch_kids_cards, build_collect_cards_json
@@ -21,81 +20,11 @@ def about_water_sanitation(request):
 def explore_water_quality(request):
     return render(request, "explore_water_quality.html")
 
-# #ranjana - 15/09/2025
-# import folium
-
-# def animal_map(request):
-#     # Coordinates for Victoria
-#     victoria_coords = [-37.4713, 144.7852]
-
-#     # Create map
-#     m = folium.Map(location=victoria_coords, zoom_start=6)
-#     folium.Marker(
-#         location=[-37.8136, 144.9631],
-#         popup="Melbourne",
-#         icon=folium.Icon(color="blue", icon="info-sign")
-#     ).add_to(m)
-
-#     # Get HTML representation of the map
-#     map_html = m._repr_html_()
-
-#     return render(request, 'animal_map.html', {'map_html': map_html})
-
-# # end - ranjana
-
-## ranjana - 18/09/2025
-# views.py (update animal_map)
-
-"""
-import os
-import urllib.parse
-from django.conf import settings
-from .services import animal_map_service
-
-def animal_map(request):
-    victoria_coords = [-37.4713, 144.7852]
-    victoria_bounds = [[-39.2, 140.9], [-33.9, 150.0]]
-
-    m = folium.Map(location=victoria_coords, zoom_start=6, max_bounds=True)
-    m.fit_bounds(victoria_bounds)
-
-    sightings = animal_map_service.get_all_sightings()
-
-    for sighting in sightings:
-        lat, lon = sighting.latitude, sighting.longitude
-        name = sighting.common_name
-        img_filename = f"{name}.png"
-
-        # Path to image file on disk (used by folium)
-        file_path = os.path.join(settings.STATICFILES_DIRS[0], "sea-animal", img_filename)
-
-        # If the image doesn't exist, use a default
-        #if not os.path.exists(file_path):
-            #file_path = os.path.join(settings.STATICFILES_DIRS[0], "sea-animal", "default.png")
-
-        icon = folium.CustomIcon(
-            icon_image=file_path,  # Must be actual file path for folium
-            icon_size=(50, 50),
-            icon_anchor=(25, 25),
-        )
-
-        popup = folium.Popup(f"<b>{name}</b>", max_width=200)
-
-        folium.Marker(
-            location=[lat, lon],
-            popup=popup,
-            icon=icon,
-        ).add_to(m)
-
-    map_html = m._repr_html_()
-    return render(request, 'animal_map.html', {'map_html': map_html})
-"""
-
-
 #--------------------------------------------------------------------
+# Ranjana - 15/09/2025
+# Ranjana - 18/09/2025  views.py (update animal_map)
 
-
-#2025/09/18 Kevin map revise#
+# Kevin - 18/09/2025 map revise
 from django.contrib.staticfiles import finders
 from django.templatetags.static import static
 
