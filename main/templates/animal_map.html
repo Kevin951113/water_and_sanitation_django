@@ -4,32 +4,242 @@
 {% block title %}Animal Map | Water & Sanitation{% endblock %}
 
 {% block head_extras %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+
+<style>
+  :root {
+    --am-card-bg:#fff; --am-text:#111; --am-muted:#555; --am-border:#ddd;
+  }
+  /* 暗色主題由 base.html 設置 data-theme="dark" 後生效 */
+  :root[data-theme="dark"] {
+    --am-card-bg:#0f172a; --am-text:#e5e7eb; --am-muted:#94a3b8; --am-border:#334155;
+  }
+
+  .am-shell{max-width:1200px;margin:0 auto;padding:0 14px;}
+  .am-section{margin-bottom:30px;}
+  .am-card{
+    background:var(--am-card-bg); color:var(--am-text);
+    border:1px solid var(--am-border); border-radius:14px;
+    padding:18px; box-shadow:0 2px 10px rgba(0,0,0,.08);
+  }
+  .am-card h2{margin:0 0 8px;font-size:1.3rem;}
+  .am-muted{color:var(--am-muted);}
+
+  .am-split{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;}
+  @media(max-width:1000px){.am-split{grid-template-columns:1fr}}
+
+  .am-map{width:100%;height:500px;border-radius:12px;background:#eef;}
+  .am-aside{
+    border:1px solid var(--am-border); border-radius:12px; padding:10px;
+    background:var(--am-card-bg); overflow:auto; max-height:520px; position:sticky; top:12px;
+  }
+  .am-aside h3{font-size:1rem;margin:0 0 8px;}
+  .am-gallery{display:flex;flex-direction:column;gap:10px;}
+
+  /* 右側清單：原圖 + 名稱 */
+  .am-figure{
+    cursor:pointer; display:flex; align-items:center; gap:12px;
+    padding:8px; border-radius:8px; border:1px solid transparent; color:var(--am-text);
+    background:transparent;
+  }
+  .am-figure:hover{background:rgba(0,0,0,0.05); border-color:var(--am-border);}
+  :root[data-theme="dark"] .am-figure:hover{background:rgba(255,255,255,0.05);}
+  .am-figure img{display:block; max-width:140px; height:auto; object-fit:contain}
+
+  /* 工具列 */
+  .am-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;align-items:center;}
+  .am-select{
+    border:1px solid var(--am-border); border-radius:8px;
+    padding:8px 10px; min-width:220px; background:var(--am-card-bg); color:var(--am-text);
+  }
+  .am-btn{
+    border:1px solid var(--am-border); background:var(--am-card-bg);
+    padding:8px 10px; border-radius:8px; cursor:pointer; color:var(--am-text);
+  }
+  .am-btn:hover{filter:brightness(1.05);}
+  .am-count{margin-left:auto; color:var(--am-muted); font-size:.9rem;}
+</style>
 {% endblock %}
 
 {% block content %}
+<section class="am-shell am-section">
+  <div class="am-card">
+    <h2>Animal Sightings Map</h2>
+    <p class="am-muted">Look! Find animals near the water.</p>
 
-<!-- Do NOT touch the header above (it's shared in base.html) -->
+    <!-- Toolbar（無搜尋列；使用 base.html 的主題切換） -->
+    <div class="am-toolbar">
+      <select id="am-select" class="am-select" aria-label="Choose animal">
+        <option value="">Choose animal…</option>
+      </select>
+      <button id="am-reset" class="am-btn" type="button">Reset</button>
+      <button id="am-reload" class="am-btn" type="button">Reload</button>
+      <span id="am-count" class="am-count" aria-live="polite"></span>
+    </div>
 
-
-  <section class="wrap" style="max-width:900px">
-    <article class="panel" style="aspect-ratio:auto; padding:18px">
-      <h2>Our Mission</h2>
-      <p>We aim to provide real-time water safety checks, sanitation maps, and community reporting tools.</p>
-    </article>
-    <div style="margin-top: 30px;">
-    {{ map_html|safe }}
+    <div class="am-split">
+      <div>
+        <div id="am-map" class="am-map" role="region" aria-label="Animal sightings map"></div>
+        <p id="am-empty" class="am-muted" style="text-align:center;display:none;">No animals found.</p>
+        <p id="am-loading" class="am-muted" style="text-align:center;">Loading…</p>
+      </div>
+      <aside class="am-aside">
+        <h3>All Animals <span id="am-gallery-count" class="am-muted"></span></h3>
+        <div id="am-gallery" class="am-gallery"></div>
+      </aside>
+    </div>
   </div>
-  </section>
-
-<!-- >>> Write your own page content here <<< -->
-
-
-
-<!-- Do NOT touch the footer below (it's shared in base.html) -->
+</section>
 {% endblock %}
 
 {% block page_scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
-  window.pageInit = function(){};
+/* -------- Utilities -------- */
+const $ = (id) => document.getElementById(id);
+const els = {
+  map: $("am-map"),
+  select: $("am-select"),
+  reset: $("am-reset"),
+  reload: $("am-reload"),
+  empty: $("am-empty"),
+  loading: $("am-loading"),
+  count: $("am-count"),
+  gallery: $("am-gallery"),
+  gcount: $("am-gallery-count"),
+};
+
+let leafletMap, clusterLayer, allItems = [], galleryAll = [];
+
+/* -------- Map -------- */
+function initMap(meta){
+  if(!leafletMap){
+    const center = (meta && meta.victoria_coords) || [-37.8,145];
+    leafletMap = L.map("am-map").setView(center, 7);
+    L.tileLayer(
+      (meta && meta.tile_url) || "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      { attribution:(meta && meta.tile_attribution) || "© OpenStreetMap" }
+    ).addTo(leafletMap);
+  }
+  if(clusterLayer){ clusterLayer.clearLayers(); leafletMap.removeLayer(clusterLayer); }
+  clusterLayer = L.markerClusterGroup();
+  leafletMap.addLayer(clusterLayer);
+}
+
+function renderMarkers(items){
+  clusterLayer.clearLayers();
+  const markers = [];
+  items.forEach(it=>{
+    const lat = Number(it.latitude), lon = Number(it.longitude);
+    if(Number.isNaN(lat) || Number.isNaN(lon)) return;
+    const opts = it.icon_url ? { icon: L.icon({ iconUrl: it.icon_url, iconSize: [40,40] }) } : undefined;
+    const m = L.marker([lat, lon], opts).bindPopup(`<b>${it.common_name || "Unknown"}</b>`);
+    markers.push(m);
+  });
+  if(markers.length){
+    clusterLayer.addLayers(markers);
+    els.empty.style.display = "none";
+  }else{
+    els.empty.style.display = "block";
+  }
+  els.count.textContent = markers.length + " found";
+}
+
+/* -------- Gallery & Select -------- */
+/* 當後端 payload.gallery 為空時，從 items 自動組唯一物種清單 */
+function buildGallery(payload){
+  const rawGallery = Array.isArray(payload.gallery) ? payload.gallery : [];
+  if(rawGallery.length) return rawGallery;
+
+  const seen = new Set();
+  const list = [];
+  (payload.items || []).forEach(it=>{
+    const name = it.common_name || "Unknown";
+    const key = name + "||" + (it.icon_url || "");
+    if(seen.has(key)) return;
+    seen.add(key);
+    list.push({ common_name: name, icon_url: it.icon_url || "" });
+  });
+  return list;
+}
+
+function renderGallery(gallery){
+  galleryAll = Array.isArray(gallery) ? gallery : [];
+  galleryAll.sort((a,b)=> (a.common_name||"").localeCompare(b.common_name||"", undefined, {sensitivity:"base"}));
+
+  els.gallery.innerHTML = "";
+  els.select.innerHTML = '<option value="">Choose animal…</option>';
+
+  galleryAll.forEach(g=>{
+    // dropdown option
+    const opt = document.createElement("option");
+    opt.value = g.common_name;
+    opt.textContent = g.common_name;
+    els.select.appendChild(opt);
+
+    // right panel row (image + name)
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "am-figure";
+    row.innerHTML = `
+      <img src="${g.icon_url}" alt="${g.common_name}" loading="lazy"/>
+      <div><strong>${g.common_name}</strong></div>
+    `;
+    row.onclick = ()=> focusAnimal(g.common_name);
+    els.gallery.appendChild(row);
+  });
+
+  els.gcount.textContent = galleryAll.length ? `(${galleryAll.length})` : "";
+}
+
+/* 聚焦到該物種第一筆座標 */
+function focusAnimal(name){
+  const found = allItems.find(it => it.common_name === name);
+  if(found){
+    leafletMap.setView([Number(found.latitude), Number(found.longitude)], 9);
+  }
+}
+
+/* -------- Data loading -------- */
+async function loadData(){
+  els.loading.style.display = "block";
+  els.empty.style.display = "none";
+  try{
+    const res = await fetch("{% url 'animal_map_data' %}");
+    const payload = await res.json();
+
+    allItems = Array.isArray(payload.items) ? payload.items : [];
+    initMap(payload.meta || {});
+    renderMarkers(allItems);
+
+    const gallery = buildGallery(payload);
+    renderGallery(gallery);
+  }catch(e){
+    console.error("animal_map_data failed:", e);
+    els.empty.style.display = "block";
+  }
+  els.loading.style.display = "none";
+}
+
+/* -------- Events -------- */
+function bindEvents(){
+  els.select.onchange = ()=> { if(els.select.value) focusAnimal(els.select.value); };
+  els.reset.onclick = ()=>{
+    els.select.value = "";
+    renderMarkers(allItems);
+  };
+  els.reload.onclick = ()=> loadData();
+}
+
+/* -------- Boot -------- */
+window.pageInit = function(){
+  bindEvents();
+  loadData();
+};
+document.addEventListener("DOMContentLoaded", window.pageInit);
 </script>
 {% endblock %}
