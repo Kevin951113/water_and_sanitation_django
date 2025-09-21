@@ -17,102 +17,54 @@ LOCAL_CARDS_OVERRIDE = True
 # =======================
 
 # ---- Local fallback data (tuples -> dicts) ----
-_LOCAL_KIDS_TUPLES = [
-    (1, 'What is water pollution?',
-     '<p>When dirty stuff gets into rivers, lakes, or the ocean, animals, plants, and people are affected.</p>',
-     '<p>Common sources: factory wastewater, household detergents, plastic trash, oil, and farm chemicals.</p>',
-     'Tap me to unlock the fish!', 1, 1),
 
-    (2, 'Why do rainy days matter?',
-      '<p>Rain washes street grime into the water — like oil and litter.</p>',
-      '<p>During heavy storms, runoff carries microplastics, fertilizers, and animal waste into creeks.</p>',
-      'Tap me to unlock the fish!', 1, 0),
+_LOCAL_KIDS_TUPLES =[
+    (1, 'Water inside an elephant',
+     '<p>About 70% of an elephant is water.</p>',
+     '<p>This water helps with blood flow, cooling, and moving nutrients.</p>',
+     'Tap me to unlock the card!', 1, 0),
 
-    (3, 'How does plastic harm fish?',
-     '<p>Fish may mistake tiny plastic bits for food.</p>',
-     '<p>Microplastics can remain in their bodies and move up the food chain.</p>',
+    (2, 'How watery is a tomato?',
+      '<p>About 95% of a tomato is water.</p>',
+      '<p>That’s why tomatoes are so juicy.</p>',
+      'Tap me to unlock the card!', 1, 0),
+
+    (3, 'Water in our bodies',
+     '<p>About 66% of the human body is water.</p>',
+     '<p>It’s in our brain, blood, and organs.</p>',
+     'Tap me to unlock the card!', 1, 0),
+
+    (4, 'Longest water pipeline in Australia',
+     '<p>The longest water supply pipeline is in Western Australia.</p>',
+     '<p>It carries water long distances to drier areas.</p>',
+     'Tap me to unlock the card!', 1, 0),
+
+    (5, 'Where at home uses the most water?',
+     '<p>The bathroom uses the most water at home.</p>',
+     '<p>Short showers and turning off taps can save a lot.</p>',
      'Tap me to unlock the fish!', 1, 0),
 
-    (4, 'What can we do at home?',
-     '<p>Don’t pour used oil down the sink — store it for recycling.</p>',
-     '<p>Choose eco-friendly cleaners and use less to keep drains safer.</p>',
-     'Tap me to unlock the fish!', 1, 0),
+    (6, 'Who lacks safe drinking water?',
+     '<p>About 1 in 4 people lack safe drinking water.</p>',
+     '<p>Clean water projects help families stay healthy.</p>',
+     'Tap me to unlock the card!', 1, 0),
 
-    (5, 'What about parks and schools?',
-     '<p>Put rubbish in the bin and pick up stray plastic bags and caps.</p>',
-     '<p>Storm drains often flow straight to rivers or the sea.</p>',
-     'Tap me to unlock the fish!', 1, 0),
+    (7, 'Sea turtles and plastic',
+     '<p>About 52% of sea turtles have eaten plastic.</p>',
+     '<p>Plastic makes them sick and comes from pollution.</p>',
+     'Tap me to unlock the card!', 1, 0),
 
-    (6, 'Why do animals need clean water?',
-     '<p>Fish, shrimp, and frogs live in water — dirty water harms them first.</p>',
-     '<p>Healthy streams and seas mean healthier environments for everyone.</p>',
-     'Tap me to unlock the fish!', 1, 0),
+    (8, 'Whale sharks and plastic',
+     '<p>A whale shark may swallow about 137 pieces of plastic every hour.</p>',
+     '<p>They can’t tell plastic from food while filtering water.</p>',
+     'Tap me to unlock the card!', 1, 0),
 
-    (7, 'What is algal bloom?',
-     '<p>Too many nutrients make algae “explode” in number.</p>',
-     '<p>It reduces oxygen and can suffocate fish. Cut fertilizer runoff.</p>',
-     'Tap me to unlock the fish!', 4, 0),
-
-    (8, 'What is sewer overflow?',
-     '<p>In big storms, mixed water may be released from treatment plants.</p>',
-     '<p>Check public advisories and avoid water play right after storms.</p>',
-     'Tap me to unlock the fish!', 4, 0),
-
-    (9, 'Be a Water Helper!',
-     '<p>Reduce plastic, recycle, and join a beach or river clean-up.</p>',
-     '<p>Share what you learned so more people can protect our water together!</p>',
-     'Tap me to unlock the fish!', 4, 0),
-
-    (10, 'Elephants are mostly water',
-     '<p>An elephant’s body is about <strong>70%</strong> water — that’s a lot of splash-power!</p>',
-     '<p>Water helps carry nutrients, cool the body, and keep blood moving.</p>',
-     'Tap me to unlock the fish!', 4, 0),
-
-    (11, 'A lifetime of sips',
-     '<p>Across a whole life, a person drinks about <strong>75,000&nbsp;L</strong> of water — like <em>hundreds</em> of bathtubs!</p>',
-     '<p>Drinking water keeps our brain focused and our body happy and healthy.</p>',
-     'Tap me to unlock the fish!', 4, 0),
-
-    (12, 'Trees breathe out water',
-     '<p>One big tree can release around <strong>265&nbsp;L</strong> of water into the air each day!</p>',
-     '<p>This is called “transpiration” and it powers the water cycle (clouds and rain!).</p>',
-     'Tap me to unlock the fish!', 4, 0),
-
-    (13, 'Tomatoes are juicy water balloons',
-     '<p>A tomato is about <strong>95%</strong> water — no wonder it’s so squishy!</p>',
-     '<p>Lots of fruits and veggies carry water, making them tasty <em>and</em> hydrating.</p>',
-     'Tap me to unlock the fish!', 4, 0),
-
-    (14, 'You are a water hero',
-     '<p>Your body is around <strong>66%</strong> water — that’s why you need regular sips.</p>',
-     '<p>Water helps you think clearly, move smoothly, and cool down when you play.</p>',
-     'Tap me to unlock the fish!', 4, 0),
-
-    (15, 'The sun lifts oceans into the sky',
-     '<p>Every day, sunshine evaporates about <strong>one trillion tonnes</strong> of water!</p>',
-     '<p>That invisible water vapour later becomes clouds, then raindrops.</p>',
-     'Tap me to unlock the fish!', 4, 0),
-
-    (16, 'Your coffee’s hidden water',
-     '<p>One cup takes about <strong>140&nbsp;L</strong> of water to grow, process, and brew.</p>',
-     '<p>Most of that water goes into farming the coffee plant — choose and sip wisely!</p>',
-     'Tap me to unlock the fish!', 4, 0),
-
-    (17, 'Australia’s longest water pipeline',
-     '<p>The longest water supply pipeline in Australia is in <strong>Western Australia</strong>.</p>',
-     '<p>Pipelines move precious water across long distances to towns and communities.</p>',
-     'Tap me to unlock the fish!', 4, 0),
-
-    (18, 'Our biggest river catchment',
-     '<p>Australia’s largest catchment is the <strong>Murray–Darling Basin</strong>.</p>',
-     '<p>A “catchment” is land where rain drains into streams, rivers, and lakes.</p>',
-     'Tap me to unlock the fish!', 4, 0),
-
-    (19, 'Animals that hardly ever drink',
-     '<p><strong>Koalas</strong> and <strong>desert rats</strong> can get most of their water from leaves and food.</p>',
-     '<p>They still need water inside their bodies — their diets do the heavy lifting!</p>',
-     'Tap me to unlock the fish!', 4, 0),
+    (9, 'Sharks and mercury',
+     '<p>About 25% of sharks have unsafe mercury levels.</p>',
+     '<p>Pollution builds up in the fish they eat.</p>',
+     'Tap me to unlock the card!', 1, 0)
 ]
+
 
 def _as_dict(row):
     """Convert a tuple into a dict that matches Django .values() output."""
@@ -164,15 +116,15 @@ def fetch_kids_cards():
 
     if use_local:
         data = sorted((_as_dict(t) for t in _LOCAL_KIDS_TUPLES),
-                      key=lambda d: d["card_order"])[:6]
-        print(f"[kids_cards] source=LOCAL tuples, returning={len(data)} items (limit 4)")
+                      key=lambda d: d["card_order"])[:9]
+        print(f"[kids_cards] source=LOCAL tuples, returning={len(data)} items (limit 9)")
         return data
 
     qs = list(
         KidsCard.objects.order_by("card_order").values(
             "card_order", "title", "lead_html", "detail_html",
             "hint_text", "read_seconds", "is_starter"
-        )[:4]
+        )[:9]
     )
     print(f"[kids_cards] source=DB, returning={len(qs)} items (limit 4)")
     return qs
@@ -185,17 +137,19 @@ def fetch_kids_cards():
 # Local collectible-card tuples:
 # (no, title, aria, img_relative, desc, special, levelCap, levelCur) ---> SS, S, A, B, C
 _LOCAL_COLLECT_TUPLES = [
-    (1, "Blue Whale", "Whale card", "cards/blue_whale.gif",
+
+    (1, "Elephant", "Elephant card", "cards/elephant.gif",
+    "The gentle giant of the land—family-centered, needs vast grasslands and plenty of water.", "B", 3, 3),
+
+
+    (2, "Blue Whale", "Whale card", "cards/blue_whale.gif",
      "Largest animal on Earth, a gentle giant that filters tiny krill from the ocean.", "S", 3, 1),
 
-    (2, "Great White Shark", "Great White Shark card", "cards/great_white.gif",
+    (3, "Great White Shark", "Great White Shark card", "cards/great_white.gif",
     "Apex ocean hunter—keen senses keep food webs balanced; needs clean, open coasts.", "S", 3, 3),
 
-    (3, "Sharks", "Sharks card", "cards/sharks.gif",
-    "From hammerheads to great whites—sharks come in many forms, all needing healthy oceans.", "SS", 3, 3),
-
-    (4, "Whale Shark", "Whale Shark card", "cards/whale_shark.gif",
-    "Gentle giant of the sea—feeds on plankton, thrives in clean, warm oceans.", "A", 3, 3),
+    (4, "Fin Whale", "Fin Whale card", "cards/fin_whale.gif",
+    "The sleek ‘greyhound of the sea’—second largest whale, feeds on krill in vast oceans.", "A", 3, 3),
 
     (5, "Hammerhead Shark", "Hammerhead Shark card", "cards/hammerhead_shark.gif",
     "With its hammer-shaped head, it scans wide seas—needs healthy reefs to hunt and thrive.", "A", 3, 2),
@@ -203,7 +157,14 @@ _LOCAL_COLLECT_TUPLES = [
     (6, "Orca", "Orca card", "cards/orca.gif",
     "The black-and-white apex hunter—social and smart, thrives in clean, rich seas.", "SS", 3, 1),
 
+    (7, "Sea Turtle", "Sea Turtle card", "cards/sea_turtle.gif",
+    "Ancient ocean traveler—returns to beaches to nest, needs clean seas and safe shores.", "S", 3, 2),
 
+    (8, "Whale Shark", "Whale Shark card", "cards/whale_shark.gif",
+    "Gentle giant of the sea—feeds on plankton, thrives in clean, warm oceans.", "A", 3, 3),
+
+    (9, "Sharks", "Sharks card", "cards/sharks.gif",
+    "From hammerheads to great whites—sharks come in many forms, all needing healthy oceans.", "SS", 3, 3),
 ]
 
 def _static_url(path: str) -> str:

@@ -10,6 +10,9 @@ urlpatterns = [
     path("pollution_sources/", views.pollution_sources, name="pollution_sources"),
     path("animal_cards/", views.animal_cards, name="animal_cards"),
     path("animal_map/", views.animal_map, name="animal_map"),
+    path("animal_map/data/", views.animal_map_data, name="animal_map_data"),
+
+
     path("diving_game/", views.diving_game, name="diving_game"),
 
     path("api/sites", views.api_sites, name="api_sites"),
