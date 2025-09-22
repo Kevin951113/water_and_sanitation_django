@@ -14,17 +14,17 @@ except Exception:
 
 
 # ===================== Cache settings =====================
-# Cache on by default (works with any Django cache backend).
-# override in settings.py:
+# Works with any Django cache backend (LocMem/Redis/Memcached).
+# Override in settings.py if needed:
 #   KIDS_CACHE_SECONDS = 300
 #   KIDS_CACHE_PREFIX  = "kids_cards"
+#   KIDS_CACHE_VERSION = 1  # bump to invalidate all at once
 KIDS_CACHE_SECONDS = int(getattr(settings, "KIDS_CACHE_SECONDS", 300))
 KIDS_CACHE_PREFIX  = str(getattr(settings, "KIDS_CACHE_PREFIX", "kids_cards"))
-# bump this to invalidate all existing keys at once
 KIDS_CACHE_VERSION = int(getattr(settings, "KIDS_CACHE_VERSION", 1))
 
 def _ckey(name: str) -> str:
-    """Build cache key with a global prefix + version."""
+    """Build namespaced cache key with global version."""
     return f"{KIDS_CACHE_PREFIX}:v{KIDS_CACHE_VERSION}:{name}"
 
 def _cache_get(name: str):
@@ -44,6 +44,7 @@ def _cache_del(name: str):
         cache.delete(_ckey(name))
     except Exception:
         pass
+
 
 # ===================== Switch here (unchanged) =====================
 # True  -> always use local tuples (no DB/RDS calls)
@@ -118,10 +119,9 @@ def _use_local_data() -> bool:
     """
     Decide whether to use local tuples instead of hitting the DB.
     Priority:
-      1) LOCAL_CARDS_OVERRIDE (True/False/None) defined in this file.
-      2) settings.USE_LOCAL_KIDS_CARDS (truthy strings like "1", "true", "yes" allowed).
-      3) settings.DEBUG (default fallback).
-    Prints a line for the exact branch taken.
+      1) LOCAL_CARDS_OVERRIDE (True/False/None)
+      2) settings.USE_LOCAL_KIDS_CARDS (accepts "1/true/yes")
+      3) settings.DEBUG
     """
     override = LOCAL_CARDS_OVERRIDE
     if override is not None:
@@ -130,11 +130,7 @@ def _use_local_data() -> bool:
 
     val = getattr(settings, "USE_LOCAL_KIDS_CARDS", None)
     if val is not None:
-        # Accept env-style strings like "1", "true", "yes"
-        if isinstance(val, str):
-            parsed = val.strip().lower() in {"1", "true", "t", "yes", "y"}
-        else:
-            parsed = bool(val)
+        parsed = (val.strip().lower() in {"1", "true", "t", "yes", "y"}) if isinstance(val, str) else bool(val)
         print(f"[kids_cards] decision: settings.USE_LOCAL_KIDS_CARDS={val!r} (parsed={parsed}) -> use_local={parsed}")
         return parsed
 
@@ -145,24 +141,25 @@ def _use_local_data() -> bool:
 
 def fetch_kids_cards():
     """
-    Dev/local: return static JSON-like data to avoid RDS costs.
-    Production: query the DB (keeps the 4-item limit for the page) with caching.
-    Also prints the chosen source and count.
+    Dev/local: return static JSON-like data, now cached as well.
+    Production: query the DB (limit 9) with caching.
     """
     use_local = _use_local_data()
+
+    # Use separate cache keys for local vs db to avoid mixing
+    mode = "local" if use_local else "db"
+    cache_key = f"kids_cards:list:limit9:mode={mode}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        print(f"[kids_cards] source=CACHE({mode}), returning={len(cached)} items (limit 9)")
+        return cached
 
     if use_local:
         data = sorted((_as_dict(t) for t in _LOCAL_KIDS_TUPLES),
                       key=lambda d: d["card_order"])[:9]
+        _cache_set(cache_key, data)
         print(f"[kids_cards] source=LOCAL tuples, returning={len(data)} items (limit 9)")
         return data
-
-    # DB path — use cache
-    cache_key = "kids_cards:list:limit9"
-    cached = _cache_get(cache_key)
-    if cached is not None:
-        print(f"[kids_cards] source=CACHE, returning={len(cached)} items (limit 9)")
-        return cached
 
     qs = list(
         KidsCard.objects.order_by("card_order").values(
@@ -171,7 +168,7 @@ def fetch_kids_cards():
         )[:9]
     )
     _cache_set(cache_key, qs)
-    print(f"[kids_cards] source=DB, returning={len(qs)} items (limit 4)")
+    print(f"[kids_cards] source=DB, returning={len(qs)} items (limit 9)")
     return qs
 
 
@@ -182,44 +179,39 @@ def fetch_kids_cards():
 # Local collectible-card tuples:
 # (no, title, aria, img_relative, desc, special, levelCap, levelCur) ---> SS, S, A, B, C
 _LOCAL_COLLECT_TUPLES = [
-
     (1, "Elephant", "Elephant card", "cards/elephant.gif",
-    "The gentle giant of the land—family-centered, needs vast grasslands and plenty of water.", "B", 3, 3),
-
+     "The gentle giant of the land—family-centered, needs vast grasslands and plenty of water.", "B", 3, 3),
 
     (2, "Blue Whale", "Whale card", "cards/blue_whale.gif",
      "Largest animal on Earth, a gentle giant that filters tiny krill from the ocean.", "S", 3, 1),
 
     (3, "Great White Shark", "Great White Shark card", "cards/great_white.gif",
-    "Apex ocean hunter—keen senses keep food webs balanced; needs clean, open coasts.", "S", 3, 3),
+     "Apex ocean hunter—keen senses keep food webs balanced; needs clean, open coasts.", "S", 3, 3),
 
     (4, "Fin Whale", "Fin Whale card", "cards/fin_whale.gif",
-    "The sleek ‘greyhound of the sea’—second largest whale, feeds on krill in vast oceans.", "A", 3, 3),
+     "The sleek ‘greyhound of the sea’—second largest whale, feeds on krill in vast oceans.", "A", 3, 3),
 
     (5, "Hammerhead Shark", "Hammerhead Shark card", "cards/hammerhead_shark.gif",
-    "With its hammer-shaped head, it scans wide seas—needs healthy reefs to hunt and thrive.", "A", 3, 2),
+     "With its hammer-shaped head, it scans wide seas—needs healthy reefs to hunt and thrive.", "A", 3, 2),
 
     (6, "Orca", "Orca card", "cards/orca.gif",
-    "The black-and-white apex hunter—social and smart, thrives in clean, rich seas.", "SS", 3, 1),
+     "The black-and-white apex hunter—social and smart, thrives in clean, rich seas.", "SS", 3, 1),
 
     (7, "Sea Turtle", "Sea Turtle card", "cards/sea_turtle.gif",
-    "Ancient ocean traveler—returns to beaches to nest, needs clean seas and safe shores.", "S", 3, 2),
+     "Ancient ocean traveler—returns to beaches to nest, needs clean seas and safe shores.", "S", 3, 2),
 
     (8, "Whale Shark", "Whale Shark card", "cards/whale_shark.gif",
-    "Gentle giant of the sea—feeds on plankton, thrives in clean, warm oceans.", "A", 3, 3),
+     "Gentle giant of the sea—feeds on plankton, thrives in clean, warm oceans.", "A", 3, 3),
 
     (9, "Sharks", "Sharks card", "cards/sharks.gif",
-    "From hammerheads to great whites—sharks come in many forms, all needing healthy oceans.", "SS", 3, 3),
+     "From hammerheads to great whites—sharks come in many forms, all needing healthy oceans.", "SS", 3, 3),
 ]
 
 def _static_url(path: str) -> str:
-    """
-    Build a STATIC_URL-based path. If already an http(s) URL or absolute path
-    starting with '/', return as-is.
-    """
+    """Return STATIC_URL-based path unless already absolute."""
     if not path:
         return ""
-    if path.startswith("http://") or path.startswith("https://"):
+    if path.startswith("http://") or path.startswith("https://") or path.startswith("/"):
         return path
     base = getattr(settings, "STATIC_URL", "/static/")
     return f"{base}{path.lstrip('/')}"
@@ -240,24 +232,24 @@ def _collect_as_dict(row):
 def fetch_collect_cards(limit: int | None = None):
     """
     Return a list[dict] for collectible cards.
-    - If _use_local_data() is True, use _LOCAL_COLLECT_TUPLES.
+    - If _use_local_data() is True, use _LOCAL_COLLECT_TUPLES (cached as well).
     - Otherwise, if the optional _KidsCollectCard model exists, query the DB with caching.
-      (Suggested model fields: no/title/aria/img or image_url/desc/special/levelCap/levelCur)
     """
     use_local = _use_local_data()
     items = []
-    src = "LOCAL"
+    src = "LOCAL" if use_local else "DB"
 
-    if use_local or _KidsCollectCard is None:
-        items = [_collect_as_dict(t) for t in _LOCAL_COLLECT_TUPLES]
+    # Cache regardless of source (local/db) to avoid recomputing/encoding.
+    mode = "local" if use_local or _KidsCollectCard is None else "db"
+    cache_key = f"collect_cards:list:mode={mode}:all"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        items = cached
+        src = f"CACHE({mode})"
     else:
-        cache_key = "collect_cards:list:all"
-        cached = _cache_get(cache_key)
-        if cached is not None:
-            items = cached
-            src = "CACHE"
+        if use_local or _KidsCollectCard is None:
+            items = [_collect_as_dict(t) for t in _LOCAL_COLLECT_TUPLES]
         else:
-            # Accommodate multiple possible field names to keep modeling flexible
             values = list(_KidsCollectCard.objects.order_by("no").values(
                 "no", "title", "aria", "img", "image_url", "desc", "description",
                 "special", "levelCap", "levelCur", "level_cap", "level_cur"
@@ -277,8 +269,7 @@ def fetch_collect_cards(limit: int | None = None):
                     "levelCap": int(level_cap or 3),
                     "levelCur": int(level_cur or 1),
                 })
-            _cache_set(cache_key, items)
-            src = "DB"
+        _cache_set(cache_key, items)
 
     if limit is not None and isinstance(limit, int) and limit > 0:
         items = items[:limit]
@@ -290,37 +281,37 @@ def build_collect_cards_json(limit: int | None = None) -> str:
     """
     Produce a JSON string for the template's
     `<script id="collectCardsData" type="application/json">`.
-    Cached separately by (optional) limit to avoid repeated JSON encoding.
+    Cached separately by (optional) limit for both local and db modes.
     """
-    # Use limit in the cache key (None -> 'all')
-    cache_key = f"collect_cards:json:{limit if limit is not None else 'all'}"
+    mode = "local" if _use_local_data() or _KidsCollectCard is None else "db"
+    cache_key = f"collect_cards:json:mode={mode}:{limit if limit is not None else 'all'}"
 
-    if not _use_local_data() and _KidsCollectCard is not None:
-        cached = _cache_get(cache_key)
-        if cached is not None:
-            return cached
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
 
     data = fetch_collect_cards(limit=limit)
     s = json.dumps(data, ensure_ascii=False)
-
-    if not _use_local_data() and _KidsCollectCard is not None:
-        _cache_set(cache_key, s)
-
+    _cache_set(cache_key, s)
     return s
 
 
 # ===================== Automatic cache invalidation =====================
 # When KidsCard or KidsCollectCard changes, clear relevant keys.
+# For LOCAL mode: simply bump KIDS_CACHE_VERSION if tuples change.
 
 def _invalidate_kids_cards_cache(*_args, **_kwargs):
-    _cache_del("kids_cards:list:limit9")
+    _cache_del("kids_cards:list:limit9:mode=local")
+    _cache_del("kids_cards:list:limit9:mode=db")
 
 def _invalidate_collect_cards_cache(*_args, **_kwargs):
-    _cache_del("collect_cards:list:all")
-    # remove all JSON variants we may have produced
-    _cache_del("collect_cards:json:all")
-    for n in (1, 3, 6, 9, 12):  # common slice sizes; harmless if missing
-        _cache_del(f"collect_cards:json:{n}")
+    _cache_del("collect_cards:list:mode=local:all")
+    _cache_del("collect_cards:list:mode=db:all")
+    # remove JSON variants (both modes, common sizes)
+    for mode in ("local", "db"):
+        _cache_del(f"collect_cards:json:mode={mode}:all")
+        for n in (1, 3, 6, 9, 12):
+            _cache_del(f"collect_cards:json:mode={mode}:{n}")
 
 @receiver(post_save, sender=KidsCard)
 @receiver(post_delete, sender=KidsCard)
