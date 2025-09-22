@@ -138,19 +138,97 @@
   }
 
   /* ===== Next / Finish ===== */
-  .next-btn{
-    position: fixed; right: calc(clamp(12px, 3vw, 28px) + min(560px, 44vw) + 10px);
-    top: 50%; transform: translateY(-50%); z-index: 2; width: 54px; height: 54px; border-radius: 999px;
-    display: grid; place-items: center; background: linear-gradient(180deg,#e8f5ff,#cfe9ff);
-    border: 1px solid rgba(120,170,255,.6); box-shadow: 0 8px 26px rgba(30,90,200,.35);
-    color:#0a2a6b; font-size: 22px; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease;
-  }
-  .next-btn.show{ opacity: 1; pointer-events: auto; }
-  .next-btn:active{ transform: translateY(-50%) scale(.96); }
-  @media (max-width:980px){
-    .next-btn{ right: clamp(12px, 3vw, 28px); top:auto; bottom: calc(12px + env(safe-area-inset-bottom)); transform:none; }
-    .next-btn:active{ transform: scale(.96); }
-  }
+    /* Bigger capsule Next button with wiggle + sheen */
+    .next-btn{
+      position: fixed;
+      right: calc(clamp(12px, 3vw, 28px) + min(560px, 44vw) + 10px);
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 2;
+
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 22px;
+      min-width: 132px;
+      height: 48px;
+      border-radius: 999px;
+
+      background: linear-gradient(180deg,#e8f5ff,#cfe9ff);
+      border: 1px solid rgba(120,170,255,.6);
+      color: #0a2a6b;
+      font-weight: 900;
+      font-size: 16px;
+      letter-spacing: .02em;
+
+      box-shadow: 0 10px 24px rgba(30,90,200,.30), inset 0 1px 0 #fff;
+      text-shadow: 0 1px 0 rgba(255,255,255,.6);
+
+      cursor: pointer;
+      opacity: 0;                
+      pointer-events: none;
+      transition: opacity .2s ease, transform .2s ease;
+
+      animation:
+        next-wiggle 1.2s ease-in-out 2s infinite,
+        next-glow   2.6s ease-in-out 0s  infinite alternate;
+
+      position: fixed;  /* for ::after sheen positioning context */
+      overflow: hidden;
+    }
+
+    .next-btn::after{
+      content: "";
+      position: absolute;
+      top: -150%;
+      left: -60%;
+      width: 40%;
+      height: 400%;
+      background: linear-gradient(90deg, rgba(255,255,255,0) 0%,
+                                          rgba(255,255,255,.65) 50%,
+                                          rgba(255,255,255,0) 100%);
+      transform: rotate(20deg);
+      animation: next-sheen 2.2s linear infinite;
+      pointer-events: none;
+    }
+
+    .next-btn.show{ opacity: 1; pointer-events: auto; }
+    .next-btn:active{ transform: translateY(-50%) scale(.98); }
+
+    @media (max-width:980px){
+      .next-btn{
+        right: clamp(12px, 3vw, 28px);
+        top: auto;
+        bottom: calc(12px + env(safe-area-inset-bottom));
+        transform: none;
+      }
+      .next-btn:active{ transform: scale(.98); }
+    }
+
+    /* Keyframes */
+    @keyframes next-wiggle{
+      0%,100%{ transform: translateY(-50%) rotate(0deg); }
+      10%   { transform: translateY(calc(-50% - 1px)) rotate(-1.2deg); }
+      20%   { transform: translateY(-50%) rotate(1.2deg); }
+      30%   { transform: translateY(calc(-50% - .5px)) rotate(-.8deg); }
+      40%   { transform: translateY(-50%) rotate(.8deg); }
+      50%   { transform: translateY(calc(-50% - .3px)) rotate(-.5deg); }
+      60%,90%{ transform: translateY(-50%) rotate(0deg); }
+    }
+    @keyframes next-glow{
+      from{ box-shadow: 0 10px 24px rgba(30,90,200,.30), inset 0 1px 0 #fff; }
+      to  { box-shadow: 0 14px 32px rgba(30,90,200,.48), inset 0 1px 0 #fff; }
+    }
+    @keyframes next-sheen{
+      0%{ left:-60%; }
+      100%{ left:140%; }
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      .next-btn{ animation: none; }
+      .next-btn::after{ animation: none; opacity:.45; }
+    }
+
 
   .finish-btn{
     position: fixed; right: calc(clamp(12px, 3vw, 28px) + min(560px, 44vw) + 10px); top: 50%; transform: translateY(-50%);
@@ -957,7 +1035,7 @@
     </div>
   </div>
 
-  <button id="nextBtn" class="next-btn" type="button" aria-label="Next card">›</button>
+  <button id="nextBtn" class="next-btn" type="button" aria-label="Next card">Next</button>
   <button id="finishBtn" class="finish-btn" type="button" aria-label="Finish">Finish</button>
 </section>
 
@@ -1002,6 +1080,7 @@
 {% block page_scripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
   const STATIC_BASE = "{% get_static_prefix %}";
@@ -1273,6 +1352,13 @@
       const id = card.dataset.card;
       const details = document.getElementById('details-'+id);
       if(!details) return;
+
+      // --- NEW: start background video as soon as the card is unlocked ---
+      const idx = cards.indexOf(card);                     // which card index
+      aquarium.classList.add('bg-on');                     // fade in the bg layer
+      setFishForCard(idx);                                 // load the right mp4 and reset to 0
+      fishVideo?.play?.().catch(()=>{});                   // play on user gesture
+      // -------------------------------------------------------------------
       card.classList.add('revealed'); details.classList.add('open'); card.setAttribute('aria-expanded', 'true');
       card.classList.add('locked'); card.setAttribute('tabindex','-1');
       const st = ensure(id);
@@ -1403,6 +1489,11 @@
 
     // Next (read-timer only)
     nextBtn.addEventListener('click', ()=>{
+      // If the player still has 0 cards, nudge them to scroll to the collection
+      if (typeof totalCollectItems === 'function' && totalCollectItems() === 0) {
+        openScrollHintSwal({ force: true });
+      }
+
       const curId = String(cards[activeIndex].dataset.card);
       const st = ensure(curId);
       if(!st.done) return;
@@ -1433,15 +1524,85 @@
     showCollectPage(0);
     updateEmptyHint();
 
+
+
+/* === Scroll hint via SweetAlert2 (no floating button needed) === */
+
+// Section reference for scrolling
+const collectionSection = document.querySelector('.kids-collection');
+
+// Simple re-entrancy + "seen once" guard
+let scrollSwalOpen = false;
+const SCROLL_SWAL_KEY = 'kidsScrollSwalSeenV1';
+
+/** Open the SweetAlert hint. If force=true, ignore the "seen" flag. */
+function openScrollHintSwal({ force = false } = {}) {
+  // If the user already has items, no need to show
+  if (typeof totalCollectItems === 'function' && totalCollectItems() > 0) return;
+
+  // Respect "seen" unless forced
+  let seen = false;
+  try { seen = localStorage.getItem(SCROLL_SWAL_KEY) === '1'; } catch (_) {}
+  if (!force && seen) return;
+
+  if (!window.Swal || scrollSwalOpen) return;
+  scrollSwalOpen = true;
+
+  Swal.fire({
+    title: 'Cards live below 👇',
+    text: 'Scroll down to see your card collection. Tap a card to flip it!',
+    icon: 'info',
+    confirmButtonText: 'Take me there',
+    showCancelButton: true,
+    cancelButtonText: 'Later',
+    allowOutsideClick: true,
+    allowEscapeKey: true,
+    backdrop: true
+  }).then((res) => {
+    scrollSwalOpen = false;
+    try { localStorage.setItem(SCROLL_SWAL_KEY, '1'); } catch (_) {}
+    if (res.isConfirmed && collectionSection) {
+      collectionSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+}
+
+/** Auto-close the hint when the collection section enters the viewport. */
+function attachScrollHintObserver() {
+  if (!('IntersectionObserver' in window) || !collectionSection) return;
+  const io = new IntersectionObserver(([entry]) => {
+    if (entry?.isIntersecting && window.Swal && scrollSwalOpen) {
+      Swal.close();
+      scrollSwalOpen = false;
+      try { localStorage.setItem(SCROLL_SWAL_KEY, '1'); } catch (_) {}
+      io.disconnect();
+    }
+  }, { rootMargin: '-80px 0px 0px 0px', threshold: 0.15 });
+  io.observe(collectionSection);
+}
+
+// Start observer immediately
+attachScrollHintObserver();
+
+// Show once on first load if user has 0 cards
+openScrollHintSwal({ force: false });
+
+/* === End: SweetAlert2 scroll hint === */
+
+
+
+
     window.addEventListener('resize', ()=>{
       cards.forEach(c => { c.classList.remove('fixed'); c.style.removeProperty('--fixedH'); });
       lockAllCardHeights();
     });
 
-    document.addEventListener('visibilitychange', ()=>{
-      if(!fishVideo) return;
-      if(document.hidden) fishVideo.pause?.(); else if(aquarium.classList.contains('bg-on')) fishVideo.play?.();
-    });
+    // REMOVE these lines from the READ_MS branch
+
+    //document.addEventListener('visibilitychange', ()=>{
+      //if(!fishVideo) return;
+      //if(document.hidden) fishVideo.pause?.(); else if(aquarium.classList.contains('bg-on')) fishVideo.play?.();
+    //});
 
     celebration.addEventListener('click', ()=>{
       if(!celebration.classList.contains('show')) return;
@@ -1531,8 +1692,8 @@
         { q: '#progressRing',
           text: 'This ring shows your learning progress. The more cards you finish, the fuller it gets.',
           prefer: 'right' },
-        { q: '.kids-collection .collect-grid',
-          text: 'Your unlocked mini cards appear here. Click any card to flip it!',
+          { q: '.kids-collection .collect-title',
+          text: 'Your unlocked mini cards appear here. Scroll to see them and click any card to flip it!',
           prefer: 'top' }
       ];
 
@@ -1606,29 +1767,32 @@
       }
 
       function setStep(i){
-        let idx = i;
-        while(idx >=0 && idx < steps.length){
-          const el = document.querySelector(steps[idx].q);
-          if(el && isVisible(el)) break;
-          idx += (i > activeIndex ? 1 : -1);
-        }
-        if(idx < 0 || idx >= steps.length){ closeTutorial(true); return; }
 
-        activeIndex = idx;
-        const step = steps[activeIndex];
-        const el = document.querySelector(step.q);
-        if(!el) { closeTutorial(true); return; }
+          let idx = Math.max(0, Math.min(i, steps.length - 1));
 
-        document.getElementById('coachText').textContent = step.text;
+          let step, el;
+          let dir = (i > activeIndex) ? 1 : -1;
+          while (idx >= 0 && idx < steps.length) {
+            step = steps[idx];
+            el = document.querySelector(step.q);
+            if (el) break;               
+            idx += dir;
+          }
+          if (!el) { closeTutorial(true); return; }
 
-        scrollIntoViewIfNeeded(el).then(()=>{
-          void document.getElementById('coachTip').offsetWidth;
-          spotlightTo(el, step.prefer || 'bottom');
-        });
+          activeIndex = idx;
+          coachText.textContent = step.text;
 
-        document.getElementById('coachBack').disabled = (activeIndex === 0);
-        document.getElementById('coachNext').textContent = (activeIndex === steps.length - 1) ? 'Got it' : 'Next';
+          scrollIntoViewIfNeeded(el).then(()=>{
+            requestAnimationFrame(()=>{
+              spotlightTo(el, step.prefer || 'bottom');
+            });
+          });
+
+          btnBack.disabled = (activeIndex === 0);
+          btnNext.textContent = (activeIndex === steps.length - 1) ? 'Got it' : 'Next';
       }
+
 
       function openTutorial(){
         const coach = document.getElementById('coach');

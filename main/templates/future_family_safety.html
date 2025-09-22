@@ -779,9 +779,104 @@ html[data-theme="light"] .range-card {
   
 
   <!-- 48-hour forecast -->
-  <section class="card-box" style="margin-bottom:18px;">
-    <div class="card-hd">
-      <span class="ws-grad">48-Hour Forecast (Keep Using vs Avoid Water)</span>
+  <!-- 48-hour forecast — Red vs Green (single bar, ties -> Keep Using, amplified split) -->
+<section class="card-box" style="margin-bottom:18px;">
+  <style>
+    :root{
+      --green:#16a34a;          /* segment green */
+      --green-deep:#065f46;     /* text on green pill */
+      --red:#ef4444;            /* segment red   */
+      --red-deep:#7f1d1d;       /* text on red pill */
+      --bar-h:30px;
+    }
+
+    .rg-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .rg-head details summary{display:inline-flex;align-items:center;gap:8px}
+
+    /* controls (theme-aware) */
+    .rg-controls{display:flex;align-items:center;gap:8px;margin:8px 0 10px}
+    .rg-controls label{color:var(--muted)}
+    .rg-select{
+      appearance:none;-webkit-appearance:none;cursor:pointer;
+      padding:8px 12px;border-radius:10px;font-weight:800;
+      color:var(--text, #e7eef8);
+      background: rgba(17,24,39,0.92);
+      border:1px solid rgba(80,160,255,0.35);
+      box-shadow:
+        inset 0 0 8px rgba(80,160,255,0.18),
+        0 0 12px rgba(80,160,255,0.25);
+      color-scheme: dark;
+    }
+    .rg-select:focus{outline:2px solid var(--accent, #1E6FFF); outline-offset:2px}
+    .rg-select option{background:rgba(17,24,39,0.96); color:var(--text, #e7eef8)}
+
+    html[data-theme="light"] .rg-select{
+      background: rgba(255,255,255,0.72);
+      border:1px solid rgba(80,160,255,0.35);
+      box-shadow:
+        inset 0 0 6px rgba(80,160,255,0.15),
+        0 0 10px rgba(80,160,255,0.18);
+      color-scheme: light;
+    }
+    html[data-theme="light"] .rg-select option{background:#ffffff; color:var(--text, #1b2430)}
+
+    /* bar */
+    .rg-wrap{position:relative;padding-top:46px}
+    .rg-bar{position:relative;display:flex;width:100%;height:var(--bar-h);border-radius:9999px;overflow:hidden;
+      box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+    .rg-seg{position:relative;height:100%;transition:width .25s ease}
+    .rg-red{background:var(--red);border-top-left-radius:9999px;border-bottom-left-radius:9999px}
+    .rg-green{background:var(--green);border-top-right-radius:9999px;border-bottom-right-radius:9999px}
+
+    /* winner/loser emphasis */
+    .rg-seg.win{box-shadow:inset 0 0 0 2px rgba(255,255,255,.9), 0 0 0 3px rgba(255,255,255,.12)}
+    .rg-seg.lose{opacity:.50}
+    html[data-theme="light"] .rg-seg.lose{opacity:.45}
+
+    .rg-mid{position:absolute;left:50%;top:0;bottom:0;width:2px;background:#fff;opacity:.9;transform:translateX(-1px)}
+
+    /* inside labels */
+    .rg-lbl{position:absolute;top:50%;transform:translateY(-50%);color:#fff;font-weight:900;font-size:12px;
+      text-shadow:0 1px 3px rgba(0,0,0,.5);pointer-events:none}
+    .rg-lbl.left{left:10px}
+    .rg-lbl.right{right:10px}
+
+    /* glossy status pill */
+    .rg-pill{position:absolute;top:0;transform:translateX(-50%);
+      padding:8px 14px;border-radius:9999px;font:900 14px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      color:var(--green-deep); background:linear-gradient(#6ee7b7,#22c55e); /* default green */
+      box-shadow:
+        inset 0 -6px 12px rgba(0,0,0,.18),
+        inset 0 2px 0 rgba(255,255,255,.35),
+        0 4px 14px rgba(0,0,0,.28);
+      transition:left .25s ease, filter .15s ease, background .15s ease, color .15s ease;
+    }
+    .rg-pill::after{ /* reflection */
+      content:""; position:absolute; inset:3px 8px auto 8px; height:40%;
+      border-radius:9999px; background:linear-gradient(180deg,rgba(255,255,255,.6),rgba(255,255,255,0)); pointer-events:none;
+    }
+    .rg-pill.avoid{ background:linear-gradient(#fca5a5,#ef4444); color:var(--red-deep) }
+
+    /* tooltip */
+    .rg-pill-tip{position:absolute;padding:6px 10px;border-radius:8px;background:#111827;color:#fff;font-weight:800;
+      font-size:12px; pointer-events:none; transform:translate(-50%,-120%); white-space:nowrap;
+      box-shadow:0 6px 18px rgba(0,0,0,.35)}
+    .rg-tip-green{color:var(--green)}
+    .rg-tip-red{color:var(--red)}
+
+    /* meta row (colored numbers) */
+    .rg-meta{display:flex;gap:14px;margin-top:8px;color:var(--muted);font-size:12px;font-weight:700;flex-wrap:wrap}
+    .rg-num{font-weight:900}
+    .rg-num.g{color:var(--green)}
+    .rg-num.r{color:var(--red)}
+    .rg-num.d-pos{color:var(--green)}
+    .rg-num.d-neg{color:var(--red)}
+  </style>
+
+  <div class="card-hd">
+    <div class="rg-head">
+      <span class="ws-grad">48-Hour Forecast (Red vs Green)</span>
+      <!-- Animated droplet kept -->
       <details class="expander">
         <summary>
           <span class="gsap-drop" aria-hidden="true">
@@ -804,44 +899,218 @@ html[data-theme="light"] .range-card {
           </span>
           What’s this?
         </summary>
+        <!-- Match the Water Chemistry explainer structure -->
         <div class="body">
           <div class="explain-block">
             <p class="explain-title">What</p>
-            <p>Two “what-if” lines showing how the safety score may move in the next 48 hours.</p>
-          </div>
-          <div class="explain-block">
-            <p class="explain-title">Scenarios</p>
-            <ul class="exp-list">
-              <li><b>Keep Using</b> – continue using the water as usual (no extra precautions).</li>
-              <li><b>Avoid Water</b> – families avoid direct use (no swimming, playing, or drinking) until conditions improve.</li>
-            </ul>
+            <p>One bar comparing two choices: <b>left red = Avoid</b>, <b>right green = Keep Using</b>.</p>
           </div>
           <div class="explain-block">
             <p class="explain-title">How to read</p>
-            <p>The gap between the two lines ≈ expected safety benefit from avoiding water. Hover points to see local time and score.</p>
+            <ul class="exp-list">
+              <li><b>More red = Avoid</b>.</li>
+              <li><b>More green = Keep Using</b>.</li>
+              <li>The glossy pill sits in the winning half.</li>
+              <li>Ties are nudged to <b>Keep Using</b> for a simple go/hold hint.</li>
+            </ul>
           </div>
           <div class="explain-block">
             <p class="explain-title">Why it matters</p>
-            <p>Helps decide whether to <em>hold off using the water now</em> or if it’s reasonably safe to continue.</p>
+            <p>Gives a quick, plain-language decision without reading a full chart.</p>
           </div>
         </div>
       </details>
     </div>
-    <div class="card-bd">
-      <div class="d-flex align-items-center gap-2" style="margin-bottom:10px;">
-        <button type="button" class="legend-chip" id="btnKeepUsing" aria-pressed="true" title="Toggle Keep Using">
-          <span class="legend-dot" style="color:#60a5fa;"></span> Keep Using
-        </button>
-        <button type="button" class="legend-chip" id="btnAvoidWater" aria-pressed="true" title="Toggle Avoid Water">
-          <span class="legend-dot" style="color:#34d399;"></span> Avoid Water
-        </button>
-      </div>
-      <div class="chart-wrap">
-        <canvas id="ffChart"></canvas>
-      </div>
-      <p class="muted" style="margin-top:10px; font-size:12px;">Hover to see time and score. Click chips to show/hide scenarios.</p>
+  </div>
+
+  <div class="card-bd">
+    <div class="rg-controls">
+      <label for="rgTime" style="font-weight:700">Time</label>
+      <select id="rgTime" class="rg-select" aria-label="Select time"></select>
     </div>
-  </section>
+
+    <div class="rg-wrap">
+      <div id="rgPill" class="rg-pill">Keep Using</div>
+      <div id="rgBar" class="rg-bar" role="img" aria-label="Safety balance">
+        <div id="rgRed"   class="rg-seg rg-red"   style="width:50%">
+          <span id="rgLblRed"   class="rg-lbl left">Red 50%</span>
+        </div>
+        <div id="rgGreen" class="rg-seg rg-green" style="width:50%">
+          <span id="rgLblGreen" class="rg-lbl right">Green 50%</span>
+        </div>
+        <div class="rg-mid" aria-hidden="true"></div>
+        <div id="rgTip" class="rg-pill-tip" style="display:none;">
+          <span class="rg-tip-green">Green 50%</span> — <span class="rg-tip-red">Red 50%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="rg-meta">
+      <span id="rgScores">Keep <b class="rg-num g">—</b> · Avoid <b class="rg-num r">—</b></span>
+      <span id="rgDelta">Δ <b class="rg-num">—</b></span>
+      <span id="rgSplit">Red <b class="rg-num r">—%</b> · Green <b class="rg-num g">—%</b></span>
+    </div>
+  </div>
+
+  {% if result %}{{ result|json_script:"ff-result" }}{% endif %}
+
+  <script>
+    /* ---------------- data loader ---------------- */
+    function loadFF() {
+      const node = document.getElementById('ff-result');
+      if (node && node.textContent.trim()) {
+        try {
+          const d = JSON.parse(node.textContent);
+          if (Array.isArray(d.forecast_48h) && d.forecast_48h.length) {
+            return d.forecast_48h.map(p => ({
+              ts: p.ts || p.timestamp || p.time || p.date,
+              keep: Number(p.do_nothing ?? p.doNothing ?? p.base ?? p.keep_using ?? p.keep),
+              avoid: Number(p.take_action ?? p.takeAction ?? p.action ?? p.avoid_water ?? p.avoid)
+            }));
+          }
+          if (Array.isArray(d.labels) && Array.isArray(d.keep) && Array.isArray(d.avoid)) {
+            return d.labels.map((L,i)=>({ ts:L, keep:Number(d.keep[i]), avoid:Number(d.avoid[i]) }));
+          }
+        } catch(e){}
+      }
+      /* fallback: synth 0..48h from now with a slightly larger spread */
+      const now = Date.now(), step = 6*60*60*1000;
+      const out=[]; let base=65;
+      for(let i=0;i<=8;i++){
+        const ts=new Date(now+i*step).toISOString();
+        base=Math.max(0,Math.min(100, base+(65-base)*0.08 + (Math.random()-0.5)*2));
+        const keep=base;
+        /* make Avoid a bit higher -> clearer red share in fallback */
+        const avoid=Math.max(0, Math.min(100, keep + 10*(1-Math.exp(-i/3)) + (Math.random()-0.5)*2));
+        out.push({ts, keep, avoid});
+      }
+      return out;
+    }
+
+    const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+    const pct =(v)=>v.toFixed(1)+'%';
+
+    /* display rules */
+    const BORDERLINE_PP = 1.0;   // ties -> at least +1pp to green side
+    const AMP_FACTOR    = 1.35;  // amplify the split for clearer contrast
+    const EPS           = 0.01;  // tiny value to reflect nudge when raw delta is 0
+
+    function compute(k,a){
+      const sum=(k||0)+(a||0);
+
+      // raw split (unbiased)
+      const rawRedPct   = sum>0 ? (a/sum)*100 : 50;
+      const rawGreenPct = 100 - rawRedPct;
+
+      // deviation from center (+ => green leads)
+      let d = rawGreenPct - 50;
+
+      /* 1) snap borderline to Keep Using (visual only) */
+      if (Math.abs(d) <= BORDERLINE_PP) {
+        d = +BORDERLINE_PP;            // exact tie or near tie => push to green
+      }
+
+      /* 2) amplify deviation for a stronger visual difference */
+      d = d * AMP_FACTOR;
+      d = clamp(d, -49, 49);           // never collapse any side to 0
+
+      const greenPct = 50 + d;
+      const redPct   = 50 - d;
+
+      const winner   = greenPct>50 ? 'keep' : 'avoid';
+
+      // score deltas
+      const deltaRaw  = (k||0) - (a||0);
+      let   deltaDisp = deltaRaw * AMP_FACTOR;   // show amplified influence
+
+      // ensure sign aligns with the visual nudge when raw is ~0
+      if (winner==='keep'  && deltaDisp<=0) deltaDisp =  Math.abs(deltaDisp) + EPS;
+      if (winner==='avoid' && deltaDisp>=0) deltaDisp = -Math.abs(deltaDisp) - EPS;
+
+      return {redPct, greenPct, winner, deltaDisp};
+    }
+
+    function fmtTime(ts){
+      const d = new Date(ts);
+      return isNaN(d) ? String(ts) :
+        d.toLocaleString([], {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+    }
+
+    /* ---------------- init ---------------- */
+    window.addEventListener('DOMContentLoaded', function(){
+      const series = loadFF();
+
+      const sel      = document.getElementById('rgTime');
+      const redEl    = document.getElementById('rgRed');
+      const greenEl  = document.getElementById('rgGreen');
+      const lblRed   = document.getElementById('rgLblRed');
+      const lblGreen = document.getElementById('rgLblGreen');
+      const pill     = document.getElementById('rgPill');
+      const bar      = document.getElementById('rgBar');
+      const tip      = document.getElementById('rgTip');
+
+      const scoresEl = document.getElementById('rgScores');
+      const deltaEl  = document.getElementById('rgDelta');
+      const splitEl  = document.getElementById('rgSplit');
+
+      /* dropdown */
+      sel.innerHTML = '';
+      series.forEach((p,i)=>{
+        const o=document.createElement('option');
+        o.value=String(i);
+        o.textContent=fmtTime(p.ts);
+        sel.appendChild(o);
+      });
+      sel.value = String(series.length-1);
+
+      function render(idxStr){
+        const i = clamp(Number(idxStr||0), 0, series.length-1);
+        const k = Number(series[i].keep);
+        const a = Number(series[i].avoid);
+
+        const {redPct, greenPct, winner, deltaDisp} = compute(k,a);
+
+        redEl.style.width   = pct(redPct);
+        greenEl.style.width = pct(greenPct);
+
+        redEl.classList.toggle('win',  winner==='avoid');
+        redEl.classList.toggle('lose', winner==='keep');
+        greenEl.classList.toggle('win',  winner==='keep');
+        greenEl.classList.toggle('lose', winner==='avoid');
+
+        lblRed.textContent   = `Red ${redPct.toFixed(1)}%`;
+        lblGreen.textContent = `Green ${greenPct.toFixed(1)}%`;
+
+        let left = (winner==='avoid') ? redPct/2 : redPct + greenPct/2;  // ties -> keep (green)
+        left = clamp(left, 7, 93);
+        pill.style.left = left + '%';
+        if(winner==='avoid'){ pill.textContent='Avoid'; pill.classList.add('avoid'); }
+        else { pill.textContent='Keep Using'; pill.classList.remove('avoid'); }
+
+        /* meta row with colored numbers (consistent with bar) */
+        scoresEl.innerHTML = `Keep <b class="rg-num g">${k.toFixed(2)}</b> · Avoid <b class="rg-num r">${a.toFixed(2)}</b>`;
+        deltaEl.innerHTML  = `Δ <b class="rg-num ${deltaDisp>=0?'d-pos':'d-neg'}">${(deltaDisp>=0?'+':'')}${deltaDisp.toFixed(2)}</b>`;
+        splitEl.innerHTML  = `Red <b class="rg-num r">${redPct.toFixed(1)}%</b> · Green <b class="rg-num g">${greenPct.toFixed(1)}%</b>`;
+
+        tip.innerHTML = `<span class="rg-tip-green">Green ${greenPct.toFixed(1)}%</span> — <span class="rg-tip-red">Red ${redPct.toFixed(1)}%</span>`;
+      }
+
+      /* hover tooltip follows cursor */
+      bar.addEventListener('mouseenter', ()=>{ tip.style.display='block'; });
+      bar.addEventListener('mouseleave', ()=>{ tip.style.display='none'; });
+      bar.addEventListener('mousemove', (e)=>{
+        const r = bar.getBoundingClientRect();
+        const x = clamp(e.clientX - r.left, 8, r.width-8);
+        tip.style.left = (x / r.width * 100) + '%';
+      });
+
+      sel.addEventListener('change', e=>render(e.target.value));
+      render(sel.value);
+    });
+  </script>
+</section>
+
+
 
   {% if result %}{{ result|json_script:"ff-result" }}{% endif %}
 </div>
