@@ -49,6 +49,21 @@ except Exception:
 from sklearn.linear_model import Ridge  # noqa: F401
 
 
+
+# ----- ISO-8601 helpers -----
+def iso_utc(dt_obj: dt.datetime) -> str:
+    """Return a sanitized ISO-8601 UTC string like '2025-09-22T11:34:11Z'.
+    Avoids the invalid '+00:00Z' by forcing UTC and replacing '+00:00' with 'Z'.
+    """
+    if dt_obj.tzinfo is None:
+        # Treat naive as UTC (service works entirely in UTC)
+        dt_obj = dt_obj.replace(tzinfo=dt.timezone.utc)
+    else:
+        # Normalize any timezone to UTC
+        dt_obj = dt_obj.astimezone(dt.timezone.utc)
+    return dt_obj.isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
 # --------------------------------------------------------------------------------------
 # Paths & constants
 # --------------------------------------------------------------------------------------
@@ -162,7 +177,7 @@ def _load_clean_safe() -> Tuple[pd.DataFrame, pd.DataFrame]:
 
 
 def _latest_updated_iso() -> Optional[str]:
-    """Newest mtime among important artifacts → ISO string for 'Last updated'."""
+    """Newest mtime among important artifacts → ISO UTC string for 'Last updated'."""
     candidates = [
         FIELD_CLEAN_CSV,
         LAB_CLEAN_WIDE_CSV,
@@ -178,8 +193,9 @@ def _latest_updated_iso() -> Optional[str]:
             pass
     if not mtimes:
         return None
-    ts = dt.datetime.fromtimestamp(max(mtimes))
-    return ts.isoformat(timespec="seconds")
+    # Use UTC and sanitize to '...Z' (no '+00:00Z')
+    ts = dt.datetime.fromtimestamp(max(mtimes), tz=dt.timezone.utc)
+    return iso_utc(ts)
 
 
 # --------------------------------------------------------------------------------------
@@ -637,12 +653,16 @@ def _forecast_48h_series(seed_score: float, confidence: float) -> List[Dict[str,
     - Confidence band width shrinks as confidence increases
     """
     out: List[Dict[str, float]] = []
-    now = pd.Timestamp.utcnow()
-    step = pd.Timedelta(hours=6)
+    # Use Python datetime in UTC and a timedelta step to avoid tz-mixups
+    now = dt.datetime.now(dt.timezone.utc)        # CHANGED: explicit UTC
+    step = dt.timedelta(hours=6)                  # CHANGED: datetime.timedelta
+
     base = float(seed_score if seed_score is not None else 65.0)
     conf = max(0.0, min(1.0, float(confidence or 0.2)))
     for i in range(9):
-        ts = (now + i * step).isoformat() + "Z"
+        # Sanitize to '...Z' (no '+00:00Z')
+        ts = iso_utc(now + i * step)             # CHANGED: use helper
+
         # do-nothing path: slight pull toward 65
         base = max(0.0, min(100.0, base + (65.0 - base) * 0.08 + (np.random.rand() - 0.5) * 2.0))
         dn = base
