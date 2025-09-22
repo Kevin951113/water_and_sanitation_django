@@ -1,68 +1,104 @@
 from django.conf import settings
+from django.core.cache import cache
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+
 import os
 import json
 from ..models import KidsCard
-
 
 try:
     from ..models import KidsCollectCard as _KidsCollectCard  # optional model
 except Exception:
     _KidsCollectCard = None
 
-# ===== Switch here =====
+
+# ===================== Cache settings =====================
+# Cache on by default (works with any Django cache backend).
+# override in settings.py:
+#   KIDS_CACHE_SECONDS = 300
+#   KIDS_CACHE_PREFIX  = "kids_cards"
+KIDS_CACHE_SECONDS = int(getattr(settings, "KIDS_CACHE_SECONDS", 300))
+KIDS_CACHE_PREFIX  = str(getattr(settings, "KIDS_CACHE_PREFIX", "kids_cards"))
+# bump this to invalidate all existing keys at once
+KIDS_CACHE_VERSION = int(getattr(settings, "KIDS_CACHE_VERSION", 1))
+
+def _ckey(name: str) -> str:
+    """Build cache key with a global prefix + version."""
+    return f"{KIDS_CACHE_PREFIX}:v{KIDS_CACHE_VERSION}:{name}"
+
+def _cache_get(name: str):
+    try:
+        return cache.get(_ckey(name))
+    except Exception:
+        return None
+
+def _cache_set(name: str, value, timeout: int | None = None):
+    try:
+        cache.set(_ckey(name), value, timeout=timeout or KIDS_CACHE_SECONDS)
+    except Exception:
+        pass
+
+def _cache_del(name: str):
+    try:
+        cache.delete(_ckey(name))
+    except Exception:
+        pass
+
+# ===================== Switch here (unchanged) =====================
 # True  -> always use local tuples (no DB/RDS calls)
-# False -> always use database
+# False -> always use database (with caching)
 # None  -> fall back to USE_LOCAL_KIDS_CARDS or settings.DEBUG
 LOCAL_CARDS_OVERRIDE = True
-# =======================
+# ================================================================
+
 
 # ---- Local fallback data (tuples -> dicts) ----
-
 _LOCAL_KIDS_TUPLES =[
     (1, 'Water inside an elephant',
      '<p>About 70% of an elephant is water.</p>',
      '<p>This water helps with blood flow, cooling, and moving nutrients.</p>',
-     'Tap me to unlock the card!', 1, 0),
+     'Tap me to unlock the card!', 15, 1),
 
     (2, 'How watery is a tomato?',
       '<p>About 95% of a tomato is water.</p>',
       '<p>That’s why tomatoes are so juicy.</p>',
-      'Tap me to unlock the card!', 1, 0),
+      'Tap me to unlock the card!', 18, 0),
 
     (3, 'Water in our bodies',
      '<p>About 66% of the human body is water.</p>',
      '<p>It’s in our brain, blood, and organs.</p>',
-     'Tap me to unlock the card!', 1, 0),
+     'Tap me to unlock the card!', 18, 0),
 
     (4, 'Longest water pipeline in Australia',
      '<p>The longest water supply pipeline is in Western Australia.</p>',
      '<p>It carries water long distances to drier areas.</p>',
-     'Tap me to unlock the card!', 1, 0),
+     'Tap me to unlock the card!', 22, 0),
 
     (5, 'Where at home uses the most water?',
      '<p>The bathroom uses the most water at home.</p>',
      '<p>Short showers and turning off taps can save a lot.</p>',
-     'Tap me to unlock the fish!', 1, 0),
+     'Tap me to unlock the card!', 15, 0),
 
     (6, 'Who lacks safe drinking water?',
      '<p>About 1 in 4 people lack safe drinking water.</p>',
      '<p>Clean water projects help families stay healthy.</p>',
-     'Tap me to unlock the card!', 1, 0),
+     'Tap me to unlock the card!', 18, 0),
 
     (7, 'Sea turtles and plastic',
      '<p>About 52% of sea turtles have eaten plastic.</p>',
      '<p>Plastic makes them sick and comes from pollution.</p>',
-     'Tap me to unlock the card!', 1, 0),
+     'Tap me to unlock the card!', 18, 0),
 
     (8, 'Whale sharks and plastic',
      '<p>A whale shark may swallow about 137 pieces of plastic every hour.</p>',
      '<p>They can’t tell plastic from food while filtering water.</p>',
-     'Tap me to unlock the card!', 1, 0),
+     'Tap me to unlock the card!', 15, 0),
 
     (9, 'Sharks and mercury',
      '<p>About 25% of sharks have unsafe mercury levels.</p>',
      '<p>Pollution builds up in the fish they eat.</p>',
-     'Tap me to unlock the card!', 1, 0)
+     'Tap me to unlock the card!', 18, 0)
 ]
 
 
@@ -106,10 +142,11 @@ def _use_local_data() -> bool:
     print(f"[kids_cards] decision: settings.DEBUG={debug} -> use_local={debug}")
     return debug
 
+
 def fetch_kids_cards():
     """
     Dev/local: return static JSON-like data to avoid RDS costs.
-    Production: query the DB (keeps the 4-item limit for the page).
+    Production: query the DB (keeps the 4-item limit for the page) with caching.
     Also prints the chosen source and count.
     """
     use_local = _use_local_data()
@@ -120,12 +157,20 @@ def fetch_kids_cards():
         print(f"[kids_cards] source=LOCAL tuples, returning={len(data)} items (limit 9)")
         return data
 
+    # DB path — use cache
+    cache_key = "kids_cards:list:limit9"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        print(f"[kids_cards] source=CACHE, returning={len(cached)} items (limit 9)")
+        return cached
+
     qs = list(
         KidsCard.objects.order_by("card_order").values(
             "card_order", "title", "lead_html", "detail_html",
             "hint_text", "read_seconds", "is_starter"
         )[:9]
     )
+    _cache_set(cache_key, qs)
     print(f"[kids_cards] source=DB, returning={len(qs)} items (limit 4)")
     return qs
 
@@ -196,37 +241,44 @@ def fetch_collect_cards(limit: int | None = None):
     """
     Return a list[dict] for collectible cards.
     - If _use_local_data() is True, use _LOCAL_COLLECT_TUPLES.
-    - Otherwise, if the optional _KidsCollectCard model exists, query the DB.
+    - Otherwise, if the optional _KidsCollectCard model exists, query the DB with caching.
       (Suggested model fields: no/title/aria/img or image_url/desc/special/levelCap/levelCur)
     """
     use_local = _use_local_data()
     items = []
+    src = "LOCAL"
 
     if use_local or _KidsCollectCard is None:
         items = [_collect_as_dict(t) for t in _LOCAL_COLLECT_TUPLES]
-        src = "LOCAL"
     else:
-        # Accommodate multiple possible field names to keep modeling flexible
-        values = list(_KidsCollectCard.objects.order_by("no").values(
-            "no", "title", "aria", "img", "image_url", "desc", "description",
-            "special", "levelCap", "levelCur", "level_cap", "level_cur"
-        ))
-        for v in values:
-            img = v.get("img") or v.get("image_url") or ""
-            desc = v.get("desc") or v.get("description") or ""
-            level_cap = v.get("levelCap", v.get("level_cap", 3))
-            level_cur = v.get("levelCur", v.get("level_cur", 1))
-            items.append({
-                "no": v.get("no"),
-                "title": v.get("title"),
-                "aria": v.get("aria") or f"{v.get('title', 'Card')} card",
-                "img": _static_url(img),
-                "desc": desc,
-                "special": v.get("special") or "S",
-                "levelCap": int(level_cap or 3),
-                "levelCur": int(level_cur or 1),
-            })
-        src = "DB"
+        cache_key = "collect_cards:list:all"
+        cached = _cache_get(cache_key)
+        if cached is not None:
+            items = cached
+            src = "CACHE"
+        else:
+            # Accommodate multiple possible field names to keep modeling flexible
+            values = list(_KidsCollectCard.objects.order_by("no").values(
+                "no", "title", "aria", "img", "image_url", "desc", "description",
+                "special", "levelCap", "levelCur", "level_cap", "level_cur"
+            ))
+            for v in values:
+                img = v.get("img") or v.get("image_url") or ""
+                desc = v.get("desc") or v.get("description") or ""
+                level_cap = v.get("levelCap", v.get("level_cap", 3))
+                level_cur = v.get("levelCur", v.get("level_cur", 1))
+                items.append({
+                    "no": v.get("no"),
+                    "title": v.get("title"),
+                    "aria": v.get("aria") or f"{v.get('title', 'Card')} card",
+                    "img": _static_url(img),
+                    "desc": desc,
+                    "special": v.get("special") or "S",
+                    "levelCap": int(level_cap or 3),
+                    "levelCur": int(level_cur or 1),
+                })
+            _cache_set(cache_key, items)
+            src = "DB"
 
     if limit is not None and isinstance(limit, int) and limit > 0:
         items = items[:limit]
@@ -238,6 +290,45 @@ def build_collect_cards_json(limit: int | None = None) -> str:
     """
     Produce a JSON string for the template's
     `<script id="collectCardsData" type="application/json">`.
+    Cached separately by (optional) limit to avoid repeated JSON encoding.
     """
+    # Use limit in the cache key (None -> 'all')
+    cache_key = f"collect_cards:json:{limit if limit is not None else 'all'}"
+
+    if not _use_local_data() and _KidsCollectCard is not None:
+        cached = _cache_get(cache_key)
+        if cached is not None:
+            return cached
+
     data = fetch_collect_cards(limit=limit)
-    return json.dumps(data, ensure_ascii=False)
+    s = json.dumps(data, ensure_ascii=False)
+
+    if not _use_local_data() and _KidsCollectCard is not None:
+        _cache_set(cache_key, s)
+
+    return s
+
+
+# ===================== Automatic cache invalidation =====================
+# When KidsCard or KidsCollectCard changes, clear relevant keys.
+
+def _invalidate_kids_cards_cache(*_args, **_kwargs):
+    _cache_del("kids_cards:list:limit9")
+
+def _invalidate_collect_cards_cache(*_args, **_kwargs):
+    _cache_del("collect_cards:list:all")
+    # remove all JSON variants we may have produced
+    _cache_del("collect_cards:json:all")
+    for n in (1, 3, 6, 9, 12):  # common slice sizes; harmless if missing
+        _cache_del(f"collect_cards:json:{n}")
+
+@receiver(post_save, sender=KidsCard)
+@receiver(post_delete, sender=KidsCard)
+def _kids_cards_changed(sender, **kwargs):
+    _invalidate_kids_cards_cache()
+
+if _KidsCollectCard is not None:
+    @receiver(post_save, sender=_KidsCollectCard)
+    @receiver(post_delete, sender=_KidsCollectCard)
+    def _kids_collect_changed(sender, **kwargs):
+        _invalidate_collect_cards_cache()
