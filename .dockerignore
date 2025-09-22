@@ -11,6 +11,8 @@ dist/
 .coverage
 htmlcov/
 .pytest_cache/
+treasure-game/
+tests/
 
 # Virtualenv / IDE / OS
 venv/

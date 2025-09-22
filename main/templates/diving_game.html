@@ -12,7 +12,9 @@
 
 
 <div id="treasure-game-root" style="min-height:640px;"></div>
-<script type="module" src="{% static 'treasure/assets/index-Dg_mcpru.js' %}"></script>
+{% if not settings.DEBUG %}
+  <script type="module" src="{% static 'treasure/assets/index-Dg_mcpru.js' %}"></script>
+{% endif %}
 
 <!-- >>> Write your own page content here <<< -->
 
