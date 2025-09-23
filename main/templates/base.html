@@ -88,15 +88,15 @@
              aria-haspopup="true"
              aria-expanded="{% if current == 'explore_water_quality' or current == 'pollution_sources' or current == 'future_family_safety' %}true{% else %}false{% endif %}">
             <span class="slot-window"><span class="slot-track">
-              <span class="slot-item">Water Insights ▼</span>
-              <span class="slot-item" aria-hidden="true">Water Insights ▼</span>
+              <span class="slot-item">Water Quality Predictions ▼</span>
+              <span class="slot-item" aria-hidden="true">Quality Predictions ▼</span>
             </span></span>
           </a>
           <div class="submenu" role="menu">
             <!-- we keep older pages commented, so we can bring them back later without hunting history -->
             <!-- <a role="menuitem" href="{% url 'explore_water_quality' %}" class="{% if current == 'explore_water_quality' %}active{% endif %}">[Explore Water Quality]</a>
             <a role="menuitem" href="{% url 'pollution_sources' %}" class="{% if current == 'pollution_sources' %}active{% endif %}">[Pollution Sources]</a>-->
-            <a role="menuitem" href="{% url 'future_family_safety' %}" class="{% if current == 'future_family_safety' %}active{% endif %}">Community Reporting & Family Safety</a>
+            <a role="menuitem" href="{% url 'future_family_safety' %}" class="{% if current == 'future_family_safety' %}active{% endif %}">Suburb</a>
           </div>
         </div>
 
@@ -110,7 +110,7 @@
             <span class="slot-window"><span class="slot-track">
               <span class="slot-item">
                 <!-- icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="#75FB4C" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" height="21" viewBox="0 -960 960 960" width="21" fill="#75FB4C" aria-hidden="true">
                   <path d="M432-240h24l168-240h-96v-144h-24L336-384h96v144Zm48 144q-130 0-221-91t-91-221q0-97 74.5-205T480-864q166 150 239 257t73 199q0 130-91 221T480-96Zm0-72q100 0 170-70t70-170q0-68-54-149T480-769Q348-638 294-557t-54 149q0 100 70 170t170 70Zm0-312Z"/>
                 </svg>
                 For Kids – Learn & Play ▼
@@ -212,7 +212,7 @@
       water_logo_img.alt = isLight ? "Brand logo (lights on)" : "Brand logo (lights off)";
     }
     function water_update_button(isLight){
-      water_btn_light.textContent = `Lights: ${isLight ? "On" : "Off"}`;  // we keep the label friendly, and we toggle aria-pressed
+      water_btn_light.textContent = `∕`;  // we keep the label friendly, and we toggle aria-pressed
       water_btn_light.setAttribute("aria-pressed", String(isLight));
     }
     water_update_button(water_is_light);

@@ -478,12 +478,12 @@ footer{
 
 /* ===== Kids Nav (Playful style) ===== */
 nav.menu .kids-link{
-  position: relative; padding: 6px 16px; border-radius: 12px;
+  position: relative; padding: 6px 10px; border-radius: 12px;
 }
 nav.menu .kids-link .slot-item{
   color: var(--kids-green);
   font-family: 'Joti One', cursive;
-  font-weight: 400; font-size: 18px; letter-spacing: 0;
+  font-weight: 400; font-size: 21px; letter-spacing: 0;
   text-shadow: none; transition: color .2s ease;
 }
 nav.menu .kids-link,
@@ -522,7 +522,7 @@ nav.menu .kids-link.active::after{ opacity:1; transform: scaleX(1); }
 nav.menu .kids-nav .submenu a {
   font-family: 'Joti One', cursive;
   font-weight: 400;
-  font-size: 17px;
+  font-size: 21px;
   color: var(--kids-green);
   text-transform: none;
   letter-spacing: 0;
