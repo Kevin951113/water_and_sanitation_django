@@ -4,27 +4,278 @@
 {% block title %}About | Water & Sanitation{% endblock %}
 
 {% block head_extras %}
+<style>
+  body {
+    font-family: 'Helvetica', sans-serif;
+    color: #333;
+  }
+
+  .about-section {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px 15px;
+  }
+
+  /* 卡片容器 */
+  .card {
+    background-color: #f8fafd;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    padding: 16px 18px;
+    margin-bottom: 15px;
+    transition: transform 0.2s;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
+
+  .card h2 {
+    color: #00B3E6; /* SDG6 蓝色 */
+    font-size: 1.6em;
+    margin-bottom: 8px;
+    border-bottom: 2px solid #00B3E6;
+    display: inline-block;
+    padding-bottom: 2px;
+  }
+
+  .card p {
+    margin: 4px 0;
+  }
+
+  .card ul {
+    margin: 6px 0;
+    padding-left: 18px;
+  }
+
+  .card ul li {
+    margin-bottom: 4px;
+  }
+
+  .card a {
+    color: #0077b6;
+    text-decoration: none;
+  }
+
+  .card a:hover {
+    text-decoration: underline;
+  }
+
+  /* 小屏幕优化 */
+  @media (max-width: 600px) {
+    .card h2 {
+      font-size: 1.4em;
+    }
+  }
+
+  /* 分组容器 */
+  .group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* 卡片之间间距 */
+    margin-bottom: 20px;
+  }
+
+  /* Team 列表 */
+  .team-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 6px 0;
+  }
+
+  .team-list li {
+    margin-bottom: 4px;
+  }
+</style>
 {% endblock %}
 
 {% block content %}
+<section class="about-section">
 
-<!-- Do NOT touch the header above (it's shared in base.html) -->
+ <!-- Team 信息 -->
+<div class="group">
+  <article class="card">
+    <h2>Team Information</h2>
+    <p><strong>Group:</strong> TA12 — Happy Flippers</p>
+    <ul class="team-list">
+      <li class="team-member">
+        <span class="name">Huaao Li</span>
+        <span class="email"><a href="mailto:hliu0279@student.monash.edu">hliu0279@student.monash.edu</a></span>
+      </li>
+      <li class="team-member">
+        <span class="name">Jewel Kurian Elias</span>
+        <span class="email"><a href="mailto:jeli0004@student.monash.edu">jeli0004@student.monash.edu</a></span>
+      </li>
+      <li class="team-member">
+        <span class="name">Ranjana Chakraverty</span>
+        <span class="email"><a href="mailto:rcha0130@student.monash.edu">rcha0130@student.monash.edu</a></span>
+      </li>
+      <li class="team-member">
+        <span class="name">Shih-Hsiang Hung </span>
+        <span class="email"><a href="mailto:khun0015@student.monash.edu">khun0015@student.monash.edu</a></span>
+      </li>
+      <li class="team-member">
+        <span class="name">Zifeng Yuan</span>
+        <span class="email"><a href="mailto:zyua0011@student.monash.edu">zyua0011@student.monash.edu</a></span>
+      </li>
+    </ul>
+  </article>
+</div>
+
+<style>
+.team-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 6px 0;
+}
+
+.team-member {
+  display: flex;
+  justify-content: space-between; /* 左右对齐 */
+  margin-bottom: 4px;
+  flex-wrap: wrap; /* 小屏幕自动换行 */
+}
+
+.team-member .name {
+  font-weight: 500;
+}
+
+.team-member .email a {
+  color: #0077b6;
+  text-decoration: none;
+}
+
+.team-member .email a:hover {
+  text-decoration: underline;
+}
+</style>
 
 
-  <section class="wrap" style="max-width:900px">
-    <article class="panel" style="aspect-ratio:auto; padding:18px">
+
+  <div class="group">
+    <article class="card">
       <h2>Our Mission</h2>
-      <p>We aim to provide real-time water safety checks, sanitation maps, and community reporting tools.</p>
+      <p>
+        Help families in Victoria make safe and informed choices about water activities — 
+        such as camping, fishing, and swimming — by providing clear, reliable, and easy-to-understand water information.
+      </p>
     </article>
-  </section>
 
-<!-- >>> Write your own page content here <<< -->
+    <article class="card">
+      <h2>Our Vision</h2>
+      <p>
+        A future where every family and child in Melbourne understands the importance of clean water and takes action to protect it, contributing to UN SDG 6.
+      </p>
+    </article>
 
-<!-- Do NOT touch the footer below (it's shared in base.html) -->
+    <article class="card">
+      <h2>Project Background</h2>
+      <p>
+        Developed by a student research team to improve public awareness of water quality in Victoria. Combines scientific data with accessible design for all ages, including children.
+      </p>
+    </article>
+  </div>
+
+  
+  <div class="group">
+    <article class="card">
+      <h2>Value & Impact</h2>
+      <ul>
+        <li>🌊 Interactive learning section for kids — children can earn “Water Protector” cards.</li>
+        <li>🐟 Melbourne Fish Map — shows local species and their info.</li>
+        <li>📊 Simple data visualizations to understand water quality and risks.</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h2>Future Plans</h2>
+      <ul>
+        <li>Expand water prediction coverage in Victoria.</li>
+        <li>Add more games for children.</li>
+        <li>Collaborate with environmental organizations and local councils.</li>
+        <li>Develop a mobile-friendly version.</li>
+      </ul>
+    </article>
+  </div>
+
+ 
+  <div class="group">
+    <article class="card">
+      <h2>Our Data Sources</h2>
+      <p>
+        Water quality and environmental data come from trusted sources:
+        <a href="https://www.melbournewater.com.au/" target="_blank">Melbourne Water</a>, 
+        <a href="https://www.epa.vic.gov.au/" target="_blank">EPA Victoria</a>, 
+        <a href="https://www.bom.gov.au/" target="_blank">Bureau of Meteorology</a>.
+      </p>
+    </article>
+
+  </div>
+
+  <!-- Potential Sponsors -->
+<div class="group">
+  <article class="card">
+    <h2>Potential Sponsors</h2>
+    
+    <!-- AWA -->
+    <div class="sponsor">
+      <h3><a href="https://www.awa.asn.au/" target="_blank">Australian Water Association (AWA)</a></h3>
+      <p>
+        The Clean Water Project aligns with AWA’s mission of advancing sustainable water management and supporting the next generation of water professionals. 
+        Sponsoring our project allows AWA to demonstrate its commitment to education, student development, and community engagement.
+      </p>
+    </div>
+
+    <!-- WaterAid Australia -->
+    <div class="sponsor" style="margin-top: 12px;">
+      <h3><a href="https://www.wateraid.org/au/" target="_blank">WaterAid Australia</a></h3>
+      <p>
+        WaterAid Australia is committed to improving access to safe water, sanitation, and hygiene through education and community engagement. 
+        Our project aligns with this mission by raising awareness of water sustainability and empowering students to contribute innovative solutions.
+      </p>
+    </div>
+  </article>
+</div>
+
+<style>
+.sponsor h3 a {
+  color: #0077b6;
+  text-decoration: none;
+}
+
+.sponsor h3 a:hover {
+  text-decoration: underline;
+}
+
+.sponsor p {
+  margin: 4px 0;
+  line-height: 1.4em;
+}
+</style>
+
+
+<style>
+.sponsor h3 {
+  margin: 6px 0;
+  color: #0077b6;
+  font-size: 1.2em;
+}
+
+.sponsor p {
+  margin: 4px 0;
+  line-height: 1.4em;
+}
+</style>
+
+
+</section>
 {% endblock %}
 
 {% block page_scripts %}
 <script>
-  window.pageInit = function(){};
+  window.pageInit = function(){
+    console.log("About page loaded");
+  };
 </script>
 {% endblock %}
